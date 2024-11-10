@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "recommender-experiments"
+version = "0.1.0"
+description = ""
+authors = ["morita <morinota416@gmail.com>"]
+readme = "README.md"
+packages = [{include = "recommender_experiments", from = "src"}]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.11"
+obp = "^0.5.7"
+matplotlib = "3.4.3"
+seaborn = "0.11.2"
+
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

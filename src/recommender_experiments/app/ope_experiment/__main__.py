@@ -1,3 +1,4 @@
+from loguru import logger
 import typer
 from pathlib import Path
 from joblib import delayed, Parallel
@@ -87,23 +88,24 @@ def run_single_simulation(
     random_state: int,
 ) -> dict:
     """
-    1回のシミュレーションを実行し、OPE推定量でポリシーの価値を評価する。
+    1回のシミュレーションを実行し、OPE推定量で方策の価値を評価する。
 
     Args:
         i (int): シミュレーションのインデックス。
         n_actions (int): アクションの数。
         dim_context (int): 文脈ベクトルの次元数。
-        beta (float): 行動ポリシーの逆温度パラメータ。
+        beta (float): データの逆温度パラメータ。
         n_rounds (int): サンプルサイズ。
-        base_model_for_evaluation_policy (str): 評価ポリシーのMLモデル。
+        base_model_for_evaluation_policy (str): 評価方策のMLモデル。
         base_model_for_reg_model (str): 回帰モデルのMLモデル。
         hyperparams (dict): モデルのハイパーパラメータ。
         base_model_dict (dict): 使用可能なベースモデルの辞書。
         ope_estimators (list): 評価するOPE推定量のリスト。
         random_state (int): ランダムシード。
     Returns:
-        dict: 推定量ごとの相対誤差を格納した辞書。
+        dict: OPE推定量ごとの相対誤差を格納した辞書。
     """
+    # データ収集方策によって集められるはずの、擬似バンディットデータを定義
     dataset = SyntheticBanditDataset(
         n_actions=n_actions,
         dim_context=dim_context,
@@ -111,25 +113,45 @@ def run_single_simulation(
         beta=beta,
         random_state=i,
     )
+    # 学習用とテスト用のバンディットデータを生成
     bandit_feedback_train = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
     bandit_feedback_test = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
+    logger.debug(f"bandit_feedback_train: {bandit_feedback_train}")
+    logger.debug(f"bandit_feedback_test: {bandit_feedback_test}")
 
+    # 評価方策のモデル構造を定義
     evaluation_policy = IPWLearner(
         n_actions=dataset.n_actions,
         base_classifier=base_model_dict[base_model_for_evaluation_policy](
             **hyperparams[base_model_for_evaluation_policy]
         ),
     )
+    logger.debug(f"evaluation_policy: {evaluation_policy}")
+
+    # データ収集方策によって集められた学習データを用いて、評価方策をオフライン学習(たぶん逆傾向スコア重み付け!)
     evaluation_policy.fit(
         context=bandit_feedback_train["context"],
         action=bandit_feedback_train["action"],
         reward=bandit_feedback_train["reward"],
         pscore=bandit_feedback_train["pscore"],
     )
+
+    # テストデータの各タイムステップに対して、評価方策による行動選択の確率分布を推論
+    ## predictメソッドは決定的な行動選択。sample_actionメソッドは確率的な行動選択。
     action_dist = evaluation_policy.predict_proba(
         context=bandit_feedback_test["context"]
     )
+    logger.debug(f"action_dist: {len(action_dist)=}")
+    logger.debug(f"action_dist: {action_dist.shape=}")
+    logger.debug(f"action_dist: {action_dist[0]=}")
+    sampled_actions = evaluation_policy.sample_action(
+        context=bandit_feedback_test["context"]
+    )
+    logger.debug(f"sampled_actions: {len(sampled_actions)=}")
+    logger.debug(f"sampled_actions: {sampled_actions.shape=}")
+    logger.debug(f"sampled_actions: {sampled_actions[0]=}")
 
+    # これはOPE推定量の準備(DM推定量のための報酬予測モデル)
     regression_model = RegressionModel(
         n_actions=dataset.n_actions,
         action_context=dataset.action_context,
@@ -145,18 +167,26 @@ def run_single_simulation(
         random_state=random_state,
     )
 
+    # オフライン評価(各OPE推定量で評価方策のオンライン性能を予測 & ground-truthと比較?)
     ope = OffPolicyEvaluation(
         bandit_feedback=bandit_feedback_test, ope_estimators=ope_estimators
     )
     metric_i = ope.evaluate_performance_of_estimators(
+        # 評価方策のオンライン性能のground-truth、どうやって算出してる??
         ground_truth_policy_value=dataset.calc_ground_truth_policy_value(
+            # あ、擬似データだから、各(context, action)ペアに対する期待報酬 E[r|a,x] が既知なんだ...!!
             expected_reward=bandit_feedback_test["expected_reward"],
+            # 上に加えて、評価方策の行動選択確率 P(a|x) を渡せば、累積報酬の期待値が算出できる
             action_dist=action_dist,
         ),
+        # 評価方策の行動選択確率 P(a|x)は、IPS推定量などの値を計算するために渡す
+        # (データ収集方策の行動選択確率は、コンストラクタで渡し済み）
         action_dist=action_dist,
+        #
         estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-        metric="relative-ee",
+        metric="relative-ee",  # OPE推定量の性能を評価するための指標
     )
+    logger.debug(f"metric_i: {metric_i}")
     return metric_i
 
 
@@ -182,9 +212,9 @@ def run_simulations_in_parallel(
         n_jobs (int): 同時に実行する最大ジョブ数。
         n_actions (int): アクションの数。
         dim_context (int): 文脈ベクトルの次元数。
-        beta (float): 行動ポリシーの逆温度パラメータ。
+        beta (float): データ収集方策の逆温度パラメータ。
         n_rounds (int): サンプルサイズ。
-        base_model_for_evaluation_policy (str): 評価ポリシーのMLモデル。
+        base_model_for_evaluation_policy (str): 評価方策のMLモデル。
         base_model_for_reg_model (str): 回帰モデルのMLモデル。
         hyperparams (dict): モデルのハイパーパラメータ。
         base_model_dict (dict): 使用可能なベースモデルの辞書。
@@ -196,7 +226,7 @@ def run_simulations_in_parallel(
     """
     return Parallel(n_jobs=n_jobs, verbose=50)(
         delayed(run_single_simulation)(
-            i,
+            simulation_idx,
             n_actions,
             dim_context,
             beta,
@@ -208,7 +238,7 @@ def run_simulations_in_parallel(
             ope_estimators,
             random_state,
         )
-        for i in np.arange(n_runs)
+        for simulation_idx in np.arange(n_runs)
     )
 
 
@@ -241,14 +271,17 @@ def compile_results(
 def main(
     n_runs: int = typer.Option(1, help="実験のシミュレーション回数。"),
     n_rounds: int = typer.Option(
-        10000, help="ログされたバンディットデータのサンプル数。"
+        10000, help="収集されたバンディットデータのサンプル数。"
     ),
     n_actions: int = typer.Option(10, help="アクションの数。"),
     dim_context: int = typer.Option(5, help="文脈ベクトルの次元。"),
-    beta: float = typer.Option(3.0, help="行動ポリシーの逆温度パラメータ。"),
+    beta: float = typer.Option(
+        3.0,
+        help="データ収集方策の逆温度パラメータ。大きいほど決定的な方策に、小さいほど探索的な方策になる。",
+    ),
     base_model_for_evaluation_policy: str = typer.Option(
         ...,
-        help="評価ポリシーに使用するMLモデル。",
+        help="評価方策に使用するMLモデル。",
         prompt=True,
         metavar="logistic_regression|lightgbm|random_forest",
     ),

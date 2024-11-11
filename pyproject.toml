@@ -12,6 +12,7 @@ obp = "^0.5.7"
 matplotlib = "3.4.3"
 seaborn = "0.11.2"
 typer = "^0.13.0"
+loguru = "^0.7.2"
 
 
 

@@ -10,7 +10,7 @@ bandit_feedback = dataset.obtain_batch_bandit_feedback()
 print(bandit_feedback.keys())
 
 # (2) オフライン方策シミュレーション
-## 評価対象の意思決定policyとして、BernoulliTSを用いる
+## 評価方策として、BernoulliTSを用いる
 evaluation_policy = BernoulliTS(
     n_actions=dataset.n_actions,
     len_list=dataset.len_list,

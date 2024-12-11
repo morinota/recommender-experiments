@@ -75,7 +75,7 @@ def logging_policy_function_stochastic(
     n_actions = action_context.shape[0]
 
     # 文脈xによらない固定の選択確率を設定する
-    p_scores = np.array([0.1, 0.2, 0.3, 0.4])
+    p_scores = np.array([0.1, 0.1, 0.1, 0.7])
 
     # 返り値の形式に整形: (n_rounds, n_actions)の配列で、各行が各ラウンドでのアクションの選択確率を表す
     action_dist = np.zeros((n_rounds, n_actions))
@@ -95,24 +95,24 @@ dataset = SyntheticBanditDataset(
     reward_function=expected_reward_function,
     # behavior_policy_function=logging_policy_function_deterministic,
     behavior_policy_function=logging_policy_function_stochastic,
-    random_state=123,
+    # random_state=123,
 )
 
 # バンディットデータを生成
-bandit_feedback: dict = dataset.obtain_batch_bandit_feedback(n_rounds=5)
+bandit_feedback: dict = dataset.obtain_batch_bandit_feedback(n_rounds=10000)
 
 # バンディットデータの中身を確認
 print(f"{bandit_feedback.keys()=}")
 print(f"{bandit_feedback['n_rounds']=}")
 print(f"{bandit_feedback['n_actions']=}")
-print(f"{bandit_feedback['context']=}")
-print(f"{bandit_feedback['action_context']=}")
-print(f"{bandit_feedback['action']=}")
-print(f"{bandit_feedback['position']=}")
-print(f"{bandit_feedback['reward']=}")
-print(f"{bandit_feedback['expected_reward']=}")
-print(f"{bandit_feedback['pi_b']=}")
-print(f"{bandit_feedback['pscore']=}")
+# print(f"{bandit_feedback['context']=}")
+# print(f"{bandit_feedback['action_context']=}")
+# print(f"{bandit_feedback['action']=}")
+# print(f"{bandit_feedback['position']=}")
+# print(f"{bandit_feedback['reward']=}")
+# print(f"{bandit_feedback['expected_reward']=}")
+# print(f"{bandit_feedback['pi_b']=}")
+# print(f"{bandit_feedback['pscore']=}")
 
 # OPE推定量を準備(naive推定量と IPS推定量)
 ope_estimators = [
@@ -160,6 +160,7 @@ def target_policy(
 target_policy_action_dist = target_policy(
     context=bandit_feedback["context"],
     action_context=bandit_feedback["action_context"],
+    recommend_arm_idx=1,
 )
 
 # 事前に設定した真の期待報酬E[r|x,a]を使って、評価方策の真の性能を計算
@@ -168,3 +169,10 @@ ground_truth_policy_value = dataset.calc_ground_truth_policy_value(
     action_dist=target_policy_action_dist,
 )
 print(f"{ground_truth_policy_value=}")
+
+# 各OPE推定量で、評価方策の性能を推定
+estimated_policy_values = ope.estimate_policy_values(
+    action_dist=target_policy_action_dist,
+    estimated_pscore=bandit_feedback["pscore"],
+)
+print(f"{estimated_policy_values=}")

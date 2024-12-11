@@ -186,4 +186,38 @@ obp.policyには、以下の線形回帰を用いたコンテキストバンデ�
 
 ### 　ベースクラス: BaseLinPolicy
 
--
+## オフライン評価用クラス `OffPolicyEvaluation` のメモ
+
+- このクラスの主な役割: 複数のOPE推定量を用いて、評価方策の性能を同時に評価すること。
+- 主なメソッド
+  - `estimate_policy_values()`: 各OPE推定量を用いて、評価方策の性能(累積報酬の期待値)を推定する。
+  - `
+
+### estimate_policy_values メソッドについて
+
+- パラメータ
+  - `action_dist`:
+    - 評価方策の行動選択確率 P(a|x) の配列。
+    - 形状は (n_rounds, n_actions, len_list) である必要がある。
+    - 各ラウンドで、評価方策がどのように行動を選択するかを表す。
+- オプションパラメータ
+  - `estimated_rewards_by_reg_model`:
+    - 回帰モデルによって推定された各アクションの期待報酬 $\hat{q}(x,a)$ の配列。
+    - 形状は (n_rounds, n_actions, len_list) である必要がある。
+    - モデル依存型のOPE推定量（DM, DR）では必須。
+  - `estimated_pscore`:
+    - データ収集方策の傾向スコアの推定値 $\hat{\pi}_b(a|x)$ の配列。
+    - 形状は (n_rounds,)である必要がある。
+    - IPS(IPW)推定量などを計算する際に必要。
+    - default=Noneであり、指定しない場合もIPS推定量はエラーなく暗黙的にnaive推定量として計算されてしまう?? :thinking:
+  - `estimated_importance_weights`
+    - 重要度重みの推定値 $\hat{w}(x,a)$ の配列。
+    - 形状は (n_rounds, ) もしくは、dict[str, array-like] である必要がある。
+    - obp.ope.ImportanceWeightEstimator`によって実装された教師あり分類によって推定された重要度の重み。
+    - estimated_pscoreがすでに指定されている場合は不要っポイ??:thinking:
+    - array-likeで指定されると、全てのOPE推定量に適用される。
+    - dictで指定されると、各OPE推定量に対して個別に適用される。
+
+  - `action_embed`:
+  - `pi_b`:
+  - `p_e_a`:

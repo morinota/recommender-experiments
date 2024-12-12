@@ -158,7 +158,7 @@ pi_b = pi_b_logits
 
 #### `calc_ground_truth_policy_value`
 
-- 引数として、`expected_reward`(=各(context, action)ペアに対する期待報酬 E[r|a,x]。合成データなら既知なので)と、`action_dist`(=評価方策の行動選択確率) を受け取り、評価方策の累積報酬の期待値を計算する。
+- 引数として、`expected_reward`(=各(context, action)ペアに対する期待報酬 E[r|a,x]。合成データなら既知なので)と、`action_dist`(=評価方策の行動選択確率) を受け取り、評価方策の累積報酬の真の期待値を計算する。
 
 ```python
 dataset.calc_ground_truth_policy_value(

@@ -1,13 +1,33 @@
 # off-policy learning用の実験コード
 
-from pathlib import Path
+
+from typing import Optional, TypedDict
+import numpy as np
 import polars as pl
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-import yaml
 
 from obp.dataset import logistic_reward_function, SyntheticBanditDataset
 from obp.policy import IPWLearner, NNPolicyLearner, Random
+
+from recommender_experiments.app.logging_policy_experiment.expected_reward_function import (
+    expected_reward_function,
+)
+
+
+class BanditFeedbackDict(TypedDict):
+    n_rounds: int  # ラウンド数
+    n_actions: int  # アクション数
+    context: np.ndarray  # 文脈 (shape: (n_rounds, dim_context))
+    action_context: (
+        np.ndarray
+    )  # アクション特徴量 (shape: (n_actions, dim_action_features))
+    action: np.ndarray  # 実際に選択されたアクション (shape: (n_rounds,))
+    position: Optional[np.ndarray]  # ポジション (shape: (n_rounds,) or None)
+    reward: np.ndarray  # 報酬 (shape: (n_rounds,))
+    expected_reward: np.ndarray  # 期待報酬 (shape: (n_rounds, n_actions))
+    pi_b: np.ndarray  # データ収集方策 P(a|x) (shape: (n_rounds, n_actions))
+    pscore: np.ndarray  # 傾向スコア (shape: (n_rounds,))
 
 
 def setup_dataset(n_actions: int, dim_context: int, beta: float, random_state: int):
@@ -15,14 +35,15 @@ def setup_dataset(n_actions: int, dim_context: int, beta: float, random_state: i
     return SyntheticBanditDataset(
         n_actions=n_actions,
         dim_context=dim_context,
-        reward_function=logistic_reward_function,
+        # reward_function=logistic_reward_function,
+        reward_function=expected_reward_function,
         beta=beta,
         random_state=random_state,
     )
 
 
 def train_policies(
-    bandit_feedback_train: dict,
+    bandit_feedback_train: BanditFeedbackDict,
     dataset: SyntheticBanditDataset,
     base_model: str,
     off_policy_objective: str,
@@ -70,13 +91,13 @@ def train_policies(
 
 def evaluate_policies(
     dataset: SyntheticBanditDataset,
-    bandit_feedback_test: dict,
+    bandit_feedback_test: BanditFeedbackDict,
     random_policy: Random,
     ipw_learner: IPWLearner,
     nn_policy_learner: NNPolicyLearner,
 ) -> pl.DataFrame:
     """学習用データセットで学習した方策を、テスト用データセットで評価する"""
-    # 各評価方策の
+    # 各評価方策をテスト用データセットに適用した時のアクション選択確率を算出
     random_action_dist = random_policy.compute_batch_action_dist(
         n_rounds=len(bandit_feedback_test["context"])
     )

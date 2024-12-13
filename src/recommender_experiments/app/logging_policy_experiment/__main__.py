@@ -1,10 +1,7 @@
+import random
 import numpy as np
 from obp.dataset import SyntheticBanditDataset
 from obp.ope import ReplayMethod, InverseProbabilityWeighting
-
-from recommender_experiments.app.logging_policy_experiment.logging_policy import (
-    logging_policy_function_stochastic,
-)
 
 
 def expected_reward_function(
@@ -72,7 +69,7 @@ def logging_policy_function_stochastic(
     n_actions = action_context.shape[0]
 
     # 文脈xによらない固定の選択確率を設定する
-    p_scores = np.array([0.01, 0.01, 0.01, 0.97])
+    p_scores = np.array([0.1, 0.1, 0.1, 0.7])
 
     # 返り値の形式に整形: (n_rounds, n_actions)の配列で、各行が各ラウンドでのアクションの選択確率を表す
     action_dist = np.zeros((n_rounds, n_actions))
@@ -114,6 +111,7 @@ def target_policy(
 
 
 def main() -> None:
+    random_state = random.randint(0, 1000)
     # ニュース推薦用の文脈付きバンディットデータセットを生成
     dataset = SyntheticBanditDataset(
         n_actions=4,  # 推薦候補ニュースの数
@@ -122,7 +120,7 @@ def main() -> None:
         reward_function=expected_reward_function,
         # behavior_policy_function=logging_policy_function_deterministic,
         behavior_policy_function=logging_policy_function_stochastic,
-        random_state=12345,
+        random_state=random_state,
     )
 
     # バンディットデータを生成
@@ -134,12 +132,12 @@ def main() -> None:
     print(f"{bandit_feedback['n_actions']=}")
     # print(f"{bandit_feedback['context']=}")
     # print(f"{bandit_feedback['action_context']=}")
-    # print(f"{bandit_feedback['action']=}")
+    print(f"{bandit_feedback['action']=}")
     # print(f"{bandit_feedback['position']=}")
     # print(f"{bandit_feedback['reward']=}")
     # print(f"{bandit_feedback['expected_reward']=}")
     # print(f"{bandit_feedback['pi_b']=}")
-    # print(f"{bandit_feedback['pscore']=}")
+    print(f"{bandit_feedback['pscore']=}")
 
     # 評価方策を使って、ログデータ(bandit_feedback)に対する行動選択確率を計算
     target_policy_action_dist = target_policy(

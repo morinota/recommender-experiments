@@ -111,7 +111,7 @@ def target_policy(
     return action_dist
 
 
-def simulate(
+def run_single_simulation(
     simulate_idx: int,
     n_rounds: int,
     n_actions: int,
@@ -120,7 +120,7 @@ def simulate(
     reward_function,
     logging_policy_function,
 ) -> dict:
-    # データセットを生成
+    # データ収集方策によって集められるはずの、擬似バンディットデータの設定を定義
     dataset = SyntheticBanditDataset(
         n_actions=n_actions,
         dim_context=dim_context,
@@ -129,11 +129,19 @@ def simulate(
         behavior_policy_function=logging_policy_function,
         random_state=simulate_idx,
     )
-
-    # バンディットデータを生成
+    # 収集されるバンディットフィードバックデータを生成
     bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
-    print(bandit_feedback["action"])
-    print(bandit_feedback["pscore"])
+    # bandit_feedbackをpl.DataFrameに変換
+    bandit_feedback_df = pl.DataFrame(
+        {
+            "time_step": [i for i in range(n_rounds)],
+            "context": bandit_feedback["context"].tolist(),
+            "action": bandit_feedback["action"].tolist(),
+            "reward": bandit_feedback["reward"].tolist(),
+            "p_score": bandit_feedback["pscore"].tolist(),
+        }
+    )
+    print(bandit_feedback_df)
 
     # 評価方策を使って、ログデータ(bandit_feedback)に対する行動選択確率を計算
     target_policy_action_dist = target_policy(
@@ -141,8 +149,7 @@ def simulate(
         action_context=bandit_feedback["action_context"],
         recommend_arm_idx=0,
     )
-
-    # 事前に設定した真の期待報酬E[r|x,a]を使って、評価方策の真の性能を計算
+    # 真の期待報酬E[r|x,a]を使って、データ収集方策の代わりに評価方策を動かした場合の価値を算出
     ground_truth_policy_value = dataset.calc_ground_truth_policy_value(
         expected_reward=bandit_feedback["expected_reward"],
         action_dist=target_policy_action_dist,
@@ -152,18 +159,17 @@ def simulate(
     naive_estimator = ReplayMethod()
     ips_estimator = InverseProbabilityWeighting()
 
-    # OPE推定量を使って、評価方策の性能を推定
+    # それぞれのOPE推定量を使って、データ収集方策の代わりに評価方策を動かした場合の価値を推定
     estimated_policy_value_by_naive = naive_estimator.estimate_policy_value(
         reward=bandit_feedback["reward"],
         action=bandit_feedback["action"],
         action_dist=target_policy_action_dist,
     )
-
     estimated_policy_value_by_ips = ips_estimator.estimate_policy_value(
         action=bandit_feedback["action"],
         reward=bandit_feedback["reward"],
-        pscore=bandit_feedback["pscore"],
         action_dist=target_policy_action_dist,
+        pscore=bandit_feedback["pscore"],
     )
 
     return {
@@ -177,14 +183,14 @@ def simulate(
 def main() -> None:
     # シミュレーションの設定
     n_sim = 3
-    n_rounds = 10000
+    n_rounds = 5
     n_actions = 4
     dim_context = 5
     reward_type = "binary"
 
     results = []
     for simulate_idx in range(n_sim):
-        simulate_result = simulate(
+        simulate_result = run_single_simulation(
             simulate_idx=simulate_idx,
             n_rounds=n_rounds,
             n_actions=n_actions,
@@ -198,6 +204,7 @@ def main() -> None:
         print(simulate_result)
         results.append(simulate_result)
 
+    # シミュレーション結果を集計して表示
     result_df = pl.DataFrame(results)
     print(result_df)
 

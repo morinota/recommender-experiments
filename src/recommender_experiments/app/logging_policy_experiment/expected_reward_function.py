@@ -21,6 +21,3 @@ def expected_reward_function(
 
     # 文脈の数だけ期待報酬を繰り返して返す
     return np.tile(fixed_rewards, (n_rounds, 1))
-
-
-x

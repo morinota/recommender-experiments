@@ -8,7 +8,7 @@ from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 
 from obp.dataset import logistic_reward_function, SyntheticBanditDataset
-from obp.policy import IPWLearner, NNPolicyLearner, Random
+from obp.policy import IPWLearner, NNPolicyLearner, Random, LogisticTS, BernoulliTS
 
 from recommender_experiments.app.logging_policy_experiment.expected_reward_function import (
     expected_reward_function,
@@ -50,7 +50,7 @@ def train_policies(
     dim_context: int,
     random_state: int,
     hyperparams: dict,
-) -> tuple[IPWLearner, NNPolicyLearner]:
+) -> tuple[IPWLearner, NNPolicyLearner, LogisticTS, BernoulliTS]:
     """学習用データセットを使って、評価方策の最適化を試みる"""
     base_model_dict = {
         "logistic_regression": LogisticRegression,
@@ -62,6 +62,12 @@ def train_policies(
         n_actions=dataset.n_actions,
         base_classifier=base_model_dict[base_model](**hyperparams["base_model"]),
     )
+    ipw_learner.fit(
+        context=bandit_feedback_train["context"],
+        action=bandit_feedback_train["action"],
+        reward=bandit_feedback_train["reward"],
+        pscore=bandit_feedback_train["pscore"],
+    )
 
     nn_policy_learner = NNPolicyLearner(
         n_actions=dataset.n_actions,
@@ -72,21 +78,33 @@ def train_policies(
         solver="adam",
         random_state=random_state,
     )
+    # nn_policy_learner.fit(
+    #     context=bandit_feedback_train["context"],
+    #     action=bandit_feedback_train["action"],
+    #     reward=bandit_feedback_train["reward"],
+    #     pscore=bandit_feedback_train["pscore"],
+    # )
 
-    ipw_learner.fit(
-        context=bandit_feedback_train["context"],
-        action=bandit_feedback_train["action"],
-        reward=bandit_feedback_train["reward"],
-        pscore=bandit_feedback_train["pscore"],
+    # contexual bandtのLogisticTSを定義してパラメータ更新させてみる
+    logistic_ts = LogisticTS(
+        dim=dim_context,
+        n_actions=dataset.n_actions,
+        random_state=random_state,
+    )
+    logistic_ts.update_params(
+        action=0, reward=1.0, context=np.array([[0.0, 0.0, 0.0, 0.0, 0.0]])
     )
 
-    nn_policy_learner.fit(
-        context=bandit_feedback_train["context"],
-        action=bandit_feedback_train["action"],
-        reward=bandit_feedback_train["reward"],
-        pscore=bandit_feedback_train["pscore"],
+    # contextfree banditのBernoulliTSを定義してパラメータ更新させてみる
+    contextfree_ts = BernoulliTS(
+        n_actions=dataset.n_actions,
+        random_state=random_state,
     )
-    return ipw_learner, nn_policy_learner
+    contextfree_ts.update_params(action=0, reward=1.0)
+
+    print(contextfree_ts)
+
+    return ipw_learner, nn_policy_learner, logistic_ts, contextfree_ts
 
 
 def evaluate_policies(
@@ -157,7 +175,7 @@ def main() -> None:
     random_policy = Random(n_actions=dataset.n_actions, random_state=random_state)
 
     # 学習用データセットを使って、評価方策を最適化
-    ipw_learner, nn_policy_learner = train_policies(
+    ipw_learner, nn_policy_learner, logistic_ts, contextfree_ts = train_policies(
         bandit_feedback_train=bandit_feedback_train,
         dataset=dataset,
         base_model=base_model,

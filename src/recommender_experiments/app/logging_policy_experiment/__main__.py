@@ -2,6 +2,7 @@ import random
 import numpy as np
 from obp.dataset import SyntheticBanditDataset
 from obp.ope import ReplayMethod, InverseProbabilityWeighting
+import polars as pl
 
 
 def expected_reward_function(
@@ -110,34 +111,29 @@ def target_policy(
     return action_dist
 
 
-def main() -> None:
-    random_state = random.randint(0, 1000)
-    # ニュース推薦用の文脈付きバンディットデータセットを生成
+def simulate(
+    simulate_idx: int,
+    n_rounds: int,
+    n_actions: int,
+    dim_context: int,
+    reward_type: str,
+    reward_function,
+    logging_policy_function,
+) -> dict:
+    # データセットを生成
     dataset = SyntheticBanditDataset(
-        n_actions=4,  # 推薦候補ニュースの数
-        dim_context=5,
-        reward_type="binary",
-        reward_function=expected_reward_function,
-        # behavior_policy_function=logging_policy_function_deterministic,
-        behavior_policy_function=logging_policy_function_stochastic,
-        random_state=random_state,
+        n_actions=n_actions,
+        dim_context=dim_context,
+        reward_type=reward_type,
+        reward_function=reward_function,
+        behavior_policy_function=logging_policy_function,
+        random_state=simulate_idx,
     )
 
     # バンディットデータを生成
-    bandit_feedback: dict = dataset.obtain_batch_bandit_feedback(n_rounds=10)
-
-    # バンディットデータの中身を確認
-    print(f"{bandit_feedback.keys()=}")
-    print(f"{bandit_feedback['n_rounds']=}")
-    print(f"{bandit_feedback['n_actions']=}")
-    # print(f"{bandit_feedback['context']=}")
-    # print(f"{bandit_feedback['action_context']=}")
-    print(f"{bandit_feedback['action']=}")
-    # print(f"{bandit_feedback['position']=}")
-    # print(f"{bandit_feedback['reward']=}")
-    # print(f"{bandit_feedback['expected_reward']=}")
-    # print(f"{bandit_feedback['pi_b']=}")
-    print(f"{bandit_feedback['pscore']=}")
+    bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
+    print(bandit_feedback["action"])
+    print(bandit_feedback["pscore"])
 
     # 評価方策を使って、ログデータ(bandit_feedback)に対する行動選択確率を計算
     target_policy_action_dist = target_policy(
@@ -151,33 +147,59 @@ def main() -> None:
         expected_reward=bandit_feedback["expected_reward"],
         action_dist=target_policy_action_dist,
     )
-    print(f"{ground_truth_policy_value=}")
 
     # OPE推定量を準備(naive推定量とIPS推定量)
     naive_estimator = ReplayMethod()
     ips_estimator = InverseProbabilityWeighting()
 
     # OPE推定量を使って、評価方策の性能を推定
-    ## naive推定量
     estimated_policy_value_by_naive = naive_estimator.estimate_policy_value(
         reward=bandit_feedback["reward"],
         action=bandit_feedback["action"],
         action_dist=target_policy_action_dist,
     )
-    print(
-        f"naive推定量(Replay Method)による評価方策の性能の推定値: {estimated_policy_value_by_naive}"
+
+    estimated_policy_value_by_ips = ips_estimator.estimate_policy_value(
+        action=bandit_feedback["action"],
+        reward=bandit_feedback["reward"],
+        pscore=bandit_feedback["pscore"],
+        action_dist=target_policy_action_dist,
     )
 
-    ## IPS推定量
-    estimated_policy_value_by_ips = ips_estimator.estimate_policy_value(
-        action=bandit_feedback["action"],  # 各ラウンドで観測された行動
-        reward=bandit_feedback["reward"],  # 各ラウンドで観測された報酬
-        pscore=bandit_feedback[
-            "pscore"
-        ],  # 各ラウンドで、データ収集方策がそのアクションを選択する確率
-        action_dist=target_policy_action_dist,  # 各ラウンドでの評価方策のアクション選択確率
-    )
-    print(f"IPS推定量による評価方策の性能の推定値: {estimated_policy_value_by_ips}")
+    return {
+        "simulate_idx": simulate_idx,
+        "ground_truth_policy_value": ground_truth_policy_value,
+        "estimated_policy_value_by_naive": estimated_policy_value_by_naive,
+        "estimated_policy_value_by_ips": estimated_policy_value_by_ips,
+    }
+
+
+def main() -> None:
+    # シミュレーションの設定
+    n_sim = 3
+    n_rounds = 10000
+    n_actions = 4
+    dim_context = 5
+    reward_type = "binary"
+
+    results = []
+    for simulate_idx in range(n_sim):
+        simulate_result = simulate(
+            simulate_idx=simulate_idx,
+            n_rounds=n_rounds,
+            n_actions=n_actions,
+            dim_context=dim_context,
+            reward_type=reward_type,
+            reward_function=expected_reward_function,
+            logging_policy_function=logging_policy_function_stochastic,
+        )
+
+        # 結果の表示
+        print(simulate_result)
+        results.append(simulate_result)
+
+    result_df = pl.DataFrame(results)
+    print(result_df)
 
 
 if __name__ == "__main__":

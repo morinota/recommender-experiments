@@ -18,10 +18,11 @@ from obp.ope import (
     DoublyRobustWithShrinkageTuning,
     OffPolicyEvaluation,
     RegressionModel,
+    ReplayMethod,
 )
 from obp.policy import IPWLearner
 
-app = typer.Typer()
+app = typer.Typer(pretty_exceptions_enable=False)
 
 
 def load_hyperparameters(
@@ -62,15 +63,16 @@ def get_ope_estimators() -> list:
         list: OPE推定量のインスタンスのリスト。
     """
     return [
+        ReplayMethod(),
         DirectMethod(),
         InverseProbabilityWeighting(),
-        SelfNormalizedInverseProbabilityWeighting(),
+        # SelfNormalizedInverseProbabilityWeighting(),
         DoublyRobust(),
-        SelfNormalizedDoublyRobust(),
-        SwitchDoublyRobustTuning(lambdas=[10, 50, 100, 500, 1000, 5000, 10000, np.inf]),
-        DoublyRobustWithShrinkageTuning(
-            lambdas=[10, 50, 100, 500, 1000, 5000, 10000, np.inf]
-        ),
+        # SelfNormalizedDoublyRobust(),
+        # SwitchDoublyRobustTuning(lambdas=[10, 50, 100, 500, 1000, 5000, 10000, np.inf]),
+        # DoublyRobustWithShrinkageTuning(
+        #     lambdas=[10, 50, 100, 500, 1000, 5000, 10000, np.inf]
+        # ),
     ]
 
 
@@ -88,7 +90,7 @@ def run_single_simulation(
     random_state: int,
 ) -> dict:
     """
-    1回のシミュレーションを実行し、OPE推定量で方策の価値を評価する。
+    1回のシミュレーションを実行し、OPE推定量で方策の性能を推定する。
 
     Args:
         i (int): シミュレーションのインデックス。
@@ -116,8 +118,11 @@ def run_single_simulation(
     # 学習用とテスト用のバンディットデータを生成
     bandit_feedback_train = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
     bandit_feedback_test = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
-    logger.debug(f"bandit_feedback_train: {bandit_feedback_train}")
-    logger.debug(f"bandit_feedback_test: {bandit_feedback_test}")
+    logger.debug(f"bandit_feedback['action']: {bandit_feedback_train['action'].shape}")
+    logger.debug(
+        f"bandit_feedback['expected_reward']: {bandit_feedback_train['expected_reward'].shape}"
+    )
+    logger.debug(f"dataset.n_actions: {dataset.n_actions}")
 
     # 評価方策のモデル構造を定義
     evaluation_policy = IPWLearner(
@@ -141,15 +146,13 @@ def run_single_simulation(
     action_dist = evaluation_policy.predict_proba(
         context=bandit_feedback_test["context"]
     )
-    logger.debug(f"action_dist: {len(action_dist)=}")
-    logger.debug(f"action_dist: {action_dist.shape=}")
-    logger.debug(f"action_dist: {action_dist[0]=}")
-    sampled_actions = evaluation_policy.sample_action(
-        context=bandit_feedback_test["context"]
+    ground_truth_policy_value = dataset.calc_ground_truth_policy_value(
+        # あ、擬似データだから、各(context, action)ペアに対する期待報酬 E[r|a,x] が既知なんだ...!!
+        expected_reward=bandit_feedback_test["expected_reward"],
+        # 上に加えて、評価方策の行動選択確率 P(a|x) を渡せば、累積報酬の期待値が算出できる
+        action_dist=action_dist,
     )
-    logger.debug(f"sampled_actions: {len(sampled_actions)=}")
-    logger.debug(f"sampled_actions: {sampled_actions.shape=}")
-    logger.debug(f"sampled_actions: {sampled_actions[0]=}")
+    print(f"ground_truth_policy_value: {ground_truth_policy_value}")
 
     # これはOPE推定量の準備(DM推定量のための報酬予測モデル)
     regression_model = RegressionModel(
@@ -171,22 +174,21 @@ def run_single_simulation(
     ope = OffPolicyEvaluation(
         bandit_feedback=bandit_feedback_test, ope_estimators=ope_estimators
     )
+
     metric_i = ope.evaluate_performance_of_estimators(
-        # 評価方策のオンライン性能のground-truth、どうやって算出してる??
-        ground_truth_policy_value=dataset.calc_ground_truth_policy_value(
-            # あ、擬似データだから、各(context, action)ペアに対する期待報酬 E[r|a,x] が既知なんだ...!!
-            expected_reward=bandit_feedback_test["expected_reward"],
-            # 上に加えて、評価方策の行動選択確率 P(a|x) を渡せば、累積報酬の期待値が算出できる
-            action_dist=action_dist,
-        ),
+        ground_truth_policy_value=ground_truth_policy_value,
         # 評価方策の行動選択確率 P(a|x)は、IPS推定量などの値を計算するために渡す
         # (データ収集方策の行動選択確率は、コンストラクタで渡し済み）
         action_dist=action_dist,
-        #
         estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         metric="relative-ee",  # OPE推定量の性能を評価するための指標
     )
-    logger.debug(f"metric_i: {metric_i}")
+    estimated_policy_value_by_ope = ope.estimate_policy_values(
+        action_dist=action_dist,
+        estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+    )
+    print(f"estimated_policy_value_by_ope: {estimated_policy_value_by_ope}")
+
     return metric_i
 
 

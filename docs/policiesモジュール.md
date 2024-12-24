@@ -5,7 +5,7 @@
 - Thompson Sampling はバンディットアルゴリズムの一種で、特に「探索」と「活用」をうまくバランスさせながらアクション（選択肢）を選ぶために使われる。
 - このクラスでは、アクションごとの報酬分布に基づいて最適な選択を行う仕組みが実装されている。
 
-初期化メソッド __post_init__
+初期化メソッド `__post_init__`
 
 - `is_zozotown_prior` がFalseの場合
   - デフォルトの事前分布として alpha=1, beta=1 のベータ分布を使用する。
@@ -200,6 +200,12 @@ def predict_proba(
   - ログバンディットデータでの深層学習手法（Joachims et al., 2018）
   - 縮小法を用いた二重頑健推定（Su et al., 2020）
   - サブガウス分布と微分可能な重要度サンプリング（Metelli et al., 2021）
+
+### __post_init__ メソッドについて: NNの構造はどうなる??
+
+- この実装では、 `hidden_layer_size` に指定した各サイズの隠れ層を積み上げて、最終的に (`出力次元 = self.n_actions`) の Linear 層と Softmax 層で終わる 多層パーセプトロン(MLP) が nn.Sequential で構築される。
+  - ちなみに `nn.Sequential` は、単にPytorchでNNの各レイヤーを順番に並べて実行してくれる仕組み。
+
 
 ### fitメソッド
 

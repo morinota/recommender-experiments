@@ -1,4 +1,6 @@
-from recommender_experiments.service.opl.two_tower_model import TwoTowerPolicyLearner
+from recommender_experiments.service.opl.shared_parameter_nn_model import (
+    SharedParameterNNPolicyLearner,
+)
 import numpy as np
 import torch
 
@@ -7,7 +9,7 @@ def test_TwoTowerモデルが正しく初期化されること():
     # Arrange
     dim_context = 3
     dim_action_features = 2
-    sut = TwoTowerPolicyLearner(dim_context=dim_context + dim_action_features)
+    sut = SharedParameterNNPolicyLearner(dim_context=dim_context + dim_action_features)
 
     # Assert
     assert isinstance(sut.nn_model, torch.nn.Sequential)
@@ -31,7 +33,7 @@ def test_アクション候補の数が動的に変化してもアクション�
     n_actions = 4
     dim_context = 3
     dim_action_features = 2
-    sut = TwoTowerPolicyLearner(dim_context=dim_context + dim_action_features)
+    sut = SharedParameterNNPolicyLearner(dim_context=dim_context + dim_action_features)
 
     # Act
     action_dist = sut.predict_proba(
@@ -63,7 +65,7 @@ def test_データ収集方策のpscoreを渡さない場合にバンディッ�
     n_actions = 4
     dim_context = 3
     dim_action_features = 2
-    sut = TwoTowerPolicyLearner(dim_context=dim_context + dim_action_features)
+    sut = SharedParameterNNPolicyLearner(dim_context=dim_context + dim_action_features)
 
     # Act
     sut.fit(
@@ -80,7 +82,7 @@ def test_データ収集方策のpscoreを渡す場合にバンディットフ�
     n_actions = 4
     dim_context = 3
     dim_action_features = 2
-    sut = TwoTowerPolicyLearner(dim_context=dim_context + dim_action_features)
+    sut = SharedParameterNNPolicyLearner(dim_context=dim_context + dim_action_features)
     # データ収集方策のpscoreを(0,1)の範囲でランダムに設定
     pscore = np.random.random(n_rounds)  # shape: (n_rounds,)
 

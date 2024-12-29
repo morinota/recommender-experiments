@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 
 @dataclass
-class TwoTowerPolicyLearner(NNPolicyLearner):
+class SharedParameterNNPolicyLearner(NNPolicyLearner):
     n_actions: int = (
         None  # dummyのパラメータ(アクション数がdynamicに変化する前提なので)
     )
@@ -206,7 +206,9 @@ if __name__ == "__main__":
     action_context = np.random.random((n_actions, dim_action_features))
 
     # TwoTowerモデルに対して、方策学習を行う
-    policy = TwoTowerPolicyLearner(dim_context=dim_context + dim_action_features)
+    policy = SharedParameterNNPolicyLearner(
+        dim_context=dim_context + dim_action_features
+    )
     # fitメソッドの呼び出し
     # policy.fit(context, action, reward, action_context)
     # predict_probaメソッドの呼び出し

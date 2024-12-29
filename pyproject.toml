@@ -21,6 +21,7 @@ pyarrow = "^18.1.0"
 
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.29.5"
+pytest = "^8.3.4"
 
 [build-system]
 requires = ["poetry-core"]

@@ -171,6 +171,7 @@ def predict_proba(
     - `ipw`
     - `dr`
     - その他、IPW手法の改善ver.(`snips`, `ipw-os`, `ipw-sbgauss`)
+    - ちなみにデフォルト値はNoneで、
   - `lambda_`: `snips`や`ipw`系の手法で使用するハイパーパラメータ。報酬のシフトや重みの調整に利用。
 - NNの構造についてのパラメータ:
   - `hidden_layer_size`: 隠れ層のサイズをタプル形式で指定（例: (100,) なら1層100ユニット）。
@@ -211,9 +212,18 @@ def predict_proba(
 
 - メソッドの目的:
   - 収集されたバンディットフィードバックデータ(context, action, rewardなど)を元に、NNを使った方策を学習する。
+- 引数:
+  - `context`: コンテキストベクトルの配列
+  - `action`: 選択されたアクションの配列
+  - `reward`: 得られた報酬の配列
+  - `pscore`: アクションが選択される確率の配列(Optional)
+    - **pscoreが与えられない場合は、データ収集方策が一様ランダム選択だと仮定される！**
+      - なるほど、じゃあnaive推定量で学習させたい場合は、pscoreを渡さなければ良いんだ...!!:thinking:
+  - `position`: ポジション情報の配列(Optional)
+    - 例えば、3つのポジションが混在してるデータなら、どのログがポジション1, 2, 3に対応するかを指定する必要がある。
 - ざっくりやってること:
   1. 入力データのバリデーション: 入力次元数やpscoreの範囲など、オフラインバンディットデータの整合性を確認。
-  2. 必要ならQ関数推定器を学習
+  2. 必要ならQ関数推定器を学習 (期待報酬の推定モデルのこと!!)
      - たとえば off_policy_objective が dr(Doubly Robust) や dm(Direct Method) のときは、まず Q関数推定器 (self.q_func_estimator) を学習して、後で使う。
        - (Q関数というのは、$\hat{q}(x, a) = \hat{E}[r | x, a]$ のような形で、コンテキストとアクションを入力として、報酬期待値の推定値を出力する関数のこと!:thinking:)
   3. オプティマイザの設定
@@ -224,10 +234,54 @@ def predict_proba(
      3. _estimate_policy_gradient で「方策の勾配に相当するもの」を計算 → policy_grad_arr。
      4. _estimate_policy_constraint で「方策に対する制約（行動が確率的にちゃんと割り当てられてるかなど？）」を計算。
      5. 損失関数を計算。
-        - ここで、「損失関数 = 勾配の期待値 - 制約項へのペナルティ + 分散項のペナルティ」みたいな形になってる。
+        - ここで、「損失関数 = -(policy_grad_arr - lambda_ * policy_constraint)」 という形式。
      6. loss.backward() → optimizer.step() でパラメータ更新。
      7. アーリーストッピング (early_stopping) の仕組みで、ある程度損失が変化しなくなったら止める。
   6. バリデーションデータでも同様に損失を計算して、改善がなければ停止 (early stopping)。
+
+損失関数の計算についてメモ
+
+```python
+# 方策勾配の推定値を最大化したいので、勾配降下法で最小化するためにマイナスをかける
+loss = -policy_grad_arr.mean() 
+loss += self.policy_reg_param * policy_constraint
+loss += self.var_reg_param * torch.var(policy_grad_arr)
+# \nabla_{\theta}の部分は、PyTorchの自動微分機能によって暗黙的に処理される
+```
+
+### _estimate_policy_gradient メソッドについて
+
+- メソッドの目的: 方策勾配の推定。
+
+実装の詳細(IPWの場合):
+(「反実仮想機械学習」で書いてあった通りの計算をしてそう...!!:thinking:)
+
+```python
+# 重要度重み(w_i)の計算
+iw = current_pi[idx_tensor, action] / pscore
+# 観測された報酬を、重要度重みで補正 (w_i * r_i)
+estimated_policy_grad_arr = iw * reward
+# log(\pi(a|x)) を掛ける(w_i * r_i * log(\pi(a_i|x_i)))
+estimated_policy_grad_arr *= log_prob[idx_tensor, action]
+```
+
+この値に、$\nabla_{\theta}$ を適用したら、方策勾配の推定値になるはず...!
+
+### _estimate_policy_constraint メソッドについて
+
+- メソッドの目的: 方策学習における制約項を計算する。
+  - なんか、重要度重みが大きくなりすぎないようにするための制約項っぽい...??:thinking:
+- この制約項って、方策学習にどんな影響を与える??
+  - データ収集方策と大きく異なるような、方策に学習されにくくなる??:thinking:
+
+実装の詳細:
+
+```python
+idx_tensor = torch.arange(action.shape[0], dtype=torch.long)
+iw = action_dist[idx_tensor, action, 0] / pscore
+
+return torch.log(iw.mean())
+```
 
 ### predict_proba メソッドについて
 

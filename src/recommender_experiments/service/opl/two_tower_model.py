@@ -3,17 +3,8 @@ from dataclasses import dataclass
 from typing import Optional
 from obp.policy import NNPolicyLearner
 import numpy as np
-from scipy.special import softmax
-from sklearn.base import BaseEstimator
-from sklearn.base import ClassifierMixin
-from sklearn.base import clone
-from sklearn.base import is_classifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.utils import check_random_state
-from sklearn.utils import check_scalar
 import torch
 import torch.nn as nn
-from torch.nn.functional import mse_loss
 import torch.optim as optim
 from tqdm import tqdm
 

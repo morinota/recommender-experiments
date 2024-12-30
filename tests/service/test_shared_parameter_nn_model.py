@@ -92,8 +92,6 @@ def test_データ収集方策のpscoreを渡す場合にバンディットフ�
     dim_context = 3
     dim_action_features = 2
     sut = SharedParameterNNPolicyLearner(dim_context=dim_context + dim_action_features)
-    # データ収集方策のpscoreを(0,1)の範囲でランダムに設定
-    pscore = np.random.random(n_rounds)  # shape: (n_rounds,)
 
     # Act
     sut.fit(
@@ -101,5 +99,6 @@ def test_データ収集方策のpscoreを渡す場合にバンディットフ�
         action=np.random.randint(0, n_actions, n_rounds),
         reward=np.random.binomial(1, 0.5, n_rounds),
         action_context=np.random.random((n_actions, dim_action_features)),
-        pscore=pscore,
+        # データ収集方策のpscoreを(0,1)の範囲でランダムに設定
+        pscore=np.random.random(n_rounds),
     )

@@ -88,42 +88,47 @@ def test_アクション候補の数が動的に変化してもアクション�
     ), "各アクションの選択確率が0以上1以下であること"
 
 
-# def test_データ収集方策のpscoreを渡さない場合にバンディットフィードバックデータで学習できること():
-#     # Arrange
-#     n_rounds = 10
-#     n_actions = 4
-#     dim_context = 3
-#     dim_action_features = 2
-#     sut = TwoTowerNNPolicyLearner(
-#         dim_context=dim_context, dim_action_features=dim_action_features
-#     )
+def test_データ収集方策のpscoreを渡さない場合にバンディットフィードバックデータで学習できること():
+    # Arrange
+    n_rounds = 10
+    n_actions = 4
+    dim_context = 300
+    dim_action_features = 200
+    dim_two_tower_embedding = 100
+    sut = TwoTowerNNPolicyLearner(
+        dim_context=dim_context,
+        dim_action_features=dim_action_features,
+        dim_two_tower_embedding=dim_two_tower_embedding,
+    )
 
-#     # Act
-#     sut.fit(
-#         context=np.random.random((n_rounds, dim_context)),
-#         action=np.random.randint(0, n_actions, n_rounds),
-#         reward=np.random.binomial(1, 0.5, n_rounds),
-#         action_context=np.random.random((n_actions, dim_action_features)),
-#     )
+    # Act
+    sut.fit(
+        context=np.random.random((n_rounds, dim_context)),
+        action=np.random.randint(0, n_actions, n_rounds),
+        reward=np.random.binomial(1, 0.5, n_rounds),
+        action_context=np.random.random((n_actions, dim_action_features)),
+    )
 
 
-# def test_データ収集方策のpscoreを渡す場合にバンディットフィードバックデータで学習できること():
-#     # Arrange
-#     n_rounds = 10
-#     n_actions = 4
-#     dim_context = 3
-#     dim_action_features = 2
-#     sut = TwoTowerNNPolicyLearner(
-#         dim_context=dim_context, dim_action_features=dim_action_features
-#     )
-#     # データ収集方策のpscoreを(0,1)の範囲でランダムに設定
-#     pscore = np.random.random(n_rounds)  # shape: (n_rounds,)
+def test_データ収集方策のpscoreを渡す場合にバンディットフィードバックデータで学習できること():
+    # Arrange
+    n_rounds = 10
+    n_actions = 4
+    dim_context = 300
+    dim_action_features = 200
+    dim_two_tower_embedding = 100
+    sut = TwoTowerNNPolicyLearner(
+        dim_context=dim_context,
+        dim_action_features=dim_action_features,
+        dim_two_tower_embedding=dim_two_tower_embedding,
+    )
 
-#     # Act
-#     sut.fit(
-#         context=np.random.random((n_rounds, dim_context)),
-#         action=np.random.randint(0, n_actions, n_rounds),
-#         reward=np.random.binomial(1, 0.5, n_rounds),
-#         action_context=np.random.random((n_actions, dim_action_features)),
-#         pscore=pscore,
-#     )
+    # Act
+    sut.fit(
+        context=np.random.random((n_rounds, dim_context)),
+        action=np.random.randint(0, n_actions, n_rounds),
+        reward=np.random.binomial(1, 0.5, n_rounds),
+        action_context=np.random.random((n_actions, dim_action_features)),
+        # データ収集方策のpscoreを(0,1)の範囲でランダムに設定
+        pscore=np.random.random(n_rounds),  # shape: (n_rounds,)
+    )

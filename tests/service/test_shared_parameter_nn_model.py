@@ -42,8 +42,10 @@ def test_アクション候補の数が動的に変化してもアクション�
     )
 
     # Assert
-    assert action_dist.shape == (10, 4)
-    assert np.allclose(action_dist.sum(axis=1), 1.0), "各ラウンドごとの確率の総和が1.0"
+    assert action_dist.shape == (10, 4), "出力の形状が(ラウンド数、アクション数)である"
+    assert np.allclose(
+        action_dist.sum(axis=1), 1.0
+    ), "各ラウンドごとに、確率の総和が1.0"
     assert np.all(0 <= action_dist) and np.all(
         action_dist <= 1
     ), "各アクションの選択確率が0以上1以下であること"
@@ -53,9 +55,16 @@ def test_アクション候補の数が動的に変化してもアクション�
         context=np.random.random((n_rounds, dim_context)),
         action_context=np.random.random((n_actions + 2, dim_action_features)),
     )
-    assert action_dist.shape == (n_rounds, n_actions + 2)
-    assert np.allclose(action_dist.sum(axis=1), 1.0)
-    assert np.all(0 <= action_dist) and np.all(action_dist <= 1)
+    assert action_dist.shape == (
+        n_rounds,
+        n_actions + 2,
+    ), "出力の形状が(ラウンド数、アクション数)である"
+    assert np.allclose(
+        action_dist.sum(axis=1), 1.0
+    ), "各ラウンドごとに、確率の総和が1.0"
+    assert np.all(0 <= action_dist) and np.all(
+        action_dist <= 1
+    ), "各アクションの選択確率が0以上1以下であること"
     assert not np.allclose(action_dist[0], action_dist[1])
 
 

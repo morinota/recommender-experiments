@@ -91,6 +91,15 @@ class TwoTowerNNPolicyLearner(NNPolicyLearner):
         # Output Layer
         self.output_layer = nn.Linear(self.dim_two_tower_embedding * 2, 1)
 
+        # Combine all layers
+        self.nn_model = nn.ModuleDict(
+            {
+                "context_tower": self.context_tower,
+                "action_tower": self.action_tower,
+                "output_layer": self.output_layer,
+            }
+        )
+
     def _predict_proba_for_fit(
         self,
         context: torch.Tensor,  # shape: (n_rounds, dim_context)
@@ -142,6 +151,7 @@ class TwoTowerNNPolicyLearner(NNPolicyLearner):
         context: np.ndarray,  # shape: (n_rounds, dim_context)
         action_context: np.ndarray,  # shape: (n_actions, dim_action_features)
     ) -> np.ndarray:
+        """方策による行動選択確率を予測するメソッド"""
         context_tensor = torch.from_numpy(context).float()
         action_context_tensor = torch.from_numpy(action_context).float()
         pi = self._predict_proba_for_fit(
@@ -222,5 +232,32 @@ class TwoTowerNNPolicyLearner(NNPolicyLearner):
 
 
 if __name__ == "__main__":
-    model = TwoTowerNNPolicyLearner(dim_context=100, dim_action_features=100)
-    print(model)
+    # 基本設定
+    n_rounds = 10
+    n_actions = 4
+    dim_context = 300
+    dim_action_features = 200
+    dim_two_tower_embedding = 100
+    # ダミーデータの生成
+    context = np.random.random((n_rounds, dim_context))
+    action = np.random.randint(0, n_actions, n_rounds)
+    reward = np.random.binomial(1, 0.5, n_rounds)  # binaryのrewardを生成
+    action_context = np.random.random((n_actions, dim_action_features))
+
+    # two-tower modelに対して、オフ方策学習を実行
+    policy = TwoTowerNNPolicyLearner(
+        dim_context=dim_context,
+        dim_action_features=dim_action_features,
+        dim_two_tower_embedding=dim_two_tower_embedding,
+    )
+    # バンディットフィードバックデータを用いてオフ方策学習
+    policy.fit(context, action, reward, action_context)
+    # 方策による行動選択確率の出力
+    action_dist = policy.predict_proba(context, action_context)
+    print(f"{action_dist=}")
+
+    # アクション数が動的に変化しても、同一モデルで推論できることを確認
+    n_actions += 2
+    action_context_ver2 = np.random.random((n_actions, dim_action_features))
+    action_dist_ver2 = policy.predict_proba(context, action_context_ver2)
+    print(f"{action_dist_ver2=}")

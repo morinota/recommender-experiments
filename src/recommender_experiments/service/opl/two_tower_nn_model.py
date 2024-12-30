@@ -150,7 +150,7 @@ class TwoTowerNNPolicyLearner(NNPolicyLearner):
         self,
         context: np.ndarray,  # shape: (n_rounds, dim_context)
         action_context: np.ndarray,  # shape: (n_actions, dim_action_features)
-    ) -> np.ndarray:
+    ) -> np.ndarray:  # shape: (n_rounds, n_actions, 1)
         """方策による行動選択確率を予測するメソッド"""
         context_tensor = torch.from_numpy(context).float()
         action_context_tensor = torch.from_numpy(action_context).float()
@@ -158,7 +158,8 @@ class TwoTowerNNPolicyLearner(NNPolicyLearner):
             context=context_tensor,
             action_context=action_context_tensor,
         )
-        return pi.squeeze(-1).detach().numpy()
+        pi_ndarray = pi.squeeze(-1).detach().numpy()
+        return pi_ndarray[:, :, np.newaxis]  # shape: (n_rounds, n_actions, 1)
 
     # fitメソッドをoverride
     def fit(

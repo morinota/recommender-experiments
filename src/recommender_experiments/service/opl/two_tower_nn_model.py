@@ -112,38 +112,38 @@ class TwoTowerNNPolicyLearner(NNPolicyLearner):
         n_actions = action_context.shape[0]
 
         # Context Tower Forward
-        context_embedding = self.context_tower(
+        context_embedding = self.nn_model["context_tower"](
             context
-        )  # shape: (n_rounds, hidden_size)
+        )  # shape: (n_rounds, dim_two_tower_embedding)
 
         # Action Tower Forward
-        action_embedding = self.action_tower(
+        action_embedding = self.nn_model["action_tower"](
             action_context
-        )  # shape: (n_actions, hidden_size)
+        )  # shape: (n_actions, dim_two_tower_embedding)
 
         # Combine context and action embeddings
         combined_embedding = torch.cat(
             [
                 context_embedding.unsqueeze(1).expand(
                     -1, n_actions, -1
-                ),  # (n_rounds, n_actions, hidden_size)
+                ),  # (n_rounds, n_actions, dim_two_tower_embedding)
                 action_embedding.unsqueeze(0).expand(
                     n_rounds, -1, -1
-                ),  # (n_rounds, n_actions, hidden_size)
+                ),  # (n_rounds, n_actions, dim_two_tower_embedding)
             ],
             dim=2,
-        )  # shape: (n_rounds, n_actions, hidden_size * 2)
+        )  # shape: (n_rounds, n_actions, dim_two_tower_embedding * 2)
 
         # Pass through output layer
         combined_embedding = combined_embedding.view(-1, combined_embedding.size(2))
-        scores = self.output_layer(combined_embedding).view(
+        scores = self.nn_model["output_layer"](combined_embedding).view(
             n_rounds, n_actions
         )  # shape: (n_rounds, n_actions)
 
-        # Softmax to get probabilities
+        # 行動選択確率分布を得るためにsoftmax関数を適用
         pi = torch.softmax(scores, dim=1)  # shape: (n_rounds, n_actions)
 
-        return pi.unsqueeze(-1)
+        return pi.unsqueeze(-1)  # shape: (n_rounds, n_actions, 1)
 
     # predict_probaメソッドをoverride
     def predict_proba(

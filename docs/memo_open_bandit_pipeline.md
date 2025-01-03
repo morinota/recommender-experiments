@@ -1,3 +1,4 @@
+# Open Bandit Pipelineパッケージに関する雑多メモ
 ## 参考資料
 
 - OBPの活用例: <https://github.com/st-tech/zr-obp/tree/master/examples>
@@ -128,6 +129,8 @@ dataset = SyntheticBanditDataset(
   - action_context: アクション特徴量
   - action: 実際に選択されたアクション
   - position: ポジション (推薦リストにおける表示位置。アイテムを1つ推薦する場合はNone)
+    - ただし、合成データセットクラスにおいては、この値は必ずNoneになるみたい。
+    - `position=None,  # position effect is not considered in synthetic data` というコメントがあったので...!!
   - reward: 報酬
   - expected_reward: 期待報酬
   - pi_b: データ収集方策が文脈xを受け取った場合にアクションaを選択する確率 P(a|x) の配列
@@ -184,11 +187,101 @@ dataset.calc_ground_truth_policy_value(
   - 報酬が確率的に発生する現象であるケース。
   - 報酬とコンテキスト、アクションの関係に線形性を仮定しているケース。
 
+## 現実で収集されたバンディットデータセットクラス `OpenBanditDataset` のメモ
+
+### コンストラクタに渡す引数
+
+- `behavior_policy`
+  - データ収集方策(behavior policy)を指定する。
+  - 有効な値は以下のいずれか。
+    - "random": ランダム方策
+    - "bts": Bernoulli Thompson Sampling (BTS) 方策(contextual banditのアルゴリズムの一つ)を指定
+- `campaign`
+  - 対象のキャンペーン名を指定する(i.e. データセットの種類みたいな??)
+  - 有効な値は以下のいずれか。
+    - "all"
+    - "men"
+    - "women"
+- `data_path`
+  - データセットのパスを指定する。
+  - デフォルトは`None`であり、指定しない場合は小規模なデータセットがダウンロードされる。
+- `dataset_name`
+  - データセットの名前。デフォルトは"obd"。
+
+### properties
+
+- `n_rounds`
+  - ログデータのラウンド数
+- `n_actions`
+  - 選択可能なアクション数
+- `dim_context`
+  - コンテキストベクトルの次元数。
+- `len_list`
+  - 推薦リストの長さ(**slate size**, スレートサイズ)
+    - ちなみにslate sizeとは、「**推薦システムにおいて一度に提示される推薦アイテムの数**」を表すっぽい...!:thinking:
+
+### メソッド
+
+- `__post_init__`
+  - クラスの初期化時に呼び出されるメソッド
+  - 引数のバリデーションや、データパスの設定を行う。
+  - データセットの読み込み(`load_raw_data`)や前処理`pre_process`も行う。
+- `load_raw_data`
+  - csvファイル形式で保存されたOpen Bandit Datasetを読み込む。
+- `pre_process`
+  - データセットの前処理を行う。**データのカスタマイズを行いたい場合、このメソッドをオーバーライドすることが推奨されてる**。
+  - デフォルトでは以下を行う:
+    - ユーザ特徴量をone-hotエンコーディング
+    - アイテム特徴量を加工して、`action_context`に変換。
+- `obtain_batch_bandit_feedback`
+  - ログデータを取得し、辞書形式のbandit feedbackデータを返す。
+  - 引数:
+    - `is_timeseries_split` (bool, default=False)
+      - Trueの場合、オリジナルのログデータを、時系列を元に訓練データとテストデータに分割する。
+    - `test_size`: テストデータの割合を指定する。
+      - この引数は`is_timeseries_split=True`が指定された場合にのみ有効。
+  - 返り値の形について。
+    - `is_timeseries_split=False`の場合は、単一の辞書を返す。
+    - `is_timeseries_split=True`の場合は、訓練データとテストデータの辞書のtupleを返す。
+- `sample_bootstrap_bandit_feedback`:
+  - ブートストラップサンプリングを使って、ログデータを再サンプリングする。
+    - **要するに、ログデータの順番やtrain/test分割を入れ替える**ってことみたい...!:thinking:
+  - 引数:
+    - `sample_size`:(int, default=None)
+      - サンプリング後のデータサイズ。
+      - Noneの場合は、元のデータサイズと同じになる。
+      - 指定する場合は、元のデータサイズよりも小さくする必要がある。
+    - `is_timeseries_split`:(bool, default=False)
+      - Trueの場合、オリジナルのログデータを、時系列を元に訓練データとテストデータに分割する。
+    - `test_size`:(float, default=0.3)
+      - テストデータの割合。
+      - `is_timeseries_split=True`の場合のみ有効。
+    - `random_state`:(int, default=12345)
+      - 乱数シード。
+- クラスメソッド`calc_on_policy_policy_value_estimate`:
+  - オンポリシー評価を行うメソッド。**データ収集方策のpolicy value(性能)をオンライン評価**する。
+    - (じゃあAVG推定量を使ってそう...!:thinking:)
+  - 引数:
+    - `behavior_policy`:(str)
+      - データ収集方策の名前 ("random" or "bts")
+    - `campaign`:(str)
+      - キャンペーン名
+    - `data_path`:(Path, default=None)
+      - データセットのパス。Noneの場合は小規模なデータセットがダウンロードされる。
+    - `test_size`:(float, default=0.3)
+      - テストデータの割合。時系列分割をする場合のみ有効。
+    -  `is_timeseries_split`:(bool, default=False)
+      - Trueの場合、オリジナルのログデータを時系列を元に訓練データとテストデータに分割し、**テストデータのみでオンライン評価**を行う。
+      - Falseの場合、全データを使ってオンライン評価を行う。
+  - 返り値:
+    - データ収集方策のpolicy valueの推定値
+
 ## 線形回帰を用いたcontextual banditクラスたちについてメモ
 
 obp.policyには、以下の線形回帰を用いたコンテキストバンディットのアルゴリズム達が実装されている。
 
 ### 　ベースクラス: BaseLinPolicy
+
 
 ## オフライン評価用クラス `OffPolicyEvaluation` のメモ
 

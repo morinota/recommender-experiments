@@ -4,6 +4,7 @@
 
 - Thompson Sampling はバンディットアルゴリズムの一種で、特に「探索」と「活用」をうまくバランスさせながらアクション（選択肢）を選ぶために使われる。
 - このクラスでは、アクションごとの報酬分布に基づいて最適な選択を行う仕組みが実装されている。
+- bernoulli TSは、**アクションごとの報酬がベルヌーイ分布に従う場合**(=binary変数の場合!)に使われる。
 
 初期化メソッド `__post_init__`
 
@@ -40,6 +41,7 @@ def update_params(self, action: int, reward: float) -> None:
 - 目的: 選択したアクションによって得られた報酬を元に、モデル内部のパラメータを更新する。
 
 バッチで行動選択分布を計算するメソッド `compute_batch_action_dist`
+(context-freeな方策だから、結局は、同一の行動選択分布をn_rounds, len_list分だけ繰り返すだけ??:thinking:)
 
 ```python
 def compute_batch_action_dist(

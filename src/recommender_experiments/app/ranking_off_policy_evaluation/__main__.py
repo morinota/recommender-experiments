@@ -1,7 +1,6 @@
 import random
 from typing import Callable, Optional, TypedDict
-import numpy as np
-from obp.dataset import SyntheticBanditDataset, OpenBanditDataset
+from obp.dataset import OpenBanditDataset, SyntheticBanditDataset
 from obp.policy import BernoulliTS, LogisticTS, LogisticUCB
 from obp.ope import (
     ReplayMethod,
@@ -10,7 +9,6 @@ from obp.ope import (
     OffPolicyEvaluation,
     InverseProbabilityWeighting as IPW,
 )
-
 
 import polars as pl
 

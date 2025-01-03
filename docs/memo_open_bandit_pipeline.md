@@ -230,6 +230,7 @@ dataset.calc_ground_truth_policy_value(
   - csvファイル形式で保存されたOpen Bandit Datasetを読み込む。
 - `pre_process`
   - データセットの前処理を行う。**データのカスタマイズを行いたい場合、このメソッドをオーバーライドすることが推奨されてる**。
+    - カスタマイズ例: https://github.com/st-tech/zr-obp/blob/master/benchmark/cf_policy_search/custom_dataset.py
   - デフォルトでは以下を行う:
     - ユーザ特徴量をone-hotエンコーディング
     - アイテム特徴量を加工して、`action_context`に変換。
@@ -276,19 +277,16 @@ dataset.calc_ground_truth_policy_value(
   - 返り値:
     - データ収集方策のpolicy valueの推定値
 
-## 線形回帰を用いたcontextual banditクラスたちについてメモ
-
-obp.policyには、以下の線形回帰を用いたコンテキストバンディットのアルゴリズム達が実装されている。
-
-### 　ベースクラス: BaseLinPolicy
-
-
 ## オフライン評価用クラス `OffPolicyEvaluation` のメモ
 
 - このクラスの主な役割: 複数のOPE推定量を用いて、評価方策の性能を同時に評価すること。
 - 主なメソッド
   - `estimate_policy_values()`: 各OPE推定量を用いて、評価方策の性能(累積報酬の期待値)を推定する。
-  - `
+
+### もし独自のOPE推定量を追加したい場合は...
+
+- `obp.ope.BaseOffPolicyEstimator`インターフェースを継承して、独自のOPE推定量を実装できる。
+
 
 ### estimate_policy_values メソッドについて
 

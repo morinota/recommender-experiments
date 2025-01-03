@@ -116,6 +116,7 @@ def compute_batch_action_dist(
   - `sample_action`メソッドでは、サンプリングした結果を返してしまっているので。
 
 - utilsモジュールに`obp.utils.convert_to_action_dist`という関数があった。これを使えば、行動選択確率に変換できるっぽい。決定的な方策をオフライン評価するために使われてそう。
+  - 参考: https://zr-obp.readthedocs.io/en/latest/_autosummary/obp.utils.html
   - 引数:
     - `n_actions`: 選択肢の数
     - `selected_actions`: 各roundで、評価方策によって選択されたアクションのリスト。

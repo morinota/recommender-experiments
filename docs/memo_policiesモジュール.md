@@ -115,6 +115,15 @@ def compute_batch_action_dist(
 - どうやら、context-freeなbanditモデルにおける`compute_batch_action_dist`メソッドのような、コンテキストを受け取って行動選択確率を返すメソッドは実装されていないみたい。
   - `sample_action`メソッドでは、サンプリングした結果を返してしまっているので。
 
+- utilsモジュールに`obp.utils.convert_to_action_dist`という関数があった。これを使えば、行動選択確率に変換できるっぽい。決定的な方策をオフライン評価するために使われてそう。
+  - 引数:
+    - `n_actions`: 選択肢の数
+    - `selected_actions`: 各roundで、評価方策によって選択されたアクションのリスト。
+      - shape=(n_rounds, len_list)
+  - 返り値: `action_dist`
+    - shape=(n_rounds, n_actions, len_list) の3次元配列。
+    - 各アクションの選択確率分布を表す。（決定的方策の分布になるはず）
+
 ## IPWLearner: IPWを使ったオフ方策学習器
 
 - 特徴

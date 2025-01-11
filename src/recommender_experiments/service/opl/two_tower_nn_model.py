@@ -88,15 +88,11 @@ class TwoTowerNNPolicyLearner(NNPolicyLearner):
         )
         self.action_tower = nn.Sequential(OrderedDict(action_layers))
 
-        # Output Layer
-        self.output_layer = nn.Linear(self.dim_two_tower_embedding * 2, 1)
-
         # Combine all layers
         self.nn_model = nn.ModuleDict(
             {
                 "context_tower": self.context_tower,
                 "action_tower": self.action_tower,
-                "output_layer": self.output_layer,
             }
         )
 
@@ -134,10 +130,9 @@ class TwoTowerNNPolicyLearner(NNPolicyLearner):
             dim=2,
         )  # shape: (n_rounds, n_actions, dim_two_tower_embedding * 2)
 
-        # Pass through output layer
-        combined_embedding = combined_embedding.view(-1, combined_embedding.size(2))
-        scores = self.nn_model["output_layer"](combined_embedding).view(
-            n_rounds, n_actions
+        # contextとactionの内積をスコアとする
+        scores = torch.matmul(
+            context_embedding, action_embedding.T
         )  # shape: (n_rounds, n_actions)
 
         # 行動選択確率分布を得るためにsoftmax関数を適用

@@ -17,7 +17,6 @@ def test_TwoTowerモデルが正しく初期化されること():
     # Assert
     assert isinstance(sut.context_tower, torch.nn.Sequential)
     assert isinstance(sut.action_tower, torch.nn.Sequential)
-    assert isinstance(sut.output_layer, torch.nn.Linear)
 
     # Context Tower の出力サイズ
     context_output_layer = sut.context_tower[-1]  # 最後が埋め込み層
@@ -32,12 +31,6 @@ def test_TwoTowerモデルが正しく初期化されること():
     assert (
         action_output_layer.out_features == 100
     ), "Action Tower の最終出力サイズが dim_two_tower_embedding に一致すること"
-
-    # スコア予測層の入出力サイズ
-    assert (
-        sut.output_layer.in_features == 200
-    ), "入力サイズが dim_two_tower_embedding * 2 であること"
-    assert sut.output_layer.out_features == 1, "出力サイズが1であること"
 
 
 def test_アクション候補の数が動的に変化してもアクション選択の確率分布の推論ができること():

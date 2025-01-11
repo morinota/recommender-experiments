@@ -63,7 +63,7 @@ def test_アクション候補の数が動的に変化してもアクション�
     ), "各ラウンドごとに、確率の総和が1.0"
     assert np.all(0 <= action_dist) and np.all(
         action_dist <= 1
-    ), "各アクションの選択確率が0以上1以下であること"
+    ), "各アクションの選択確率が0.0以上1.0以下であること"
 
     # アクション候補の数が変化しても、同一モデルで推論できること
     action_dist = sut.predict_proba(
@@ -127,3 +127,21 @@ def test_データ収集方策のpscoreを渡す場合にバンディットフ�
         # データ収集方策のpscoreを(0,1)の範囲でランダムに設定
         pscore=np.random.random(n_rounds),  # shape: (n_rounds,)
     )
+    action_dist = sut.predict_proba(
+        context=np.random.random((n_rounds, dim_context)),
+        action_context=np.random.random((n_actions, dim_action_features)),
+    )
+
+    # Assert
+    assert action_dist.shape == (
+        n_rounds,
+        n_actions,
+        1,
+    ), "出力の形状が(ラウンド数、アクション数, 1)である。obpの仕様に合わせて1つ軸を追加してる"
+    assert not np.any(np.isnan(action_dist)), "各要素がnanではないこと"
+    assert np.allclose(
+        action_dist.sum(axis=1), 1.0
+    ), "各ラウンドごとに、確率の総和が1.0"
+    assert np.all(0 <= action_dist) and np.all(
+        action_dist <= 1
+    ), "各アクションの選択確率が0以上1以下であること"

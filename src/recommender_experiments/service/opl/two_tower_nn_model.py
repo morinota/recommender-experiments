@@ -38,6 +38,7 @@ class TwoTowerNNPolicyLearner(NNPolicyLearner):
     epsilon: float = 1e-8
     n_iter_no_change: int = 10
     q_func_estimator_hyperparams: Optional[dict] = None
+    # TwoTowerNNPolicyLearner独自のパラメータ
     dim_action_features: int = None
     dim_two_tower_embedding: int = None
 
@@ -104,33 +105,24 @@ class TwoTowerNNPolicyLearner(NNPolicyLearner):
         self.context_tower.eval()
         self.action_tower.eval()
 
-        n_rounds = context.shape[0]
-        n_actions = action_context.shape[0]
-
         # Context Tower Forward
         context_embedding = self.nn_model["context_tower"](
             context
         )  # shape: (n_rounds, dim_two_tower_embedding)
+        # normalize context_embedding
+        context_embedding = context_embedding / torch.norm(
+            context_embedding, dim=-1, keepdim=True
+        )
 
         # Action Tower Forward
         action_embedding = self.nn_model["action_tower"](
             action_context
         )  # shape: (n_actions, dim_two_tower_embedding)
-
-        # Combine context and action embeddings
-        combined_embedding = torch.cat(
-            [
-                context_embedding.unsqueeze(1).expand(
-                    -1, n_actions, -1
-                ),  # (n_rounds, n_actions, dim_two_tower_embedding)
-                action_embedding.unsqueeze(0).expand(
-                    n_rounds, -1, -1
-                ),  # (n_rounds, n_actions, dim_two_tower_embedding)
-            ],
-            dim=2,
-        )  # shape: (n_rounds, n_actions, dim_two_tower_embedding * 2)
-
-        # contextとactionの内積をスコアとする
+        # normalize action_embedding
+        action_embedding = action_embedding / torch.norm(
+            action_embedding, dim=-1, keepdim=True
+        )
+        # context_embeddingとaction_embeddingの内積をスコアとして計算
         scores = torch.matmul(
             context_embedding, action_embedding.T
         )  # shape: (n_rounds, n_actions)
@@ -149,12 +141,12 @@ class TwoTowerNNPolicyLearner(NNPolicyLearner):
         """方策による行動選択確率を予測するメソッド"""
         context_tensor = torch.from_numpy(context).float()
         action_context_tensor = torch.from_numpy(action_context).float()
-        pi = self._predict_proba_for_fit(
+        action_dist = self._predict_proba_for_fit(
             context=context_tensor,
             action_context=action_context_tensor,
         )
-        pi_ndarray = pi.squeeze(-1).detach().numpy()
-        return pi_ndarray[:, :, np.newaxis]  # shape: (n_rounds, n_actions, 1)
+        action_dist_ndarray = action_dist.squeeze(-1).detach().numpy()
+        return action_dist_ndarray[:, :, np.newaxis]  # shape: (n_rounds, n_actions, 1)
 
     # fitメソッドをoverride
     def fit(
@@ -186,8 +178,6 @@ class TwoTowerNNPolicyLearner(NNPolicyLearner):
         # start policy training
         n_not_improving_training = 0
         previous_training_loss = None
-        n_not_improving_validation = 0
-        previous_validation_loss = None
         for _ in tqdm(range(self.max_iter), desc="policy learning"):
             self.nn_model.train()
             for x, a, r, p, pos in training_data_loader:
@@ -212,6 +202,8 @@ class TwoTowerNNPolicyLearner(NNPolicyLearner):
                 loss = -policy_grad_arr.mean()
                 loss += self.policy_reg_param * policy_constraint
                 loss += self.var_reg_param * torch.var(policy_grad_arr)
+
+                # lossを最小化するようにモデルパラメータを更新
                 loss.backward()
                 optimizer.step()
 
@@ -225,35 +217,3 @@ class TwoTowerNNPolicyLearner(NNPolicyLearner):
                 if n_not_improving_training >= self.n_iter_no_change:
                     break
                 previous_training_loss = loss_value
-
-
-if __name__ == "__main__":
-    # 基本設定
-    n_rounds = 10
-    n_actions = 4
-    dim_context = 300
-    dim_action_features = 200
-    dim_two_tower_embedding = 100
-    # ダミーデータの生成
-    context = np.random.random((n_rounds, dim_context))
-    action = np.random.randint(0, n_actions, n_rounds)
-    reward = np.random.binomial(1, 0.5, n_rounds)  # binaryのrewardを生成
-    action_context = np.random.random((n_actions, dim_action_features))
-
-    # two-tower modelに対して、オフ方策学習を実行
-    policy = TwoTowerNNPolicyLearner(
-        dim_context=dim_context,
-        dim_action_features=dim_action_features,
-        dim_two_tower_embedding=dim_two_tower_embedding,
-    )
-    # バンディットフィードバックデータを用いてオフ方策学習
-    policy.fit(context, action, reward, action_context)
-    # 方策による行動選択確率の出力
-    action_dist = policy.predict_proba(context, action_context)
-    print(f"{action_dist=}")
-
-    # アクション数が動的に変化しても、同一モデルで推論できることを確認
-    n_actions += 2
-    action_context_ver2 = np.random.random((n_actions, dim_action_features))
-    action_dist_ver2 = policy.predict_proba(context, action_context_ver2)
-    print(f"{action_dist_ver2=}")

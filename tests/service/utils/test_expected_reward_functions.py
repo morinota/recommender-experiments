@@ -1,7 +1,8 @@
 import numpy as np
 
 from recommender_experiments.service.utils.expected_reward_functions import (
-    context_free_binary,
+    ContextAwareBinary,
+    ContextFreeBinary,
 )
 
 
@@ -15,14 +16,11 @@ def test_context_free_binary() -> None:
     action_context = np.random.random((n_actions, dim_action_context))
     upper = 0.5
     lower = 0.1
+    sut = ContextFreeBinary(lower=lower, upper=upper)
 
     # Act
-    expected_rewards = context_free_binary(
-        context,
-        action_context,
-        lower=lower,
-        upper=upper,
-    )
+    expected_reward_function = sut.get_function()
+    expected_rewards = expected_reward_function(context, action_context)
 
     # Assert
     assert expected_rewards.shape == (n_rounds, n_actions)
@@ -38,3 +36,33 @@ def test_context_free_binary() -> None:
     assert (
         expected_rewards[0][n_actions - 1] == lower
     ), "index=n_actions-1のアクションの期待報酬関数は、lowerと一致する"
+
+
+def test_context_aware_binary() -> None:
+    # Arrange
+    n_rounds = 2
+    n_actions = 3
+    context = np.array([[1.0, 0.0], [0.0, 1.0]])
+    action_context = np.array([[1.0, 0.0], [0.5, 0.5], [0.0, 1.0]])
+    upper = 0.5
+    lower = 0.1
+    sut = ContextAwareBinary(lower=lower, upper=upper)
+
+    # Act
+    expected_reward_function = sut.get_function()
+    expected_rewards = expected_reward_function(context, action_context)
+
+    # Assert
+    assert expected_rewards.shape == (n_rounds, n_actions)
+    assert np.all(
+        expected_rewards >= lower
+    ), "全てのアクションの期待報酬関数の値は、lower以上である"
+    assert np.all(
+        expected_rewards <= upper
+    ), "全てのアクションの期待報酬関数の値は、upper以下である"
+    assert (
+        expected_rewards[0][0] == upper
+    ), "round=0にて、contextとaction_contextの内積が最大のアクションの期待報酬関数は、upperと一致する"
+    assert (
+        expected_rewards[0][2] == lower
+    ), "round=0にて、contextとaction_contextの内積が最小のアクションの期待報酬関数は、lowerと一致する"

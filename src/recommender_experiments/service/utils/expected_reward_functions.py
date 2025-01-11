@@ -1,16 +1,18 @@
 # 実験用に、真の期待報酬関数 E_{p(r|x,a)}[r] を定義するモジュール
 
 
+import abc
+from typing import Callable
 import numpy as np
 
 
-def context_free_binary(
-    context: np.ndarray,  # shape: (n_rounds, dim_context)
-    action_context: np.ndarray,  # shape: (n_actions, dim_action_context)
-    random_state: int = None,
-    lower: float = 0.0,
-    upper: float = 1.0,
-) -> np.ndarray:  # (n_rounds, n_actions, len_list)
+class ExpectedRewardFunctionInterface(abc.ABC):
+    @abc.abstractmethod
+    def get_function(self) -> Callable[[np.ndarray, np.ndarray, int], np.ndarray]:
+        raise NotImplementedError
+
+
+class ContextFreeBinary(ExpectedRewardFunctionInterface):
     """(アクションa, 文脈x)の各組み合わせに対する期待報酬 E_{p(r|x,a)}[r] を定義する関数。
     今回は、文脈xに依存しない、アクション毎に固定のcontext-freeな期待報酬関数を想定している。
     具体的には、アクションaのindexが0から大きくなるにつれて、期待報酬がupperからlowerに線形に減少するような関数を想定している。
@@ -21,31 +23,68 @@ def context_free_binary(
         lower (float, optional): 期待値の下限値. Defaults to 0.0.
         upper (float, optional): 期待値の上限値. Defaults to 1.0.
     Returns:
-        np.ndarray: 期待報酬 (n_rounds, n_actions, len_list) の配列。
+        np.ndarray: 期待報酬 (n_rounds, n_actions) の配列。
     """
-    # 乱数シードを設定
-    if random_state is not None:
-        np.random.seed(random_state)
 
-    n_rounds = context.shape[0]
-    n_actions = action_context.shape[0]
-    len_list = 1  # len_listは1で固定とする
+    def __init__(self, lower: float = 0.0, upper: float = 1.0) -> None:
+        self.lower = lower
+        self.upper = upper
 
-    # アクションaのindexが0から大きくなるにつれて、期待報酬がupperからlowerに線形に減少する配列を生成
-    action_rewards = np.linspace(upper, lower, n_actions)
-    print(action_rewards)
+    def get_function(self) -> Callable[[np.ndarray, np.ndarray, int], np.ndarray]:
+        def _expected_reward_function(
+            context: np.ndarray,  # shape: (n_rounds, dim_context)
+            action_context: np.ndarray,  # shape: (n_actions, dim_action_context)
+            random_state: int = None,
+        ) -> np.ndarray:  # (n_rounds, n_actions)
+            n_rounds = context.shape[0]
+            n_actions = action_context.shape[0]
 
-    # 各ラウンドに対して同じ期待報酬を繰り返す
-    rewards = np.tile(action_rewards, (n_rounds, 1))
+            # アクションaのindexが0から大きくなるにつれて、期待報酬がupperからlowerに線形に減少する配列を生成
+            action_rewards = np.linspace(self.upper, self.lower, n_actions)
+            print(action_rewards)
 
-    return rewards
+            # 各ラウンドに対して同じ期待報酬を繰り返す
+            rewards = np.tile(action_rewards, (n_rounds, 1))
+            return rewards
+
+        return _expected_reward_function
 
 
-# 試しに期待報酬関数を実行してみる
-n_rounds = 3
-n_actions = 50
-dim_context = 300
-dim_action_context = 300
-context = np.random.random((n_rounds, dim_context))
-action_context = np.random.random((n_actions, dim_action_context))
-print(context_free_binary(context, action_context))
+class ContextAwareBinary(ExpectedRewardFunctionInterface):
+    """(アクションa, 文脈x)の各組み合わせに対する期待報酬 E_{p(r|x,a)}[r] を定義する関数。
+    今回は、文脈xに依存する、context-awareな期待報酬関数を想定している。
+    具体的には、contextとaction_contextの内積をとり、
+    各ラウンドで内積が最小となる(x,a)から、最大となる(x,a)までの期待報酬がlowerからupperに線形に増加するような関数。
+    Args:
+        context (np.ndarray): 文脈x。 (n_rounds, dim_context)の配列。
+        action_context (np.ndarray): アクション特徴量。 (n_actions, dim_action_context)の配列。
+        random_state (int, optional): 乱数シード. Defaults to None.
+        lower (float, optional): 期待値の下限値. Defaults to 0.0.
+        upper (float, optional): 期待値の上限値. Defaults to 1.0.
+    Returns:
+        np.ndarray: 期待報酬 (n_rounds, n_actions) の配列。
+    """
+
+    def __init__(self, lower: float = 0.0, upper: float = 1.0) -> None:
+        self.lower = lower
+        self.upper = upper
+
+    def get_function(self) -> Callable[[np.ndarray, np.ndarray, int], np.ndarray]:
+        def _expected_reward_function(
+            context: np.ndarray,  # shape: (n_rounds, dim_context)
+            action_context: np.ndarray,  # shape: (n_actions, dim_action_context)
+            random_state: int = None,
+        ) -> np.ndarray:  # (n_rounds, n_actions)
+            # 各ラウンドでの、contextとaction_contextの内積を計算
+            dot_products = context @ action_context.T  # shape: (n_rounds, n_actions)
+
+            # 内積を正規化して[lower, upper]の範囲にスケーリング
+            min_dot = dot_products.min(axis=1, keepdims=True)
+            max_dot = dot_products.max(axis=1, keepdims=True)
+            normalized_dot = (dot_products - min_dot) / (max_dot - min_dot)
+
+            # 正規化された値をlowerからupperの範囲にスケーリング
+            expexted_rewards = normalized_dot * (self.upper - self.lower) + self.lower
+            return expexted_rewards
+
+        return _expected_reward_function

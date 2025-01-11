@@ -25,7 +25,7 @@ def test_context_free_binary() -> None:
     )
 
     # Assert
-    assert expected_rewards.shape == (n_rounds, n_actions, 1)
+    assert expected_rewards.shape == (n_rounds, n_actions)
     assert np.all(
         expected_rewards >= lower
     ), "全てのアクションの期待報酬関数の値は、lower以上である"
@@ -33,8 +33,8 @@ def test_context_free_binary() -> None:
         expected_rewards <= upper
     ), "全てのアクションの期待報酬関数の値は、upper以下である"
     assert (
-        expected_rewards[0][0][0] == upper
+        expected_rewards[0][0] == upper
     ), "index=0のアクションの期待報酬関数は、upperと一致する"
     assert (
-        expected_rewards[0][n_actions - 1][0] == lower
+        expected_rewards[0][n_actions - 1] == lower
     ), "index=n_actions-1のアクションの期待報酬関数は、lowerと一致する"

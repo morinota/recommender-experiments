@@ -118,15 +118,17 @@ def _run_single_simulation(
 
 
 def main() -> None:
-    _run_single_simulation(
-        simulate_idx=0,
-        n_rounds_train=10000,
-        n_rounds_test=10000,
-        n_actions=4,
-        dim_context=50,
-        action_context=np.random.random((4, 50)),
-        reward_function=context_free_binary,
-        logging_policy_function=_logging_policy,
+    print(
+        _run_single_simulation(
+            simulate_idx=0,
+            n_rounds_train=10000,
+            n_rounds_test=10000,
+            n_actions=4,
+            dim_context=50,
+            action_context=np.random.random((4, 50)),
+            reward_function=context_free_binary,
+            logging_policy_function=_logging_policy,
+        )
     )
 
 

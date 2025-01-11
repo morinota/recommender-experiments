@@ -36,9 +36,7 @@ def context_free_binary(
     print(action_rewards)
 
     # 各ラウンドに対して同じ期待報酬を繰り返す
-    rewards = np.tile(action_rewards, (n_rounds, 1)).reshape(
-        n_rounds, n_actions, len_list
-    )
+    rewards = np.tile(action_rewards, (n_rounds, 1))
 
     return rewards
 

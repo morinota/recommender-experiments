@@ -41,6 +41,7 @@ class TwoTowerNNPolicyLearner(NNPolicyLearner):
     # TwoTowerNNPolicyLearner独自のパラメータ
     dim_action_features: int = None
     dim_two_tower_embedding: int = None
+    is_embedding_normed: bool = False
 
     def __post_init__(self):
         print("overriden __post_init__ for TwoTower Model")
@@ -109,19 +110,22 @@ class TwoTowerNNPolicyLearner(NNPolicyLearner):
         context_embedding = self.nn_model["context_tower"](
             context
         )  # shape: (n_rounds, dim_two_tower_embedding)
-        # normalize context_embedding
-        context_embedding = context_embedding / torch.norm(
-            context_embedding, dim=-1, keepdim=True
-        )
+        if self.is_embedding_normed:
+            # normalize context_embedding
+            context_embedding = context_embedding / torch.norm(
+                context_embedding, dim=-1, keepdim=True
+            )
 
         # Action Tower Forward
         action_embedding = self.nn_model["action_tower"](
             action_context
         )  # shape: (n_actions, dim_two_tower_embedding)
         # normalize action_embedding
-        action_embedding = action_embedding / torch.norm(
-            action_embedding, dim=-1, keepdim=True
-        )
+        if self.is_embedding_normed:
+            action_embedding = action_embedding / torch.norm(
+                action_embedding, dim=-1, keepdim=True
+            )
+
         # context_embeddingとaction_embeddingの内積をスコアとして計算
         scores = torch.matmul(
             context_embedding, action_embedding.T

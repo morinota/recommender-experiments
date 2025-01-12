@@ -66,3 +66,9 @@ def test_context_aware_binary() -> None:
     assert (
         expected_rewards[0][2] == lower
     ), "round=0にて、contextとaction_contextの内積が最小のアクションの期待報酬関数は、lowerと一致する"
+    assert (
+        expected_rewards[1][2] == upper
+    ), "round=1にて、contextとaction_contextの内積が最大のアクションの期待報酬関数は、upperと一致する"
+    assert (
+        expected_rewards[1][0] == lower
+    ), "round=1にて、contextとaction_contextの内積が最小のアクションの期待報酬関数は、lowerと一致する"

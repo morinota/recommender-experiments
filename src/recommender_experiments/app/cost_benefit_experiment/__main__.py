@@ -1,7 +1,7 @@
 import random
 from typing import Callable, Literal, Optional, TypedDict
 import numpy as np
-from obp.dataset import SyntheticBanditDataset
+from obp.dataset import SyntheticBanditDataset, logistic_reward_function
 from obp.ope import ReplayMethod, InverseProbabilityWeighting, BaseOffPolicyEstimator
 import polars as pl
 from obp.policy import IPWLearner, NNPolicyLearner, Random, LogisticTS, BernoulliTS
@@ -11,7 +11,8 @@ from recommender_experiments.service.opl.two_tower_nn_model import (
     TwoTowerNNPolicyLearner,
 )
 from recommender_experiments.service.utils.expected_reward_functions import (
-    context_free_binary,
+    ContextFreeBinary,
+    ContextAwareBinary,
 )
 
 
@@ -65,9 +66,29 @@ def _run_single_simulation(
     n_actions: int,
     dim_context: int,
     action_context: np.ndarray,
-    reward_function: Callable[[np.ndarray, np.ndarray, int], np.ndarray],
     logging_policy_function: Callable[[np.ndarray, np.ndarray, int], np.ndarray],
+    expected_reward_lower: float,
+    expected_reward_upper: float,
+    # is_expected_reward_context_aware: bool = False,
+    expected_reward_setting: Literal[
+        "my_context_free", "my_context_aware", "linear"
+    ] = "my_context_aware",
+    new_policy_setting: Literal["two_tower_nn", "obp_nn"] = "two_tower_nn",
 ) -> dict:
+    # 期待報酬関数を設定
+    if expected_reward_setting == "my_context_aware":
+        reward_function_generator = ContextAwareBinary(
+            expected_reward_lower, expected_reward_upper
+        )
+        reward_function = reward_function_generator.get_function()
+    elif expected_reward_setting == "my_context_free":
+        reward_function_generator = ContextFreeBinary(
+            expected_reward_lower, expected_reward_upper
+        )
+        reward_function = reward_function_generator.get_function()
+    elif expected_reward_setting == "linear":
+        reward_function = logistic_reward_function
+
     # データ収集方策によって集められるはずの、擬似バンディットデータの設定を定義
     dataset = SyntheticBanditDataset(
         n_actions=n_actions,
@@ -80,54 +101,123 @@ def _run_single_simulation(
     )
 
     # 収集されるバンディットフィードバックデータを生成
-    bandit_feedback_train = dataset.obtain_batch_bandit_feedback(n_rounds_train)
     bandit_feedback_test = dataset.obtain_batch_bandit_feedback(n_rounds_test)
 
     # 新方策のためのNNモデルを初期化
-    new_policy = TwoTowerNNPolicyLearner(
-        dim_context=dim_context,
-        dim_action_features=bandit_feedback_train["action_context"].shape[1],
-        dim_two_tower_embedding=10,
-    )
-
-    # データ収集方策で集めたデータ(学習用)で、新方策のためのNNモデルのパラメータを更新
-    new_policy.fit(
-        context=bandit_feedback_train["context"],
-        action_context=bandit_feedback_train["action_context"],
-        action=bandit_feedback_train["action"],
-        reward=bandit_feedback_train["reward"],
-        pscore=bandit_feedback_train["pscore"],
-    )
-
-    # データ収集方策で集めたデータ(評価用)で、新方策の性能を確認
-    test_action_dist = new_policy.predict_proba(
-        context=bandit_feedback_test["context"],
-        action_context=bandit_feedback_test["action_context"],
-    )
-    ground_truth_new_policy_value = dataset.calc_ground_truth_policy_value(
+    if new_policy_setting == "obp_nn":
+        new_policy = NNPolicyLearner(
+            n_actions=n_actions,
+            dim_context=dim_context,
+            random_state=simulate_idx,
+            off_policy_objective="ipw",
+        )
+    elif new_policy_setting == "two_tower_nn":
+        new_policy = TwoTowerNNPolicyLearner(
+            dim_context=dim_context,
+            dim_action_features=action_context.shape[1],
+            dim_two_tower_embedding=100,
+            off_policy_objective="ipw",
+        )
+    # 学習前の真の性能を確認
+    if new_policy_setting == "obp_nn":
+        test_action_dist = new_policy.predict_proba(
+            context=bandit_feedback_test["context"],
+        )
+    elif new_policy_setting == "two_tower_nn":
+        test_action_dist = new_policy.predict_proba(
+            context=bandit_feedback_test["context"],
+            action_context=bandit_feedback_test["action_context"],
+        )
+    policy_value_before_fit = dataset.calc_ground_truth_policy_value(
         expected_reward=bandit_feedback_test["expected_reward"],
         action_dist=test_action_dist,
     )
+    print(f"policy_value_before_fit: {policy_value_before_fit}")
+
+    for i in range(10):
+        bandit_feedback_train = dataset.obtain_batch_bandit_feedback(n_rounds_train)
+        # データ収集方策で集めたデータ(学習用)で、新方策のためのNNモデルのパラメータを更新
+        if new_policy_setting == "obp_nn":
+            new_policy.fit(
+                context=bandit_feedback_train["context"],
+                action=bandit_feedback_train["action"],
+                reward=bandit_feedback_train["reward"],
+                pscore=bandit_feedback_train["pscore"],
+            )
+        elif new_policy_setting == "two_tower_nn":
+            new_policy.fit(
+                context=bandit_feedback_train["context"],
+                action_context=bandit_feedback_train["action_context"],
+                action=bandit_feedback_train["action"],
+                reward=bandit_feedback_train["reward"],
+                pscore=bandit_feedback_train["pscore"],
+            )
+
+        # データ収集方策で集めたデータ(評価用)で、学習後の新方策の真の性能を確認
+        if new_policy_setting == "obp_nn":
+            test_action_dist = new_policy.predict_proba(
+                context=bandit_feedback_test["context"],
+            )
+        elif new_policy_setting == "two_tower_nn":
+            test_action_dist = new_policy.predict_proba(
+                context=bandit_feedback_test["context"],
+                action_context=bandit_feedback_test["action_context"],
+            )
+        ground_truth_new_policy_value = dataset.calc_ground_truth_policy_value(
+            expected_reward=bandit_feedback_test["expected_reward"],
+            action_dist=test_action_dist,
+        )
+        print(
+            f"ground_truth_new_policy_value(at {i * n_rounds_train} data): {ground_truth_new_policy_value}"
+        )
 
     return {
         "simulation_idx": simulate_idx,
         "n_rounds_train": n_rounds_train,
         "n_rounds_test": n_rounds_test,
+        "n_actions": n_actions,
+        "expected_reward_lower": expected_reward_lower,
+        "expected_reward_upper": expected_reward_upper,
         "ground_truth_new_policy_value": ground_truth_new_policy_value,
     }
 
 
+def _run_multiple_simulations(
+    n_rounds_train_list: list[int],
+    n_rounds_test_list: list[int],
+    n_actions_list: list[int],
+    dim_context_list: list[int],
+    expected_reward_scale_list: list[tuple[float, float]],
+) -> pl.DataFrame:
+    pass
+
+
 def main() -> None:
+    # 実験パラメータ
+    n_actions_list = [5, 10, 20, 50, 100, 1000]
+    dim_context_list = [5, 10, 20, 50, 100]
+    n_rounds_train = list(range(1000, 100000, 2000))
+    expected_reward_scale_list = [
+        (0.1, 0.9),
+        (0.1, 0.7),
+        (0.1, 0.5),
+        (0.1, 0.3),
+        (0.1, 0.2),
+    ]
     print(
         _run_single_simulation(
             simulate_idx=0,
-            n_rounds_train=10000,
-            n_rounds_test=10000,
+            n_rounds_train=1000,
+            n_rounds_test=1000,
             n_actions=4,
             dim_context=50,
             action_context=np.random.random((4, 50)),
-            reward_function=context_free_binary,
             logging_policy_function=_logging_policy,
+            expected_reward_lower=0.05,
+            expected_reward_upper=0.10,
+            expected_reward_setting="my_context_aware",
+            # new_policy_setting="obp_nn",
+            new_policy_setting="two_tower_nn",
         )
     )
 

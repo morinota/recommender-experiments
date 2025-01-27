@@ -11,6 +11,9 @@ from obp.policy import IPWLearner, NNPolicyLearner, Random, LogisticTS, Bernoull
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from tqdm import tqdm
+from recommender_experiments.service.opl.shared_parameter_nn_model import (
+    SharedParameterNNPolicyLearner,
+)
 from recommender_experiments.service.opl.two_tower_nn_model import (
     TwoTowerNNPolicyLearner,
 )
@@ -82,17 +85,28 @@ def _run_single_simulation(
     bandit_feedback_test = dataset.obtain_batch_bandit_feedback(n_rounds_test)
 
     # 新方策のためのNNモデルを初期化
-    new_policy = TwoTowerNNPolicyLearner(
+    # new_policy = TwoTowerNNPolicyLearner(
+    #     dim_context=dim_context,
+    #     dim_action_features=action_context.shape[1],
+    #     dim_two_tower_embedding=100,
+    #     off_policy_objective="ipw",
+    #     learning_rate_init=learning_rate_init,
+    # )
+    # new_policy = SharedParameterNNPolicyLearner(
+    #     dim_context=dim_context + action_context.shape[1],
+    #     off_policy_objective="ipw",
+    #     learning_rate_init=learning_rate_init,
+    # )
+    new_policy = NNPolicyLearner(
+        n_actions=n_actions,
         dim_context=dim_context,
-        dim_action_features=action_context.shape[1],
-        dim_two_tower_embedding=100,
         off_policy_objective="ipw",
         learning_rate_init=learning_rate_init,
     )
     # 学習前の真の性能を確認
     test_action_dist = new_policy.predict_proba(
         context=bandit_feedback_test["context"],
-        action_context=bandit_feedback_test["action_context"],
+        # action_context=bandit_feedback_test["action_context"],
     )
     policy_value_before_fit = dataset.calc_ground_truth_policy_value(
         expected_reward=bandit_feedback_test["expected_reward"],
@@ -110,7 +124,7 @@ def _run_single_simulation(
         # データ収集方策で集めたデータ(学習用)で、two-towerモデルのパラメータを更新
         new_policy.fit(
             context=bandit_feedback_train["context"],
-            action_context=bandit_feedback_train["action_context"],
+            # action_context=bandit_feedback_train["action_context"],
             action=bandit_feedback_train["action"],
             reward=bandit_feedback_train["reward"],
             pscore=bandit_feedback_train["pscore"] if should_ips_estimate else None,
@@ -119,7 +133,7 @@ def _run_single_simulation(
         # データ収集方策で集めたデータ(評価用)で、学習後の新方策の真の性能を確認
         test_action_dist = new_policy.predict_proba(
             context=bandit_feedback_test["context"],
-            action_context=bandit_feedback_test["action_context"],
+            # action_context=bandit_feedback_test["action_context"],
         )
         ground_truth_new_policy_value = dataset.calc_ground_truth_policy_value(
             expected_reward=bandit_feedback_test["expected_reward"],
@@ -141,9 +155,9 @@ def _run_single_simulation(
             "n_rounds_test": n_rounds_test,
             "expected_reward_lower": expected_reward_lower,
             "expected_reward_upper": expected_reward_upper,
+            "should_ips_estimate": should_ips_estimate,
             "expected_reward_setting": expected_reward_setting,
             "new_policy_value": _policy_value,
-            "should_ips_estimate": should_ips_estimate,
         }
         for _n_rounds_train, _policy_value in new_policy_value_by_n_train.items()
     ]
@@ -225,7 +239,7 @@ def main() -> None:
     expected_reward_settings = ["my_context_aware"]
 
     _run_single_simulation(
-        n_rounds_train=20000,
+        n_rounds_train=10000,
         n_rounds_test=1000,
         n_actions=5,
         dim_context=50,
@@ -233,8 +247,8 @@ def main() -> None:
         logging_policy_function=logging_policies.context_aware_stochastic_policy,
         expected_reward_lower=0.2,
         expected_reward_upper=0.4,
-        expected_reward_setting="linear",
-        learning_rate_init=0.00001,
+        expected_reward_setting="my_context_free",
+        learning_rate_init=0.0001,
         should_ips_estimate=True,
     )
 

@@ -60,7 +60,7 @@ def _run_single_simulation(
     # 期待報酬関数を設定
     if expected_reward_setting == "my_context_aware":
         reward_function_generator = ContextAwareBinary(
-            expected_reward_lower, expected_reward_upper
+            expected_reward_lower, expected_reward_upper, True
         )
         reward_function = reward_function_generator.get_function()
     elif expected_reward_setting == "my_context_free":
@@ -239,7 +239,7 @@ def main() -> None:
     expected_reward_settings = ["my_context_aware"]
 
     _run_single_simulation(
-        n_rounds_train=10000,
+        n_rounds_train=20000,
         n_rounds_test=1000,
         n_actions=5,
         dim_context=50,

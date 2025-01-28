@@ -56,6 +56,9 @@ def _run_single_simulation(
     ] = "my_context_aware",
     learning_rate_init: float = 0.0001,
     should_ips_estimate: bool = True,
+    new_policy_setting: Literal[
+        "two_tower_nn", "obp_nn", "shared_parameter_nn"
+    ] = "two_tower_nn",
 ) -> list[dict]:
     # 期待報酬関数を設定
     if expected_reward_setting == "my_context_aware":
@@ -85,34 +88,41 @@ def _run_single_simulation(
     bandit_feedback_test = dataset.obtain_batch_bandit_feedback(n_rounds_test)
 
     # 新方策のためのNNモデルを初期化
-    # new_policy = TwoTowerNNPolicyLearner(
-    #     dim_context=dim_context,
-    #     dim_action_features=action_context.shape[1],
-    #     dim_two_tower_embedding=100,
-    #     off_policy_objective="ipw",
-    #     learning_rate_init=learning_rate_init,
+    if new_policy_setting == "two_tower_nn":
+        new_policy = TwoTowerNNPolicyLearner(
+            dim_context=dim_context,
+            dim_action_features=action_context.shape[1],
+            dim_two_tower_embedding=100,
+            off_policy_objective="ipw",
+            learning_rate_init=learning_rate_init,
+            is_embedding_normed=True,
+        )
+    elif new_policy_setting == "shared_parameter_nn":
+        new_policy = SharedParameterNNPolicyLearner(
+            dim_context=dim_context + action_context.shape[1],
+            off_policy_objective="ipw",
+            learning_rate_init=learning_rate_init,
+        )
+    elif new_policy_setting == "obp_nn":
+        new_policy = NNPolicyLearner(
+            n_actions=n_actions,
+            dim_context=dim_context,
+            off_policy_objective="ipw",
+            learning_rate_init=learning_rate_init,
+        )
+    else:
+        raise ValueError(f"new_policy_setting: {new_policy_setting} is not supported")
+
+    # # 学習前の真の性能を確認
+    # test_action_dist = new_policy.predict_proba(
+    #     context=bandit_feedback_test["context"],
+    #     action_context=bandit_feedback_test["action_context"],
     # )
-    # new_policy = SharedParameterNNPolicyLearner(
-    #     dim_context=dim_context + action_context.shape[1],
-    #     off_policy_objective="ipw",
-    #     learning_rate_init=learning_rate_init,
+    # policy_value_before_fit = dataset.calc_ground_truth_policy_value(
+    #     expected_reward=bandit_feedback_test["expected_reward"],
+    #     action_dist=test_action_dist,
     # )
-    new_policy = NNPolicyLearner(
-        n_actions=n_actions,
-        dim_context=dim_context,
-        off_policy_objective="ipw",
-        learning_rate_init=learning_rate_init,
-    )
-    # 学習前の真の性能を確認
-    test_action_dist = new_policy.predict_proba(
-        context=bandit_feedback_test["context"],
-        # action_context=bandit_feedback_test["action_context"],
-    )
-    policy_value_before_fit = dataset.calc_ground_truth_policy_value(
-        expected_reward=bandit_feedback_test["expected_reward"],
-        action_dist=test_action_dist,
-    )
-    logger.debug(f"{policy_value_before_fit=}")
+    # logger.debug(f"{policy_value_before_fit=}")
 
     # 学習データ数を10分割して、段階的にfittingを行い、新方策の性能の推移を記録する
     new_policy_value_by_n_train = {}
@@ -122,19 +132,50 @@ def _run_single_simulation(
             splitted_n_rounds_train
         )
         # データ収集方策で集めたデータ(学習用)で、two-towerモデルのパラメータを更新
-        new_policy.fit(
-            context=bandit_feedback_train["context"],
-            # action_context=bandit_feedback_train["action_context"],
-            action=bandit_feedback_train["action"],
-            reward=bandit_feedback_train["reward"],
-            pscore=bandit_feedback_train["pscore"] if should_ips_estimate else None,
-        )
+        if new_policy_setting == "two_tower_nn":
+            new_policy.fit(
+                context=bandit_feedback_train["context"],
+                action_context=bandit_feedback_train["action_context"],
+                action=bandit_feedback_train["action"],
+                reward=bandit_feedback_train["reward"],
+                pscore=bandit_feedback_train["pscore"] if should_ips_estimate else None,
+            )
 
-        # データ収集方策で集めたデータ(評価用)で、学習後の新方策の真の性能を確認
-        test_action_dist = new_policy.predict_proba(
-            context=bandit_feedback_test["context"],
-            # action_context=bandit_feedback_test["action_context"],
-        )
+            test_action_dist = new_policy.predict_proba(
+                context=bandit_feedback_test["context"],
+                action_context=bandit_feedback_test["action_context"],
+            )
+
+        elif new_policy_setting == "shared_parameter_nn":
+            new_policy.fit(
+                context=bandit_feedback_train["context"],
+                action=bandit_feedback_train["action"],
+                reward=bandit_feedback_train["reward"],
+                pscore=bandit_feedback_train["pscore"] if should_ips_estimate else None,
+            )
+
+            test_action_dist = new_policy.predict_proba(
+                context=bandit_feedback_test["context"],
+                action_context=bandit_feedback_test["action_context"],
+            )
+
+        elif new_policy_setting == "obp_nn":
+            new_policy.fit(
+                context=bandit_feedback_train["context"],
+                action=bandit_feedback_train["action"],
+                reward=bandit_feedback_train["reward"],
+                pscore=bandit_feedback_train["pscore"] if should_ips_estimate else None,
+            )
+
+            test_action_dist = new_policy.predict_proba(
+                context=bandit_feedback_test["context"]
+            )
+
+        else:
+            raise ValueError(
+                f"new_policy_setting: {new_policy_setting} is not supported"
+            )
+
         ground_truth_new_policy_value = dataset.calc_ground_truth_policy_value(
             expected_reward=bandit_feedback_test["expected_reward"],
             action_dist=test_action_dist,
@@ -200,7 +241,7 @@ def _run_simulations_in_parallel(
             n_rounds_train_list,
         )
     )
-    print(f"simulate_configs: {simulate_configs}")
+    logger.debug(f"simulate_configs: {simulate_configs}")
 
     results = Parallel(n_jobs=n_jobs)(
         delayed(_run_single_simulation)(
@@ -250,15 +291,16 @@ def main() -> None:
         expected_reward_setting="my_context_free",
         learning_rate_init=0.0001,
         should_ips_estimate=True,
+        new_policy_setting="obp_nn",
     )
 
-    # # シミュレーションの実行
+    # # # シミュレーションの実行
     # result_df = _run_simulations_in_parallel(
     #     n_actions_list=n_actions_list,
     #     dim_context_list=dim_context_list,
     #     expected_reward_scale_list=expected_reward_scale_list,
     #     expected_reward_settings=expected_reward_settings,
-    #     n_rounds_train_list=[5000, 10000, 15000, 20000, 25000],
+    #     n_rounds_train_list=[25000],
     #     fixed_n_round_test=1000,
     # )
 

@@ -126,8 +126,8 @@ def _run_single_simulation(
 
     # 学習データ数を10分割して、段階的にfittingを行い、新方策の性能の推移を記録する
     new_policy_value_by_n_train = {}
-    splitted_n_rounds_train = n_rounds_train // 10
-    for i in range(10):
+    splitted_n_rounds_train = 2000
+    for num_of_train_data in range(2000, n_rounds_train, 4000):
         bandit_feedback_train = dataset.obtain_batch_bandit_feedback(
             splitted_n_rounds_train
         )
@@ -181,11 +181,9 @@ def _run_single_simulation(
             action_dist=test_action_dist,
         )
         # 学習データ数をキーとして、新方策の性能を記録
-        new_policy_value_by_n_train[splitted_n_rounds_train * (i + 1)] = (
-            ground_truth_new_policy_value
-        )
+        new_policy_value_by_n_train[num_of_train_data] = ground_truth_new_policy_value
         logger.debug(
-            f"n_rounds_train: {splitted_n_rounds_train * (i + 1)}, new_policy_value: {ground_truth_new_policy_value}"
+            f"n_rounds_train: {num_of_train_data}, new_policy_value: {ground_truth_new_policy_value}"
         )
 
     # 分割した学習データ数ごとの新方策の性能をlistで返す
@@ -279,18 +277,18 @@ def main() -> None:
     # expected_reward_settings = ["my_context_aware", "my_context_free", "linear"]
     expected_reward_settings = ["my_context_aware"]
 
+    n_actions = 5
     _run_single_simulation(
         n_rounds_train=20000,
         n_rounds_test=1000,
-        n_actions=5,
+        n_actions=n_actions,
         dim_context=50,
-        action_context=np.random.random((5, 50)),
+        action_context=np.random.random((n_actions, 50)),
         logging_policy_function=logging_policies.context_aware_stochastic_policy,
         expected_reward_lower=0.2,
         expected_reward_upper=0.4,
         expected_reward_setting="my_context_free",
-        learning_rate_init=0.0001,
-        should_ips_estimate=True,
+        should_ips_estimate=False,
         new_policy_setting="obp_nn",
     )
 

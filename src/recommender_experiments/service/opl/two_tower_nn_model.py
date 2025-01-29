@@ -102,10 +102,7 @@ class TwoTowerNNPolicyLearner(NNPolicyLearner):
         self,
         context: torch.Tensor,  # shape: (n_rounds, dim_context)
         action_context: torch.Tensor,  # shape: (n_actions, dim_action_features)
-    ) -> np.ndarray:  # shape: (n_rounds, n_actions, 1)
-        self.context_tower.eval()
-        self.action_tower.eval()
-
+    ) -> torch.Tensor:  # shape: (n_rounds, n_actions, 1)
         # Context Tower Forward
         context_embedding = self.nn_model["context_tower"](
             context

@@ -149,6 +149,7 @@ def _run_single_simulation(
         elif new_policy_setting == "shared_parameter_nn":
             new_policy.fit(
                 context=bandit_feedback_train["context"],
+                action_context=bandit_feedback_train["action_context"],
                 action=bandit_feedback_train["action"],
                 reward=bandit_feedback_train["reward"],
                 pscore=bandit_feedback_train["pscore"] if should_ips_estimate else None,
@@ -277,7 +278,25 @@ def main() -> None:
     # expected_reward_settings = ["my_context_aware", "my_context_free", "linear"]
     expected_reward_settings = ["my_context_aware"]
 
-    n_actions = 50
+    # シミュレーションの実行
+    result_df = _run_simulations_in_parallel(
+        n_actions_list=n_actions_list,
+        dim_context_list=dim_context_list,
+        expected_reward_scale_list=expected_reward_scale_list,
+        expected_reward_settings=expected_reward_settings,
+        n_rounds_train_list=[25000],
+        fixed_n_round_test=1000,
+    )
+
+    # シミュレーション結果の保存
+    results_dir = Path("logs/two_tower_model_experiment")
+    results_dir.mkdir(parents=True, exist_ok=True)
+    result_df.write_csv(results_dir / "result_df.csv")
+
+
+if __name__ == "__main__":
+    # main()
+    n_actions = 10
     _run_single_simulation(
         n_rounds_train=20000,
         n_rounds_test=1000,
@@ -290,24 +309,6 @@ def main() -> None:
         expected_reward_setting="my_context_aware",
         should_ips_estimate=False,
         # new_policy_setting="two_tower_nn",
+        # new_policy_setting="shared_parameter_nn",
         new_policy_setting="obp_nn",
     )
-
-    # # # シミュレーションの実行
-    # result_df = _run_simulations_in_parallel(
-    #     n_actions_list=n_actions_list,
-    #     dim_context_list=dim_context_list,
-    #     expected_reward_scale_list=expected_reward_scale_list,
-    #     expected_reward_settings=expected_reward_settings,
-    #     n_rounds_train_list=[25000],
-    #     fixed_n_round_test=1000,
-    # )
-
-    # # # シミュレーション結果の保存
-    # results_dir = Path("logs/two_tower_model_experiment")
-    # results_dir.mkdir(parents=True, exist_ok=True)
-    # result_df.write_csv(results_dir / "result_df.csv")
-
-
-if __name__ == "__main__":
-    main()

@@ -147,8 +147,6 @@ class SharedParameterNNPolicyLearner(NNPolicyLearner):
         context: torch.Tensor,  # shape: (n_rounds, dim_context)
         action_context: torch.Tensor,  # shape: (n_actions, dim_action_features)
     ) -> np.ndarray:  # shape: (n_rounds, n_actions, 1)
-        self.nn_model.eval()
-
         n_rounds = context.shape[0]
         n_actions = action_context.shape[0]
 

@@ -1,12 +1,27 @@
 import numpy as np
 
 
+def random_policy(
+    context: np.ndarray,
+    action_context: np.ndarray,
+    random_state: int = None,
+) -> np.ndarray:
+    """一様ランダムにアイテムを選択するデータ収集方策"""
+    n_rounds = context.shape[0]
+    n_actions = action_context.shape[0]
+
+    action_dist = np.full((n_rounds, n_actions), 1.0 / n_actions)
+
+    assert action_dist.shape == (n_rounds, n_actions)
+    return action_dist
+
+
 def context_free_determinisitic_policy(
     context: np.ndarray,
     action_context: np.ndarray,
     random_state: int = None,
 ) -> np.ndarray:
-    """コンテキストを考慮せず、全てのユーザに対して必ず最後尾のニュース $a_{|A|-1}$ を推薦する決定的方策"""
+    """コンテキストを考慮せず、全てのcontextに対して必ず最後尾のアイテム $a_{|A|-1}$ を推薦する決定的方策"""
     n_rounds = context.shape[0]
     n_actions = action_context.shape[0]
 
@@ -26,7 +41,7 @@ def context_free_stochastic_policy(
 ) -> np.ndarray:
     """コンテキストを考慮なしの確率的方策(epsilon-greedy)
     - epsilon=0.1とする。
-    - 活用フェーズでは、必ず最後尾のニュース $a_{|A|-1}$ を選択する。
+    - 活用フェーズでは、必ず最後尾のアイテム $a_{|A|-1}$ を選択する。
     """
     n_rounds = context.shape[0]
     n_actions = action_context.shape[0]
@@ -47,8 +62,8 @@ def context_aware_determinisitic_policy(
     action_context: np.ndarray,
     random_state: int = None,
 ) -> np.ndarray:
-    """ユーザとニュースのコンテキストを考慮し、
-    コンテキストベクトル $x$ とアイテムコンテキストベクトル $e$ の内積が最も大きいニュースを
+    """ユーザとアイテムのコンテキストを考慮し、
+    コンテキストベクトル $x$ とアイテムコンテキストベクトル $e$ の内積が最も大きいアイテムを
     確率1.0で推薦する決定的方策。
     返り値:
         action_dist: 推薦確率 (shape: (n_rounds, n_actions))
@@ -75,9 +90,9 @@ def context_aware_stochastic_policy(
     action_context: np.ndarray,
     random_state: int = None,
 ) -> np.ndarray:
-    """ユーザとニュースのコンテキストを考慮し、
-    コンテキストベクトル $x$ とアイテムコンテキストベクトル $e$ の内積が最も大きいニュースを
-    確率1-epsilonで推薦し、その他のニュースを一様ランダムに確率epsilonで推薦する確率的方策。
+    """ユーザとアイテムのコンテキストを考慮し、
+    コンテキストベクトル $x$ とアイテムコンテキストベクトル $e$ の内積が最も大きいアイテムを
+    確率1-epsilonで推薦し、その他のアイテムを一様ランダムに確率epsilonで推薦する確率的方策。
     返り値:
         action_dist: 推薦確率 (shape: (n_rounds, n_actions))
     """

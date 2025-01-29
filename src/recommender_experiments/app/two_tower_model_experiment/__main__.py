@@ -63,7 +63,7 @@ def _run_single_simulation(
     # 期待報酬関数を設定
     if expected_reward_setting == "my_context_aware":
         reward_function_generator = ContextAwareBinary(
-            expected_reward_lower, expected_reward_upper, True
+            expected_reward_lower, expected_reward_upper, False
         )
         reward_function = reward_function_generator.get_function()
     elif expected_reward_setting == "my_context_free":
@@ -95,7 +95,7 @@ def _run_single_simulation(
             dim_two_tower_embedding=100,
             off_policy_objective="ipw",
             learning_rate_init=learning_rate_init,
-            is_embedding_normed=True,
+            is_embedding_normed=False,
         )
     elif new_policy_setting == "shared_parameter_nn":
         new_policy = SharedParameterNNPolicyLearner(
@@ -277,18 +277,19 @@ def main() -> None:
     # expected_reward_settings = ["my_context_aware", "my_context_free", "linear"]
     expected_reward_settings = ["my_context_aware"]
 
-    n_actions = 5
+    n_actions = 50
     _run_single_simulation(
         n_rounds_train=20000,
         n_rounds_test=1000,
         n_actions=n_actions,
         dim_context=50,
         action_context=np.random.random((n_actions, 50)),
-        logging_policy_function=logging_policies.context_aware_stochastic_policy,
+        logging_policy_function=logging_policies.random_policy,
         expected_reward_lower=0.2,
         expected_reward_upper=0.4,
-        expected_reward_setting="my_context_free",
+        expected_reward_setting="my_context_aware",
         should_ips_estimate=False,
+        # new_policy_setting="two_tower_nn",
         new_policy_setting="obp_nn",
     )
 

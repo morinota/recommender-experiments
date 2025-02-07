@@ -10,6 +10,7 @@ import polars as pl
 from obp.policy import IPWLearner, NNPolicyLearner, Random, LogisticTS, BernoulliTS
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
+import torch
 from tqdm import tqdm
 from recommender_experiments.service.opl.shared_parameter_nn_model import (
     SharedParameterNNPolicyLearner,
@@ -87,6 +88,13 @@ def _run_single_simulation(
     # 収集されるバンディットフィードバックデータを生成
     bandit_feedback_test = dataset.obtain_batch_bandit_feedback(n_rounds_test)
 
+    # データ収集方策の性能を確認
+    logging_policy_value = dataset.calc_ground_truth_policy_value(
+        expected_reward=bandit_feedback_test["expected_reward"],
+        action_dist=bandit_feedback_test["pi_b"],
+    )
+    logger.debug(f"{logging_policy_value=}")
+
     # 新方策のためのNNモデルを初期化
     if new_policy_setting == "two_tower_nn":
         new_policy = TwoTowerNNPolicyLearner(
@@ -96,6 +104,7 @@ def _run_single_simulation(
             off_policy_objective="ipw",
             learning_rate_init=learning_rate_init,
             is_embedding_normed=False,
+            softmax_temprature=1,
         )
     elif new_policy_setting == "shared_parameter_nn":
         new_policy = SharedParameterNNPolicyLearner(
@@ -184,7 +193,7 @@ def _run_single_simulation(
         # 学習データ数をキーとして、新方策の性能を記録
         new_policy_value_by_n_train[num_of_train_data] = ground_truth_new_policy_value
         logger.debug(
-            f"n_rounds_train: {num_of_train_data}, new_policy_value: {ground_truth_new_policy_value}"
+            f"n_rounds_train: {num_of_train_data}, new_policy_value: {ground_truth_new_policy_value}, relative value: {ground_truth_new_policy_value/logging_policy_value}"
         )
 
     # 分割した学習データ数ごとの新方策の性能をlistで返す
@@ -297,18 +306,19 @@ def main() -> None:
 if __name__ == "__main__":
     # main()
     n_actions = 10
+    torch.autograd.set_detect_anomaly(True)
     _run_single_simulation(
-        n_rounds_train=20000,
+        n_rounds_train=40000,
         n_rounds_test=1000,
         n_actions=n_actions,
         dim_context=50,
         action_context=np.random.random((n_actions, 50)),
         logging_policy_function=logging_policies.random_policy,
-        expected_reward_lower=0.2,
+        expected_reward_lower=0.01,
         expected_reward_upper=0.4,
         expected_reward_setting="my_context_aware",
-        should_ips_estimate=False,
-        # new_policy_setting="two_tower_nn",
+        should_ips_estimate=True,
+        new_policy_setting="two_tower_nn",
         # new_policy_setting="shared_parameter_nn",
-        new_policy_setting="obp_nn",
+        # new_policy_setting="obp_nn",
     )

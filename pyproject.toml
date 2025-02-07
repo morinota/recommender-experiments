@@ -16,6 +16,7 @@ loguru = "^0.7.2"
 polars = "^1.17.1"
 pandera = "^0.21.1"
 pyarrow = "^18.1.0"
+japanize-matplotlib = "^1.1.3"
 
 
 

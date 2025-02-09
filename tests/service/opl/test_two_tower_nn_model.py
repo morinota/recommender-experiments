@@ -91,17 +91,63 @@ def test_アクション候補の数が動的に変化してもアクション�
     ), "各アクションの選択確率が0以上1以下であること"
 
 
-def test_データ収集方策のpscoreを渡さない場合にバンディットフィードバックデータで学習できること():
+def test_バンディットフィードバックデータを元にIPS推定量で学習できること():
     # Arrange
-    n_rounds = 10
+    n_rounds = 100
     n_actions = 4
     dim_context_features = 200
     dim_action_features = 150
     dim_two_tower_embedding = 100
+    off_policy_objective = "ips"
     sut = TwoTowerNNPolicyLearner(
         dim_context_features,
         dim_action_features,
         dim_two_tower_embedding,
+        off_policy_objective=off_policy_objective,
+    )
+    bandit_feedback_train = {
+        "n_rounds": n_rounds,
+        "n_actions": n_actions,
+        "context": np.random.random((n_rounds, dim_context_features)),
+        "action_context": np.random.random((n_actions, dim_action_features)),
+        "action": np.random.randint(0, n_actions, n_rounds),
+        "reward": np.random.binomial(1, 0.5, n_rounds),
+        "expected_reward": np.random.random((n_rounds, n_actions)),
+        "pi_b": np.random.random((n_rounds, n_actions)),
+        "pscore": np.random.random(n_rounds),
+        "position": None,
+    }
+
+    # Act
+    sut.fit(
+        bandit_feedback_train=bandit_feedback_train,
+        bandit_feedback_test=bandit_feedback_train,
+    )
+
+    # Assert
+    assert len(sut.train_losses) > 0, "学習時の損失が記録されていること"
+    assert (
+        len(sut.train_values) > 0
+    ), "学習データに対する方策性能の推移が記録されていること"
+    assert (
+        len(sut.test_values) > 0
+    ), "テストデータに対する方策性能の推移が記録されていること"
+
+
+def test_バンディットフィードバックデータを元にDR推定量で学習できること():
+    # Arrange
+    n_rounds = 100
+    n_actions = 4
+    dim_context_features = 200
+    dim_action_features = 150
+    dim_two_tower_embedding = 100
+    off_policy_objective = "dr"
+
+    sut = TwoTowerNNPolicyLearner(
+        dim_context_features,
+        dim_action_features,
+        dim_two_tower_embedding,
+        off_policy_objective=off_policy_objective,
     )
     bandit_feedback_train = {
         "n_rounds": n_rounds,

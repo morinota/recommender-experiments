@@ -33,6 +33,7 @@ class OPLSimulationResult(pydantic.BaseModel):
     expected_reward_upper: float
     expected_reward_setting: Literal["my_context_free", "my_context_aware", "linear"]
     new_policy_setting: Literal["two_tower_nn", "obp_nn"]
+    logging_policy_value: float
     new_policy_value: float
 
 
@@ -86,7 +87,7 @@ def run_opl_single_simulation(
             new_policy = NNPolicyLearner(
                 n_actions=n_actions,
                 dim_context=dim_context,
-                off_policy_objective="ipw",
+                off_policy_objective="dr",
                 learning_rate_init=learning_rate_init,
                 batch_size=batch_size,
                 max_iter=n_epochs,
@@ -94,22 +95,28 @@ def run_opl_single_simulation(
             )
         elif new_policy_setting == "two_tower_nn":
             new_policy = TwoTowerNNPolicyLearner(
-                dim_context=dim_context,
+                dim_context_features=dim_context,
                 dim_action_features=action_context.shape[1],
                 dim_two_tower_embedding=100,
-                off_policy_objective="ipw",
+                off_policy_objective="dr",
                 learning_rate_init=learning_rate_init,
                 batch_size=batch_size,
                 max_iter=n_epochs,
                 random_state=simulation_idx,
             )
-        # 学習前の新方策の真の性能を確認
+        # 性能評価用のデータを取得
         bandit_feedback_test = dataset.obtain_batch_bandit_feedback(n_rounds_test)
-        if new_policy_setting == "obp_nn":
+        # データ収集方策の性能を確認
+        logging_policy_value = dataset.calc_ground_truth_policy_value(
+            expected_reward=bandit_feedback_test["expected_reward"],
+            action_dist=bandit_feedback_test["pi_b"],
+        )
+        # 新方策の学習前の性能を確認
+        if isinstance(new_policy, NNPolicyLearner):
             test_action_dist = new_policy.predict_proba(
                 context=bandit_feedback_test["context"],
             )
-        elif new_policy_setting == "two_tower_nn":
+        elif isinstance(new_policy, TwoTowerNNPolicyLearner):
             test_action_dist = new_policy.predict_proba(
                 context=bandit_feedback_test["context"],
                 action_context=bandit_feedback_test["action_context"],
@@ -122,28 +129,25 @@ def run_opl_single_simulation(
 
         # データ収集方策で集めたデータ(学習用)で、新方策のためのNNモデルのパラメータを更新
         bandit_feedback_train = dataset.obtain_batch_bandit_feedback(n_rounds_train)
-        if new_policy_setting == "obp_nn":
+        if isinstance(new_policy, NNPolicyLearner):
             new_policy.fit(
                 context=bandit_feedback_train["context"],
                 action=bandit_feedback_train["action"],
                 reward=bandit_feedback_train["reward"],
                 pscore=bandit_feedback_train["pscore"],
             )
-        elif new_policy_setting == "two_tower_nn":
+        elif isinstance(new_policy, TwoTowerNNPolicyLearner):
             new_policy.fit(
-                context=bandit_feedback_train["context"],
-                action_context=bandit_feedback_train["action_context"],
-                action=bandit_feedback_train["action"],
-                reward=bandit_feedback_train["reward"],
-                pscore=bandit_feedback_train["pscore"],
+                bandit_feedback_train=bandit_feedback_train,
+                bandit_feedback_test=bandit_feedback_test,
             )
 
         # 学習後の新方策の真の性能を確認
-        if new_policy_setting == "obp_nn":
+        if isinstance(new_policy, NNPolicyLearner):
             test_action_dist = new_policy.predict_proba(
                 context=bandit_feedback_test["context"],
             )
-        elif new_policy_setting == "two_tower_nn":
+        elif isinstance(new_policy, TwoTowerNNPolicyLearner):
             test_action_dist = new_policy.predict_proba(
                 context=bandit_feedback_test["context"],
                 action_context=bandit_feedback_test["action_context"],
@@ -152,6 +156,7 @@ def run_opl_single_simulation(
             expected_reward=bandit_feedback_test["expected_reward"],
             action_dist=test_action_dist,
         )
+        print(f"policy_value_after_fit: {new_policy_value}")
 
         # 結果を保存
         results.append(
@@ -168,6 +173,7 @@ def run_opl_single_simulation(
                     "expected_reward_setting": expected_reward_setting,
                     "new_policy_setting": new_policy_setting,
                     "new_policy_value": new_policy_value,
+                    "logging_policy_value": logging_policy_value,
                 }
             )
         )
@@ -249,3 +255,44 @@ def run_opl_multiple_simulations_in_parallel(
     # list[list[OPLSimulationResult]] -> list[OPLSimulationResult]
     flattened_results = list(itertools.chain.from_iterable(parallel_results))
     return flattened_results
+
+
+if __name__ == "__main__":
+    # Arrange
+    n_simulations = 1
+    n_actions = 10
+    dim_context = 50
+    n_rounds_train = 2000
+    n_rounds_test = 2000
+    batch_size = 200
+    n_epochs = 200
+    action_context = np.random.random(size=(n_actions, dim_context))
+    # データ収集方策は簡単のため、一様ランダムな方策を指定
+    logging_policy_function = lambda context, action_context, random_state: np.full(
+        (context.shape[0], n_actions), 1.0 / n_actions
+    )
+    # 真の期待報酬 E_{p(r|x,a)}[r] の設定
+    expected_reward_lower = 0.0
+    expected_reward_upper = 0.5
+    expected_reward_setting = "my_context_free"
+    # 新方策の設定
+    new_policy_setting = "two_tower_nn"
+
+    # Act
+    actual = run_opl_single_simulation(
+        n_simulations=n_simulations,
+        n_actions=n_actions,
+        dim_context=dim_context,
+        action_context=action_context,
+        n_rounds_train=n_rounds_train,
+        n_rounds_test=n_rounds_test,
+        batch_size=batch_size,
+        n_epochs=n_epochs,
+        logging_policy_function=logging_policy_function,
+        expected_reward_setting=expected_reward_setting,
+        expected_reward_lower=expected_reward_lower,
+        expected_reward_upper=expected_reward_upper,
+        new_policy_setting=new_policy_setting,
+    )
+
+    print(actual)

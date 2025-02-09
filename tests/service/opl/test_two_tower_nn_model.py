@@ -35,6 +35,11 @@ def test_TwoTowerモデルが正しく初期化されること():
         action_output_layer.out_features == 100
     ), "Action Tower の最終出力サイズが dim_two_tower_embedding に一致すること"
 
+    # 学習時の損失関数と方策性能の記録
+    assert sut.train_losses == []
+    assert sut.train_values == []
+    assert sut.test_values == []
+
 
 def test_アクション候補の数が動的に変化してもアクション選択の確率分布の推論ができること():
     # Arrange
@@ -116,6 +121,15 @@ def test_データ収集方策のpscoreを渡さない場合にバンディッ�
         bandit_feedback_train=bandit_feedback_train,
         bandit_feedback_test=bandit_feedback_train,
     )
+
+    # Assert
+    assert len(sut.train_losses) > 0, "学習時の損失が記録されていること"
+    assert (
+        len(sut.train_values) > 0
+    ), "学習データに対する方策性能の推移が記録されていること"
+    assert (
+        len(sut.test_values) > 0
+    ), "テストデータに対する方策性能の推移が記録されていること"
 
 
 # def test_データ収集方策のpscoreを渡す場合にバンディットフィードバックデータで学習できること():

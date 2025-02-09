@@ -51,6 +51,10 @@ class NNPolicyDataset(torch.utils.data.Dataset):
 
 @dataclass
 class TwoTowerNNPolicyLearner:
+    """勾配ベースのアプローチを用いて、Two-Towerモデルのオフライン方策学習を行うクラス
+    参考:https://github.com/usaito/www2024-lope/blob/main/notebooks/learning.py
+    """
+
     dim_context_features: int
     dim_action_features: int
     dim_two_tower_embedding: int

@@ -119,13 +119,6 @@ class TwoTowerNNPolicyLearner:
 
     def fit(
         self,
-        # context: np.ndarray,  # context: (n_rounds, dim_context)
-        # action: np.ndarray,  # action: (n_rounds, )
-        # reward: np.ndarray,  # reward: (n_rounds,)
-        # action_context: np.ndarray,  # action_context: (n_actions, dim_action_features)
-        # pscore: Optional[np.ndarray] = None,  # pscore: (n_rounds,)
-        # position: Optional[np.ndarray] = None,  # position: (n_rounds,)
-        # q_x_a: Optional[np.ndarray] = None,  # q_x_a: (n_rounds, n_actions)
         bandit_feedback_train: BanditFeedbackDict,
         bandit_feedback_test: Optional[BanditFeedbackDict] = None,
     ) -> None:
@@ -286,17 +279,11 @@ class TwoTowerNNPolicyLearner:
         context_embedding = self.nn_model["context_tower"](
             context
         )  # shape: (n_rounds, dim_two_tower_embedding)
-        context_embedding = context_embedding / context_embedding.norm(
-            dim=-1, keepdim=True
-        )
 
         # Action Tower Forward
         action_embedding = self.nn_model["action_tower"](
             action_context
         )  # shape: (n_actions, dim_two_tower_embedding)
-        action_embedding = action_embedding / action_embedding.norm(
-            dim=-1, keepdim=True
-        )
 
         # context_embeddingとaction_embeddingの内積をスコアとして計算
         logits = torch.matmul(

@@ -141,6 +141,9 @@ def run_opl_single_simulation(
                 bandit_feedback_train=bandit_feedback_train,
                 bandit_feedback_test=bandit_feedback_test,
             )
+            print(f"train_losses: {new_policy.train_losses}")
+            print(f"train_values: {new_policy.train_values}")
+            print(f"test_values: {new_policy.test_values}")
 
         # 学習後の新方策の真の性能を確認
         if isinstance(new_policy, NNPolicyLearner):
@@ -252,7 +255,7 @@ def run_opl_multiple_simulations_in_parallel(
         ) in enumerate(simulate_configs)
     )
 
-    # list[list[OPLSimulationResult]] -> list[OPLSimulationResult]
+    # list[list[OPLSimulationResult]] -> list[OPLSimulationResult]にflatten
     flattened_results = list(itertools.chain.from_iterable(parallel_results))
     return flattened_results
 
@@ -262,7 +265,7 @@ if __name__ == "__main__":
     n_simulations = 1
     n_actions = 10
     dim_context = 50
-    n_rounds_train = 2000
+    n_rounds_train = 50000
     n_rounds_test = 2000
     batch_size = 200
     n_epochs = 200
@@ -274,7 +277,7 @@ if __name__ == "__main__":
     # 真の期待報酬 E_{p(r|x,a)}[r] の設定
     expected_reward_lower = 0.0
     expected_reward_upper = 0.5
-    expected_reward_setting = "my_context_free"
+    expected_reward_setting = "linear"
     # 新方策の設定
     new_policy_setting = "two_tower_nn"
 

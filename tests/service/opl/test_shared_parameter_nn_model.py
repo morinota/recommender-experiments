@@ -9,7 +9,9 @@ def test_TwoTowerモデルが正しく初期化されること():
     # Arrange
     dim_context = 3
     dim_action_features = 2
-    sut = SharedParameterNNPolicyLearner(dim_context=dim_context + dim_action_features)
+    sut = SharedParameterNNPolicyLearner(
+        dim_context=dim_context + dim_action_features,
+    )
 
     # Assert
     assert isinstance(sut.nn_model, torch.nn.Sequential)
@@ -42,7 +44,11 @@ def test_アクション候補の数が動的に変化してもアクション�
     )
 
     # Assert
-    assert action_dist.shape == (10, 4), "出力の形状が(ラウンド数、アクション数)である"
+    assert action_dist.shape == (
+        10,
+        4,
+        1,
+    ), "出力の形状が(ラウンド数、アクション数, 1)である。obpの仕様に合わせて1つ軸を追加してる"
     assert np.allclose(
         action_dist.sum(axis=1), 1.0
     ), "各ラウンドごとに、確率の総和が1.0"
@@ -58,7 +64,8 @@ def test_アクション候補の数が動的に変化してもアクション�
     assert action_dist.shape == (
         n_rounds,
         n_actions + 2,
-    ), "出力の形状が(ラウンド数、アクション数)である"
+        1,
+    ), "出力の形状が(ラウンド数、アクション数, 1)である。obpの仕様に合わせて1つ軸を追加してる"
     assert np.allclose(
         action_dist.sum(axis=1), 1.0
     ), "各ラウンドごとに、確率の総和が1.0"

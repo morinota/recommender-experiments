@@ -85,6 +85,7 @@ def test_複数設定のOPLシミュレーションが並列で実行される�
         expected_reward_settings,
         new_policy_settings,
         n_jobs,
+        logging_policy_functions,
     )
 
     # Assert

@@ -2,7 +2,7 @@ import numpy as np
 import torch
 
 from recommender_experiments.service.opl.two_tower_nn_model import (
-    TwoTowerNNPolicyLearner,
+    PolicyByTwoTowerModel,
 )
 
 
@@ -11,7 +11,7 @@ def test_TwoTowerモデルが正しく初期化されること():
     dim_context_features = 200
     dim_action_features = 150
     dim_two_tower_embedding = 100
-    sut = TwoTowerNNPolicyLearner(
+    sut = PolicyByTwoTowerModel(
         dim_context_features,
         dim_action_features,
         dim_two_tower_embedding,
@@ -48,7 +48,7 @@ def test_アクション候補の数が動的に変化してもアクション�
     dim_context_features = 200
     dim_action_features = 150
     dim_two_tower_embedding = 100
-    sut = TwoTowerNNPolicyLearner(
+    sut = PolicyByTwoTowerModel(
         dim_context_features,
         dim_action_features,
         dim_two_tower_embedding,
@@ -91,7 +91,7 @@ def test_アクション候補の数が動的に変化してもアクション�
     ), "各アクションの選択確率が0以上1以下であること"
 
 
-def test_バンディットフィードバックデータを元にIPS推定量でオフライン学習できること():
+def test_バンディットフィードバックデータを元にIPS推定量で勾配ベースのオフ方策学習ができること():
     # Arrange
     n_rounds = 100
     n_actions = 4
@@ -99,7 +99,7 @@ def test_バンディットフィードバックデータを元にIPS推定量�
     dim_action_features = 150
     dim_two_tower_embedding = 100
     off_policy_objective = "ips"
-    sut = TwoTowerNNPolicyLearner(
+    sut = PolicyByTwoTowerModel(
         dim_context_features,
         dim_action_features,
         dim_two_tower_embedding,
@@ -119,7 +119,7 @@ def test_バンディットフィードバックデータを元にIPS推定量�
     }
 
     # Act
-    sut.fit(
+    sut.fit_by_gradiant_based_approach(
         bandit_feedback_train=bandit_feedback_train,
         bandit_feedback_test=bandit_feedback_train,
     )
@@ -134,7 +134,7 @@ def test_バンディットフィードバックデータを元にIPS推定量�
     ), "テストデータに対する方策性能の推移が記録されていること"
 
 
-def test_バンディットフィードバックデータを元にDR推定量でオフライン学習できること():
+def test_バンディットフィードバックデータを元にDR推定量で勾配ベースのオフ方策学習ができること():
     # Arrange
     n_rounds = 100
     n_actions = 4
@@ -143,7 +143,7 @@ def test_バンディットフィードバックデータを元にDR推定量で
     dim_two_tower_embedding = 100
     off_policy_objective = "dr"
 
-    sut = TwoTowerNNPolicyLearner(
+    sut = PolicyByTwoTowerModel(
         dim_context_features,
         dim_action_features,
         dim_two_tower_embedding,
@@ -163,7 +163,7 @@ def test_バンディットフィードバックデータを元にDR推定量で
     }
 
     # Act
-    sut.fit(
+    sut.fit_by_gradiant_based_approach(
         bandit_feedback_train=bandit_feedback_train,
         bandit_feedback_test=bandit_feedback_train,
     )

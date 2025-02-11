@@ -50,9 +50,9 @@ class NNPolicyDataset(torch.utils.data.Dataset):
 
 
 @dataclass
-class TwoTowerNNPolicyLearner:
-    """勾配ベースのアプローチを用いて、Two-Towerモデルのオフライン方策学習を行うクラス
-    参考:https://github.com/usaito/www2024-lope/blob/main/notebooks/learning.py
+class PolicyByTwoTowerModel:
+    """Two-Towerモデルのオフ方策学習を行うクラス
+    実装参考: https://github.com/usaito/www2024-lope/blob/main/notebooks/learning.py
     """
 
     dim_context_features: int
@@ -117,7 +117,7 @@ class TwoTowerNNPolicyLearner:
         self.train_values = []
         self.test_values = []
 
-    def fit(
+    def fit_by_gradiant_based_approach(
         self,
         bandit_feedback_train: BanditFeedbackDict,
         bandit_feedback_test: Optional[BanditFeedbackDict] = None,
@@ -166,10 +166,6 @@ class TwoTowerNNPolicyLearner:
         action_context_tensor = torch.from_numpy(action_context).float()
 
         # start policy training
-        # n_not_improving_training = 0
-        # previous_training_loss = None
-        # n_not_improving_validation = 0
-        # previous_validation_loss = None
         q_x_a_train = bandit_feedback_train["expected_reward"]
         q_x_a_test = bandit_feedback_test["expected_reward"]
         for _ in range(self.max_iter):
@@ -219,6 +215,14 @@ class TwoTowerNNPolicyLearner:
             action_context=bandit_feedback_test["action_context"],
         ).squeeze(-1)
         self.test_values.append((q_x_a_test * pi_test).sum(1).mean())
+
+    def fit_by_regression_based_approach(
+        self,
+        bandit_feedback_train: BanditFeedbackDict,
+        bandit_feedback_test: Optional[BanditFeedbackDict] = None,
+    ) -> None:
+        """two-towerモデルに基づく推薦方策を、回帰ベースアプローチで学習するメソッド"""
+        pass
 
     def _create_train_data_for_opl(
         self,
@@ -324,7 +328,7 @@ if __name__ == "__main__":
     dim_action_features = 200
     dim_two_tower_embedding = 120
 
-    sut = TwoTowerNNPolicyLearner(
+    sut = PolicyByTwoTowerModel(
         dim_context=dim_context,
         dim_action_features=dim_action_features,
         dim_two_tower_embedding=dim_two_tower_embedding,
@@ -333,7 +337,7 @@ if __name__ == "__main__":
     )
 
     # Act
-    sut.fit(
+    sut.fit_by_gradiant_based_approach(
         context=np.random.random((n_rounds, dim_context)),
         action=np.random.randint(0, n_actions, n_rounds),
         reward=np.random.binomial(1, 0.5, n_rounds),
@@ -353,3 +357,11 @@ if __name__ == "__main__":
     assert np.all(0 <= action_dist) and np.all(
         action_dist <= 1
     ), "各アクションの選択確率が0以上1以下であること"
+
+    sut = RegressionBasedTwoTowerModel(
+        dim_context=dim_context,
+        dim_action_features=dim_action_features,
+        dim_two_tower_embedding=dim_two_tower_embedding,
+        is_embedding_normed=True,
+        batch_size=20000,
+    )

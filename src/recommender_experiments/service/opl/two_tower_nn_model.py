@@ -17,12 +17,12 @@ from recommender_experiments.service.synthetic_bandit_feedback import BanditFeed
 class NNPolicyDataset(torch.utils.data.Dataset):
     """PyTorch dataset for NNPolicyLearner"""
 
-    context: np.ndarray
-    action: np.ndarray
-    reward: np.ndarray
-    pscore: np.ndarray
-    q_x_a_hat: np.ndarray
-    pi_0: np.ndarray
+    context: np.ndarray  # 文脈x_i
+    action: np.ndarray  # 行動a_i
+    reward: np.ndarray  # 報酬r_i
+    pscore: np.ndarray  # 傾向スコア \pi_0(a_i|x_i)
+    q_x_a_hat: np.ndarray  # 期待報酬の推定値 \hat{q}(x_i, a)
+    pi_0: np.ndarray  # データ収集方策の行動選択確率分布 \pi_0(a|x_i)
 
     def __post_init__(self):
         """initialize class"""
@@ -122,6 +122,7 @@ class PolicyByTwoTowerModel:
         bandit_feedback_train: BanditFeedbackDict,
         bandit_feedback_test: Optional[BanditFeedbackDict] = None,
     ) -> None:
+        """推薦方策を、勾配ベースアプローチで学習するメソッド"""
 
         n_actions = bandit_feedback_train["n_actions"]
         context, action, reward, action_context, pscore, pi_b = (
@@ -132,12 +133,6 @@ class PolicyByTwoTowerModel:
             bandit_feedback_train["pscore"],
             bandit_feedback_train["pi_b"],
         )
-
-        # 期待報酬の推定モデル \hat{q}(x,a) を構築
-        if self.off_policy_objective == "ips":
-            q_x_a_hat = np.zeros((reward.shape[0], n_actions))
-        elif self.off_policy_objective == "dr":
-            q_x_a_hat = estimate_q_x_a_via_regression(bandit_feedback_train)
 
         # optimizerの設定
         if self.solver == "adagrad":
@@ -154,6 +149,12 @@ class PolicyByTwoTowerModel:
             )
         else:
             raise NotImplementedError("`solver` must be one of 'adam' or 'adagrad'")
+
+        # 期待報酬の推定モデル \hat{q}(x,a) を構築
+        if self.off_policy_objective == "ips":
+            q_x_a_hat = np.zeros((reward.shape[0], n_actions))
+        elif self.off_policy_objective == "dr":
+            q_x_a_hat = estimate_q_x_a_via_regression(bandit_feedback_train)
 
         training_data_loader = self._create_train_data_for_opl(
             context,
@@ -222,7 +223,62 @@ class PolicyByTwoTowerModel:
         bandit_feedback_test: Optional[BanditFeedbackDict] = None,
     ) -> None:
         """two-towerモデルに基づく推薦方策を、回帰ベースアプローチで学習するメソッド"""
-        pass
+        n_actions = bandit_feedback_train["n_actions"]
+        context, action, reward, action_context, pscore, pi_b = (
+            bandit_feedback_train["context"],
+            bandit_feedback_train["action"],
+            bandit_feedback_train["reward"],
+            bandit_feedback_train["action_context"],
+            bandit_feedback_train["pscore"],
+            bandit_feedback_train["pi_b"],
+        )
+
+        # optimizerの設定
+        if self.solver == "adagrad":
+            optimizer = optim.Adagrad(
+                self.nn_model.parameters(),
+                lr=self.learning_rate_init,
+                weight_decay=self.alpha,
+            )
+        elif self.solver == "adam":
+            optimizer = optim.Adam(
+                self.nn_model.parameters(),
+                lr=self.learning_rate_init,
+                weight_decay=self.alpha,
+            )
+        else:
+            raise NotImplementedError("`solver` must be one of 'adam' or 'adagrad'")
+
+        training_data_loader = self._create_train_data_for_opl(
+            context,
+            action,
+            reward,
+            pscore,
+            np.zeros((reward.shape[0], n_actions)),  # 回帰ベースでは不要
+            pi_b,
+        )
+        action_context_tensor = torch.from_numpy(action_context).float()
+
+        # start policy training
+        q_x_a_train = bandit_feedback_train["expected_reward"]
+        q_x_a_test = bandit_feedback_test["expected_reward"]
+        for _ in range(self.max_iter):
+            # 各エポックの最初に、学習データとテストデータに対する真の方策性能を計算
+            pi_train = self.predict_proba(
+                context=context, action_context=action_context
+            ).squeeze(-1)
+            self.train_values.append((q_x_a_train * pi_train).sum(1).mean())
+            pi_test = self.predict_proba(
+                context=bandit_feedback_test["context"],
+                action_context=bandit_feedback_test["action_context"],
+            ).squeeze(-1)
+            self.test_values.append((q_x_a_test * pi_test).sum(1).mean())
+
+            loss_epoch = 0.0
+            self.nn_model.train()
+            for x, a, r, p, q_x_a_hat_, pi_b_ in training_data_loader:
+                optimizer.zero_grad()
+                pass
 
     def _create_train_data_for_opl(
         self,

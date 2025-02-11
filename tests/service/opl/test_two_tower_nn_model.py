@@ -11,6 +11,8 @@ def test_TwoTowerモデルが正しく初期化されること():
     dim_context_features = 200
     dim_action_features = 150
     dim_two_tower_embedding = 100
+
+    # Act
     sut = PolicyByTwoTowerModel(
         dim_context_features,
         dim_action_features,
@@ -22,17 +24,17 @@ def test_TwoTowerモデルが正しく初期化されること():
     assert isinstance(sut.action_tower, torch.nn.Sequential)
 
     # Context Tower の出力サイズ
-    context_output_layer = sut.context_tower[-1]  # 最後が埋め込み層
+    context_output_layer = sut.context_tower[-1]  # コンテキストタワーの最後が埋め込み層
     assert isinstance(context_output_layer, torch.nn.Linear)
     assert (
-        context_output_layer.out_features == 100
+        context_output_layer.out_features == dim_two_tower_embedding
     ), "Context Tower の最終出力サイズが dim_two_tower_embedding に一致すること"
 
     # Action Tower の出力サイズ
-    action_output_layer = sut.action_tower[-1]  # 最後が埋め込み層
+    action_output_layer = sut.action_tower[-1]  # アクションタワーの最後が埋め込み層
     assert isinstance(action_output_layer, torch.nn.Linear)
     assert (
-        action_output_layer.out_features == 100
+        action_output_layer.out_features == dim_two_tower_embedding
     ), "Action Tower の最終出力サイズが dim_two_tower_embedding に一致すること"
 
     # 学習時の損失関数と方策性能の記録

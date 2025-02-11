@@ -180,43 +180,45 @@ def test_バンディットフィードバックデータを元にDR推定量で
     ), "テストデータに対する方策性能の推移が記録されていること"
 
 
-# def test_データ収集方策のpscoreを渡す場合にバンディットフィードバックデータで学習できること():
-#     # Arrange
-#     n_rounds = 10
-#     n_actions = 4
-#     dim_context_features = 200
-#     dim_action_features = 150
-#     dim_two_tower_embedding = 100
-#     sut = TwoTowerNNPolicyLearner(
-#         dim_context_features,
-#         dim_action_features,
-#         dim_two_tower_embedding,
-#     )
+def test_バンディットフィードバックデータを元に回帰ベースのオフ方策学習ができること():
+    # Arrange
+    n_rounds = 100
+    n_actions = 4
+    dim_context_features = 200
+    dim_action_features = 150
+    dim_two_tower_embedding = 100
+    off_policy_objective = ""
 
-#     # Act
-#     sut.fit(
-#         context=np.random.random((n_rounds, dim_context_features)),
-#         action=np.random.randint(0, n_actions, n_rounds),
-#         reward=np.random.binomial(1, 0.5, n_rounds),
-#         action_context=np.random.random((n_actions, dim_action_features)),
-#         # データ収集方策のpscoreを(0,1)の範囲でランダムに設定
-#         pscore=np.random.random(n_rounds),  # shape: (n_rounds,)
-#     )
-#     action_dist = sut.predict_proba(
-#         context=np.random.random((n_rounds, dim_context)),
-#         action_context=np.random.random((n_actions, dim_action_features)),
-#     )
+    sut = PolicyByTwoTowerModel(
+        dim_context_features,
+        dim_action_features,
+        dim_two_tower_embedding,
+        off_policy_objective=off_policy_objective,
+    )
+    bandit_feedback_train = {
+        "n_rounds": n_rounds,
+        "n_actions": n_actions,
+        "context": np.random.random((n_rounds, dim_context_features)),
+        "action_context": np.random.random((n_actions, dim_action_features)),
+        "action": np.random.randint(0, n_actions, n_rounds),
+        "reward": np.random.binomial(1, 0.5, n_rounds),
+        "expected_reward": np.random.random((n_rounds, n_actions)),
+        "pi_b": np.random.random((n_rounds, n_actions)),
+        "pscore": np.random.random(n_rounds),
+        "position": None,
+    }
 
-#     # Assert
-#     assert action_dist.shape == (
-#         n_rounds,
-#         n_actions,
-#         1,
-#     ), "出力の形状が(ラウンド数、アクション数, 1)である。obpの仕様に合わせて1つ軸を追加してる"
-#     assert not np.any(np.isnan(action_dist)), "各要素がnanではないこと"
-#     assert np.allclose(
-#         action_dist.sum(axis=1), 1.0
-#     ), "各ラウンドごとに、確率の総和が1.0"
-#     assert np.all(0 <= action_dist) and np.all(
-#         action_dist <= 1
-#     ), "各アクションの選択確率が0以上1以下であること"
+    # Act
+    sut.fit_by_regression_based_approach(
+        bandit_feedback_train=bandit_feedback_train,
+        bandit_feedback_test=bandit_feedback_train,
+    )
+
+    # Assert
+    assert len(sut.train_losses) > 0, "学習時の損失が記録されていること"
+    assert (
+        len(sut.train_values) > 0
+    ), "学習データに対する方策性能の推移が記録されていること"
+    assert (
+        len(sut.test_values) > 0
+    ), "テストデータに対する方策性能の推移が記録されていること"

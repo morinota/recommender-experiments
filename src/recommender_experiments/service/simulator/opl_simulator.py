@@ -1,6 +1,8 @@
 import itertools
 from pathlib import Path
 import random
+from tqdm_joblib import tqdm_joblib
+
 from typing import Callable, Literal, Optional, TypedDict
 from joblib import Parallel, delayed
 import numpy as np
@@ -33,6 +35,7 @@ class OPLSimulationResult(pydantic.BaseModel):
     expected_reward_upper: float
     expected_reward_setting: Literal["my_context_free", "my_context_aware", "linear"]
     new_policy_setting: Literal["two_tower_nn", "obp_nn"]
+    off_policy_learning_method: Literal["ips", "dr", "regression_based"]
     logging_policy_value: float
     new_policy_value: float
 
@@ -126,7 +129,6 @@ def run_opl_single_simulation(
             expected_reward=bandit_feedback_test["expected_reward"],
             action_dist=test_action_dist,
         )
-        print(f"policy_value_before_fit: {policy_value_before_fit}")
 
         # データ収集方策で集めたデータ(学習用)で、新方策のためのNNモデルのパラメータを更新
         bandit_feedback_train = dataset.obtain_batch_bandit_feedback(n_rounds_train)
@@ -142,9 +144,6 @@ def run_opl_single_simulation(
                 bandit_feedback_train=bandit_feedback_train,
                 bandit_feedback_test=bandit_feedback_test,
             )
-            print(f"train_losses: {new_policy.train_losses}")
-            print(f"train_values: {new_policy.train_values}")
-            print(f"test_values: {new_policy.test_values}")
 
         # 学習後の新方策の真の性能を確認
         if isinstance(new_policy, NNPolicyLearner):
@@ -160,7 +159,6 @@ def run_opl_single_simulation(
             expected_reward=bandit_feedback_test["expected_reward"],
             action_dist=test_action_dist,
         )
-        print(f"policy_value_after_fit: {new_policy_value}")
 
         # 結果を保存
         results.append(
@@ -178,6 +176,7 @@ def run_opl_single_simulation(
                     "new_policy_setting": new_policy_setting,
                     "new_policy_value": new_policy_value,
                     "logging_policy_value": logging_policy_value,
+                    "off_policy_learning_method": off_policy_learning_method,
                 }
             )
         )
@@ -221,41 +220,44 @@ def run_opl_multiple_simulations_in_parallel(
             expected_reward_settings,
             new_policy_settings,
             logging_policy_functions,
+            off_policy_learning_methods,
         )
     )
-    print(f"simulate_configs: {simulate_configs}")
-
-    parallel_results: list[list[OPLSimulationResult]] = Parallel(n_jobs=n_jobs)(
-        delayed(run_opl_single_simulation)(
-            n_simulations=n_simulations,
-            n_actions=n_actions,
-            dim_context=dim_context,
-            # 期待報酬関数の設定の都合で、action_contextの次元数をdim_contextと同じにしてる。
-            action_context=np.random.random((n_actions, dim_context)),
-            n_rounds_train=n_rounds_train,
-            n_rounds_test=n_rounds_test,
-            batch_size=batch_size,
-            n_epochs=n_epochs,
-            logging_policy_function=logging_policy_function,
-            expected_reward_setting=expected_reward_setting,
-            expected_reward_lower=expected_reward_lower,
-            expected_reward_upper=expected_reward_upper,
-            new_policy_setting=new_policy_setting,
-            learning_rate_init=0.00001,
+    # シミュレーションを並列で実行
+    with tqdm_joblib(tqdm(desc="Simulating OPL", total=len(simulate_configs))):
+        parallel_results: list[list[OPLSimulationResult]] = Parallel(n_jobs=n_jobs)(
+            delayed(run_opl_single_simulation)(
+                n_simulations=n_simulations,
+                n_actions=n_actions,
+                dim_context=dim_context,
+                # 期待報酬関数の設定の都合で、action_contextの次元数をdim_contextと同じにしてる。
+                action_context=np.random.random((n_actions, dim_context)),
+                n_rounds_train=n_rounds_train,
+                n_rounds_test=n_rounds_test,
+                batch_size=batch_size,
+                n_epochs=n_epochs,
+                logging_policy_function=logging_policy_function,
+                expected_reward_setting=expected_reward_setting,
+                expected_reward_lower=expected_reward_lower,
+                expected_reward_upper=expected_reward_upper,
+                new_policy_setting=new_policy_setting,
+                learning_rate_init=0.00001,
+                off_policy_learning_method=off_policy_learning_method,
+            )
+            for _, (
+                n_actions,
+                dim_context,
+                n_rounds_train,
+                n_rounds_test,
+                batch_size,
+                n_epochs,
+                (expected_reward_lower, expected_reward_upper),
+                expected_reward_setting,
+                new_policy_setting,
+                logging_policy_function,
+                off_policy_learning_method,
+            ) in enumerate(simulate_configs)
         )
-        for _, (
-            n_actions,
-            dim_context,
-            n_rounds_train,
-            n_rounds_test,
-            batch_size,
-            n_epochs,
-            (expected_reward_lower, expected_reward_upper),
-            expected_reward_setting,
-            new_policy_setting,
-            logging_policy_function,
-        ) in enumerate(simulate_configs)
-    )
 
     # list[list[OPLSimulationResult]] -> list[OPLSimulationResult]にflatten
     flattened_results = list(itertools.chain.from_iterable(parallel_results))
@@ -303,3 +305,22 @@ if __name__ == "__main__":
     )
 
     print(actual)
+
+    # Act
+    actual = run_opl_multiple_simulations_in_parallel(
+        n_simulations=1,
+        n_actions_list=[10],
+        dim_context_list=[50],
+        n_rounds_train_list=[2000],
+        n_rounds_test_list=[2000],
+        batch_size_list=[200],
+        n_epochs_list=[200],
+        expected_reward_scale_list=[(0.0, 0.5)],
+        expected_reward_settings=["my_context_aware"],
+        new_policy_settings=["two_tower_nn"],
+        logging_policy_functions=[logging_policy_function],
+        off_policy_learning_methods=["dr", "ips", "regression_based"],
+        n_jobs=5,
+    )
+    result_df = pl.DataFrame([result.model_dump() for result in actual])
+    print(result_df)

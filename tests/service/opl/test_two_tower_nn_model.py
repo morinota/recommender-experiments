@@ -121,7 +121,7 @@ def test_バンディットフィードバックデータを元にIPS推定量�
     }
 
     # Act
-    sut.fit_by_gradiant_based_approach(
+    sut._fit_by_gradiant_based_approach(
         bandit_feedback_train=bandit_feedback_train,
         bandit_feedback_test=bandit_feedback_train,
     )
@@ -165,7 +165,7 @@ def test_バンディットフィードバックデータを元にDR推定量で
     }
 
     # Act
-    sut.fit_by_gradiant_based_approach(
+    sut.fit(
         bandit_feedback_train=bandit_feedback_train,
         bandit_feedback_test=bandit_feedback_train,
     )
@@ -187,7 +187,7 @@ def test_バンディットフィードバックデータを元に回帰ベー�
     dim_context_features = 200
     dim_action_features = 150
     dim_two_tower_embedding = 100
-    off_policy_objective = ""
+    off_policy_objective = "regression_based"
 
     sut = PolicyByTwoTowerModel(
         dim_context_features,
@@ -209,13 +209,16 @@ def test_バンディットフィードバックデータを元に回帰ベー�
     }
 
     # Act
-    sut.fit_by_regression_based_approach(
+    sut.fit(
         bandit_feedback_train=bandit_feedback_train,
         bandit_feedback_test=bandit_feedback_train,
     )
 
     # Assert
     assert len(sut.train_losses) > 0, "学習時の損失が記録されていること"
+    assert all(
+        [loss is not np.nan for loss in sut.train_losses]
+    ), "学習時の損失がnanでないこと"
     assert (
         len(sut.train_values) > 0
     ), "学習データに対する方策性能の推移が記録されていること"

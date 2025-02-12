@@ -13,7 +13,7 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from tqdm import tqdm
 from recommender_experiments.service.opl.two_tower_nn_model import (
-    TwoTowerNNPolicyLearner,
+    PolicyByTwoTowerModel,
 )
 from recommender_experiments.service.utils.expected_reward_functions import (
     ContextFreeBinary,
@@ -53,6 +53,7 @@ def run_opl_single_simulation(
         "my_context_free", "my_context_aware", "linear"
     ] = "my_context_aware",
     new_policy_setting: Literal["two_tower_nn", "obp_nn"] = "two_tower_nn",
+    off_policy_learning_method: str = "dr",
     learning_rate_init: float = 0.00001,
 ) -> list[OPLSimulationResult]:
     # 期待報酬関数を設定
@@ -87,18 +88,18 @@ def run_opl_single_simulation(
             new_policy = NNPolicyLearner(
                 n_actions=n_actions,
                 dim_context=dim_context,
-                off_policy_objective="dr",
+                off_policy_objective=off_policy_learning_method,
                 learning_rate_init=learning_rate_init,
                 batch_size=batch_size,
                 max_iter=n_epochs,
                 random_state=simulation_idx,
             )
         elif new_policy_setting == "two_tower_nn":
-            new_policy = TwoTowerNNPolicyLearner(
+            new_policy = PolicyByTwoTowerModel(
                 dim_context_features=dim_context,
                 dim_action_features=action_context.shape[1],
                 dim_two_tower_embedding=100,
-                off_policy_objective="dr",
+                off_policy_objective=off_policy_learning_method,
                 learning_rate_init=learning_rate_init,
                 batch_size=batch_size,
                 max_iter=n_epochs,
@@ -116,7 +117,7 @@ def run_opl_single_simulation(
             test_action_dist = new_policy.predict_proba(
                 context=bandit_feedback_test["context"],
             )
-        elif isinstance(new_policy, TwoTowerNNPolicyLearner):
+        elif isinstance(new_policy, PolicyByTwoTowerModel):
             test_action_dist = new_policy.predict_proba(
                 context=bandit_feedback_test["context"],
                 action_context=bandit_feedback_test["action_context"],
@@ -136,7 +137,7 @@ def run_opl_single_simulation(
                 reward=bandit_feedback_train["reward"],
                 pscore=bandit_feedback_train["pscore"],
             )
-        elif isinstance(new_policy, TwoTowerNNPolicyLearner):
+        elif isinstance(new_policy, PolicyByTwoTowerModel):
             new_policy.fit(
                 bandit_feedback_train=bandit_feedback_train,
                 bandit_feedback_test=bandit_feedback_test,
@@ -150,7 +151,7 @@ def run_opl_single_simulation(
             test_action_dist = new_policy.predict_proba(
                 context=bandit_feedback_test["context"],
             )
-        elif isinstance(new_policy, TwoTowerNNPolicyLearner):
+        elif isinstance(new_policy, PolicyByTwoTowerModel):
             test_action_dist = new_policy.predict_proba(
                 context=bandit_feedback_test["context"],
                 action_context=bandit_feedback_test["action_context"],
@@ -202,6 +203,7 @@ def run_opl_multiple_simulations_in_parallel(
     logging_policy_functions: list[
         Callable[[np.ndarray, np.ndarray, int], np.ndarray]
     ] = None,
+    off_policy_learning_methods: list[str] = ["dr"],
 ) -> list[OPLSimulationResult]:
     if logging_policy_functions is None:
         logging_policy_functions = [random_policy]
@@ -265,7 +267,7 @@ if __name__ == "__main__":
     n_simulations = 1
     n_actions = 10
     dim_context = 50
-    n_rounds_train = 50000
+    n_rounds_train = 20000
     n_rounds_test = 2000
     batch_size = 200
     n_epochs = 200
@@ -277,9 +279,10 @@ if __name__ == "__main__":
     # 真の期待報酬 E_{p(r|x,a)}[r] の設定
     expected_reward_lower = 0.0
     expected_reward_upper = 0.5
-    expected_reward_setting = "linear"
+    expected_reward_setting = "my_context_aware"
     # 新方策の設定
     new_policy_setting = "two_tower_nn"
+    off_policy_learning_method = "regression_based"
 
     # Act
     actual = run_opl_single_simulation(
@@ -296,6 +299,7 @@ if __name__ == "__main__":
         expected_reward_lower=expected_reward_lower,
         expected_reward_upper=expected_reward_upper,
         new_policy_setting=new_policy_setting,
+        off_policy_learning_method=off_policy_learning_method,
     )
 
     print(actual)

@@ -1,13 +1,11 @@
 from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Optional
-from obp.policy import NNPolicyLearner
 import numpy as np
 import torch
 
 import torch.nn as nn
 import torch.optim as optim
-from tqdm import tqdm
 
 from recommender_experiments.service.estimator import estimate_q_x_a_via_regression
 from recommender_experiments.service.synthetic_bandit_feedback import BanditFeedbackDict
@@ -15,7 +13,7 @@ from recommender_experiments.service.synthetic_bandit_feedback import BanditFeed
 
 @dataclass
 class NNPolicyDataset(torch.utils.data.Dataset):
-    """PyTorch dataset for NNPolicyLearner"""
+    """Two-Towerモデルのオフ方策学習用のデータセットクラス"""
 
     context: np.ndarray  # 文脈x_i
     action: np.ndarray  # 行動a_i
@@ -67,7 +65,7 @@ class PolicyByTwoTowerModel:
     log_eps: float = 1e-10
     solver: str = "adam"
     max_iter: int = 200
-    off_policy_objective: str = "ips"
+    off_policy_objective: str = "dr"
     random_state: int = 12345
 
     def __post_init__(self):
@@ -123,13 +121,13 @@ class PolicyByTwoTowerModel:
         bandit_feedback_test: Optional[BanditFeedbackDict] = None,
     ) -> None:
         """推薦方策を学習するメソッド"""
-        if self.off_policy_objective in ["ips", "dr"]:
+        if self.off_policy_objective in ("ips", "dr"):
             self._fit_by_gradiant_based_approach(
                 bandit_feedback_train=bandit_feedback_train,
                 bandit_feedback_test=bandit_feedback_test,
             )
         elif self.off_policy_objective == "regression_based":
-            self.fit_by_regression_based_approach(
+            self._fit_by_regression_based_approach(
                 bandit_feedback_train=bandit_feedback_train,
                 bandit_feedback_test=bandit_feedback_test,
             )
@@ -176,6 +174,8 @@ class PolicyByTwoTowerModel:
             q_x_a_hat = np.zeros((reward.shape[0], n_actions))
         elif self.off_policy_objective == "dr":
             q_x_a_hat = estimate_q_x_a_via_regression(bandit_feedback_train)
+        else:
+            raise NotImplementedError
 
         training_data_loader = self._create_train_data_for_opl(
             context,
@@ -207,11 +207,11 @@ class PolicyByTwoTowerModel:
             for x, a, r, p, q_x_a_hat_, pi_b_ in training_data_loader:
                 optimizer.zero_grad()
                 # 新方策の行動選択確率分布\pi(a|x)を計算
-                pi = self._predict_proba(
+                pi = self._predict_proba_as_tensor(
                     x, action_context_tensor
                 )  # pi=(batch_size, n_actions)
 
-                # 方策勾配の推定値を計算
+                # 方策勾配の推定値を計算 (方策性能を最大化したいのでマイナスをかけてlossとする)
                 loss = -self._estimate_policy_gradient(
                     action=a,
                     reward=r,
@@ -240,14 +240,23 @@ class PolicyByTwoTowerModel:
 
     def _create_train_data_for_opl(
         self,
-        context: np.ndarray,  # shape: (n_rounds, dim_context)
-        action: np.ndarray,  # shape: (n_rounds,)
-        reward: np.ndarray,  # shape: (n_rounds,)
-        pscore: np.ndarray,  # shape: (n_rounds,)
-        q_x_a_hat: np.ndarray,  # shape: (n_rounds, n_actions)
-        pi_0: np.ndarray,  # shape: (n_rounds, n_actions)
+        context: np.ndarray,
+        action: np.ndarray,
+        reward: np.ndarray,
+        pscore: np.ndarray,
+        q_x_a_hat: np.ndarray,
+        pi_0: np.ndarray,
         **kwargs,
     ) -> torch.utils.data.DataLoader:
+        """学習データを作成するメソッド
+        Args:
+            context (np.ndarray): コンテキスト特徴量の配列 (n_rounds, dim_context_features)
+            action (np.ndarray): 選択されたアクションの配列 (n_rounds,)
+            reward (np.ndarray): 観測された報酬の配列 (n_rounds,)
+            pscore (np.ndarray): 傾向スコアの配列 (n_rounds,)
+            q_x_a_hat (np.ndarray): 期待報酬の推定値の配列 (n_rounds, n_actions)
+            pi_0 (np.ndarray): データ収集方策の行動選択確率の配列 (n_rounds, n_actions)
+        """
         dataset = NNPolicyDataset(
             torch.from_numpy(context).float(),
             torch.from_numpy(action).long(),
@@ -272,6 +281,20 @@ class PolicyByTwoTowerModel:
         pi: torch.Tensor,  # shape: (batch_size, n_actions, 1)
         pi_0: torch.Tensor,  # shape: (batch_size, n_actions)
     ) -> torch.Tensor:  # shape: (batch_size,)
+        """
+        方策勾配の推定値を計算するメソッド
+        Args:
+            action (torch.Tensor): 選択されたアクションのテンソル (batch_size,)
+            reward (torch.Tensor): 観測された報酬のテンソル (batch_size,)
+            pscore (torch.Tensor): 傾向スコアのテンソル (batch_size,)
+            q_x_a_hat (torch.Tensor): 期待報酬の推定値のテンソル (batch_size, n_actions)
+            pi (torch.Tensor): 現在の方策による行動選択確率のテンソル (batch_size, n_actions, 1)
+            pi_0 (torch.Tensor): 収集した方策による行動選択確率のテンソル (batch_size, n_actions)
+        Returns:
+            torch.Tensor: 方策勾配の推定値のテンソル (batch_size,)
+                ただし勾配計算自体はPyTorchの自動微分機能により行われるので、
+                ここで返される値は 方策勾配の推定量の \nabla_{\theta} を除いた部分のみ
+        """
         current_pi = pi.detach()
         log_prob = torch.log(pi + self.log_eps)
         idx_tensor = torch.arange(action.shape[0], dtype=torch.long)
@@ -284,21 +307,23 @@ class PolicyByTwoTowerModel:
 
         return estimated_policy_grad_arr
 
-    def _predict_proba(
+    def _predict_proba_as_tensor(
         self,
-        context: torch.Tensor,  # shape: (n_rounds, dim_context_features)
-        action_context: torch.Tensor,  # shape: (n_actions, dim_action_features)
-    ) -> torch.Tensor:  # shape: (n_rounds, n_actions, 1)
+        context: torch.Tensor,
+        action_context: torch.Tensor,
+    ) -> torch.Tensor:
         """方策による行動選択確率を予測するメソッド。
         行動選択確率は各アクションのロジット値を計算し、softmax関数を適用することで得られる。
+        学習時にも推論時にも利用するために、PyTorchのテンソルを入出力とする。
+        Args:
+            context (torch.Tensor): コンテキスト特徴量のテンソル (n_rounds, dim_context_features)
+            action_context (torch.Tensor): アクション特徴量のテンソル (n_actions, dim_action_features)
+        Returns:
+            torch.Tensor: 行動選択確率 \pi_{\theta}(a|x) のテンソル (n_rounds, n_actions)
         """
-
-        # Context Tower Forward
         context_embedding = self.nn_model["context_tower"](
             context
         )  # shape: (n_rounds, dim_two_tower_embedding)
-
-        # Action Tower Forward
         action_embedding = self.nn_model["action_tower"](
             action_context
         )  # shape: (n_actions, dim_two_tower_embedding)
@@ -317,28 +342,40 @@ class PolicyByTwoTowerModel:
 
     def predict_proba(
         self,
-        context: np.ndarray,  # shape: (n_rounds, dim_context)
-        action_context: np.ndarray,  # shape: (n_actions, dim_action_features)
-    ) -> np.ndarray:  # shape: (n_rounds, n_actions, 1)
-        """方策による行動選択確率を予測するメソッド"""
+        context: np.ndarray,
+        action_context: np.ndarray,
+    ) -> np.ndarray:
+        """方策による行動選択確率を予測するメソッド
+        Args:
+            context (np.ndarray): コンテキスト特徴量の配列 (n_rounds, dim_context_features)
+            action_context (np.ndarray): アクション特徴量の配列 (n_actions, dim_action_features)
+        Returns:
+            np.ndarray: 行動選択確率 \pi_{\theta}(a|x) の配列 (n_rounds, n_actions, 1)
+        """
         assert context.shape[1] == self.dim_context_features
         assert action_context.shape[1] == self.dim_action_features
 
         self.nn_model.eval()
 
-        action_dist = self._predict_proba(
+        action_dist = self._predict_proba_as_tensor(
             context=torch.from_numpy(context).float(),
             action_context=torch.from_numpy(action_context).float(),
         )
         action_dist_ndarray = action_dist.squeeze(-1).detach().numpy()
-        return action_dist_ndarray[:, :, np.newaxis]  # shape: (n_rounds, n_actions, 1)
+        # open bandit pipelineの合成データクラスの仕様に合わせて、1つ軸を追加してる
+        return action_dist_ndarray[:, :, np.newaxis]
 
-    def fit_by_regression_based_approach(
+    def _fit_by_regression_based_approach(
         self,
         bandit_feedback_train: BanditFeedbackDict,
         bandit_feedback_test: Optional[BanditFeedbackDict] = None,
     ) -> None:
-        """two-towerモデルに基づく推薦方策を、回帰ベースアプローチで学習するメソッド"""
+        """two-towerモデルに基づく推薦方策を、回帰ベースアプローチで学習するメソッド。
+        ここでは、報酬rの予測問題としてクロスエントロピー誤差を最小化するように学習を行う。
+        Args:
+            bandit_feedback_train (BanditFeedbackDict): 学習用のバンディットフィードバックデータ
+            bandit_feedback_test (Optional[BanditFeedbackDict]): テスト用のバンディットフィードバックデータ
+        """
         n_actions = bandit_feedback_train["n_actions"]
         context, action, reward, action_context, pscore, pi_b = (
             bandit_feedback_train["context"],
@@ -394,20 +431,24 @@ class PolicyByTwoTowerModel:
             self.nn_model.train()
             for x, a, r, p, q_x_a_hat_, pi_b_ in training_data_loader:
                 optimizer.zero_grad()
-                # 各バッチに対するtwo-towerモデルの出力を計算
+                # 各バッチに対するtwo-towerモデルの出力を \hat{q}(x,a) とみなす
                 context_embedding = self.nn_model["context_tower"](x)
                 action_embedding = self.nn_model["action_tower"](action_context_tensor)
                 logits = torch.matmul(context_embedding, action_embedding.T)
                 q_x_a_hat_by_two_tower = torch.sigmoid(logits)
 
-                # 回帰ベースアプローチで、cross-entropy損失を計算
+                # 選択されたアクションに対応する\hat{q}(x,a)を取得
                 selected_action_idx_tensor = torch.arange(a.shape[0], dtype=torch.long)
                 q_x_a_hat_by_two_tower_of_selected_action = q_x_a_hat_by_two_tower[
-                    selected_action_idx_tensor, a
+                    selected_action_idx_tensor,
+                    a,
                 ]
+
+                # 期待報酬の推定値 \hat{q}(x,a) と報酬rとのクロスエントロピー誤差を損失関数とする
                 loss = torch.nn.functional.binary_cross_entropy(
                     q_x_a_hat_by_two_tower_of_selected_action, r
                 ).mean()
+
                 # lossを最小化するようにモデルパラメータを更新
                 loss.backward()
                 optimizer.step()

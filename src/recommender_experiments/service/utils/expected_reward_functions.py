@@ -61,6 +61,7 @@ class ContextAwareBinary(ExpectedRewardFunctionInterface):
         random_state (int, optional): 乱数シード. Defaults to None.
         lower (float, optional): 期待値の下限値. Defaults to 0.0.
         upper (float, optional): 期待値の上限値. Defaults to 1.0.
+        should_reverse (bool, optional): 期待報酬が内積が小さいペアほど上限値に近く、大きいペアほど下限値に近いようにするかどうか。 Defaults to False.
     Returns:
         np.ndarray: 期待報酬 (n_rounds, n_actions) の配列。
     """

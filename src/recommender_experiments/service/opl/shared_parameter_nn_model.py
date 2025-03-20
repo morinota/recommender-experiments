@@ -162,7 +162,6 @@ class SharedParameterNNPolicyLearner(NNPolicyLearner):
             ],
             dim=2,
         )  # shape: (n_rounds, n_actions, dim_context + dim_action_features)
-        print(f"{combined_input.shape=}")
 
         # 2次元に変形してNNに入力
         combined_input = combined_input.view(
@@ -175,7 +174,7 @@ class SharedParameterNNPolicyLearner(NNPolicyLearner):
         # 各ラウンドごとに、アクション選択確率の総和が1.0になるようにsoftmax関数を適用
         pi = torch.softmax(scores, dim=1)  # shape: (n_rounds, n_actions)
 
-        return pi.unsqueeze(-1)
+        return pi.unsqueeze(-1)  # shape: (n_rounds, n_actions, 1)
 
     # predict_probaメソッドをoverride
     def predict_proba(
@@ -188,33 +187,5 @@ class SharedParameterNNPolicyLearner(NNPolicyLearner):
             context=torch.from_numpy(context).float(),  # shape: (n_rounds, dim_context)
             action_context=action_context_tensor,  # shape: (n_actions, dim_action_features)
         )
-        return pi.squeeze(-1).detach().numpy()
-
-
-if __name__ == "__main__":
-    # 問題設定
-    n_rounds = 10
-    n_actions = 4
-    dim_context = 3
-    dim_action_features = 2
-    # ダミーデータの生成
-    context = np.random.random((n_rounds, dim_context))
-    action = np.random.randint(0, n_actions, n_rounds)
-    reward = np.random.binomial(1, 0.5, n_rounds)  # binaryのrewardを生成
-    action_context = np.random.random((n_actions, dim_action_features))
-
-    # TwoTowerモデルに対して、方策学習を行う
-    policy = SharedParameterNNPolicyLearner(
-        dim_context=dim_context + dim_action_features
-    )
-    # fitメソッドの呼び出し
-    # policy.fit(context, action, reward, action_context)
-    # predict_probaメソッドの呼び出し
-    action_dist = policy.predict_proba(context, action_context)
-    print(f"{action_dist=}")
-
-    # アクション数が増えても、同一モデルで呼び出せることを確認
-    n_actions += 2
-    action_context = np.random.random((n_actions, dim_action_features))
-    action_dist = policy.predict_proba(context, action_context)
-    print(f"{action_dist=}")
+        action_dist_ndarray = pi.squeeze(-1).detach().numpy()
+        return action_dist_ndarray[:, :, np.newaxis]  # shape: (n_rounds, n_actions, 1)

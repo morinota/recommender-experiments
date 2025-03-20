@@ -180,7 +180,7 @@ def run_opl_single_simulation(
                 }
             )
         )
-
+        print(f"simulation_idx: {simulation_idx}, new_policy_value: {new_policy_value}")
     return results
 
 
@@ -311,12 +311,12 @@ if __name__ == "__main__":
         n_simulations=1,
         n_actions_list=[10],
         dim_context_list=[50],
-        n_rounds_train_list=[2000],
+        n_rounds_train_list=[2000, 5000, 10000, 15000, 20000],
         n_rounds_test_list=[2000],
         batch_size_list=[200],
         n_epochs_list=[200],
         expected_reward_scale_list=[(0.0, 0.5)],
-        expected_reward_settings=["my_context_aware"],
+        expected_reward_settings=["linear"],
         new_policy_settings=["two_tower_nn"],
         logging_policy_functions=[logging_policy_function],
         off_policy_learning_methods=["dr", "ips", "regression_based"],

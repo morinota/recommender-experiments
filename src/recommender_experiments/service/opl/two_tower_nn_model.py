@@ -20,7 +20,6 @@ class NNPolicyDataset(torch.utils.data.Dataset):
     reward: np.ndarray  # 報酬r_i
     pscore: np.ndarray  # 傾向スコア \pi_0(a_i|x_i)
     q_x_a_hat: np.ndarray  # 期待報酬の推定値 \hat{q}(x_i, a)
-    pi_0: np.ndarray  # データ収集方策の行動選択確率分布 \pi_0(a|x_i)
 
     def __post_init__(self):
         """initialize class"""
@@ -30,7 +29,6 @@ class NNPolicyDataset(torch.utils.data.Dataset):
             == self.reward.shape[0]
             == self.pscore.shape[0]
             == self.q_x_a_hat.shape[0]
-            == self.pi_0.shape[0]
         )
 
     def __getitem__(self, index):
@@ -40,7 +38,6 @@ class NNPolicyDataset(torch.utils.data.Dataset):
             self.reward[index],
             self.pscore[index],
             self.q_x_a_hat[index],
-            self.pi_0[index],
         )
 
     def __len__(self):
@@ -183,7 +180,6 @@ class PolicyByTwoTowerModel:
             reward,
             pscore,
             q_x_a_hat,
-            pi_b,
         )
         action_context_tensor = torch.from_numpy(action_context).float()
 
@@ -204,7 +200,7 @@ class PolicyByTwoTowerModel:
 
             loss_epoch = 0.0
             self.nn_model.train()
-            for x, a, r, p, q_x_a_hat_, pi_b_ in training_data_loader:
+            for x, a, r, p, q_x_a_hat_ in training_data_loader:
                 optimizer.zero_grad()
                 # 新方策の行動選択確率分布\pi(a|x)を計算
                 pi = self._predict_proba_as_tensor(
@@ -217,7 +213,6 @@ class PolicyByTwoTowerModel:
                     reward=r,
                     pscore=p,
                     q_x_a_hat=q_x_a_hat_,
-                    pi_0=pi_b_,
                     pi=pi,
                 ).mean()
                 # lossを最小化するようにモデルパラメータを更新
@@ -245,7 +240,6 @@ class PolicyByTwoTowerModel:
         reward: np.ndarray,
         pscore: np.ndarray,
         q_x_a_hat: np.ndarray,
-        pi_0: np.ndarray,
         **kwargs,
     ) -> torch.utils.data.DataLoader:
         """学習データを作成するメソッド
@@ -255,7 +249,6 @@ class PolicyByTwoTowerModel:
             reward (np.ndarray): 観測された報酬の配列 (n_rounds,)
             pscore (np.ndarray): 傾向スコアの配列 (n_rounds,)
             q_x_a_hat (np.ndarray): 期待報酬の推定値の配列 (n_rounds, n_actions)
-            pi_0 (np.ndarray): データ収集方策の行動選択確率の配列 (n_rounds, n_actions)
         """
         dataset = NNPolicyDataset(
             torch.from_numpy(context).float(),
@@ -263,7 +256,6 @@ class PolicyByTwoTowerModel:
             torch.from_numpy(reward).float(),
             torch.from_numpy(pscore).float(),
             torch.from_numpy(q_x_a_hat).float(),
-            torch.from_numpy(pi_0).float(),
         )
 
         data_loader = torch.utils.data.DataLoader(
@@ -279,7 +271,6 @@ class PolicyByTwoTowerModel:
         pscore: torch.Tensor,  # shape: (batch_size,)
         q_x_a_hat: torch.Tensor,  # shape: (batch_size, n_actions)
         pi: torch.Tensor,  # shape: (batch_size, n_actions, 1)
-        pi_0: torch.Tensor,  # shape: (batch_size, n_actions)
     ) -> torch.Tensor:  # shape: (batch_size,)
         """
         方策勾配の推定値を計算するメソッド
@@ -289,7 +280,6 @@ class PolicyByTwoTowerModel:
             pscore (torch.Tensor): 傾向スコアのテンソル (batch_size,)
             q_x_a_hat (torch.Tensor): 期待報酬の推定値のテンソル (batch_size, n_actions)
             pi (torch.Tensor): 現在の方策による行動選択確率のテンソル (batch_size, n_actions, 1)
-            pi_0 (torch.Tensor): 収集した方策による行動選択確率のテンソル (batch_size, n_actions)
         Returns:
             torch.Tensor: 方策勾配の推定値のテンソル (batch_size,)
                 ただし勾配計算自体はPyTorchの自動微分機能により行われるので、
@@ -408,7 +398,6 @@ class PolicyByTwoTowerModel:
             reward,
             pscore,
             np.zeros((reward.shape[0], n_actions)),  # 回帰ベースでは不要
-            pi_b,
         )
         action_context_tensor = torch.from_numpy(action_context).float()
 
@@ -429,7 +418,7 @@ class PolicyByTwoTowerModel:
 
             loss_epoch = 0.0
             self.nn_model.train()
-            for x, a, r, p, q_x_a_hat_, pi_b_ in training_data_loader:
+            for x, a, r, p, q_x_a_hat_ in training_data_loader:
                 optimizer.zero_grad()
                 # 各バッチに対するtwo-towerモデルの出力を \hat{q}(x,a) とみなす
                 context_embedding = self.nn_model["context_tower"](x)

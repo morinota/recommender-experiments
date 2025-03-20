@@ -2100,6 +2100,20 @@ slack = ["slack-sdk"]
 telegram = ["requests"]
 
 [[package]]
+name = "tqdm-joblib"
+version = "0.0.4"
+description = "Tracking progress of joblib.Parallel execution"
+optional = false
+python-versions = "*"
+files = [
+    {file = "tqdm_joblib-0.0.4-py3-none-any.whl", hash = "sha256:786f4423f2282701db7959a2b4449d1e3ab60b4841f5a6d03ec49e8cb8946e0b"},
+    {file = "tqdm_joblib-0.0.4.tar.gz", hash = "sha256:8588e0d04aa5d51a0fae3ce68206045a8117ec695daddeaea3012dfd8869d2a5"},
+]
+
+[package.dependencies]
+tqdm = "*"
+
+[[package]]
 name = "traitlets"
 version = "5.14.3"
 description = "Traitlets Python configuration system"
@@ -2332,4 +2346,4 @@ viz = ["matplotlib", "nc-time-axis", "seaborn"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.11"
-content-hash = "e9d8fd0e85b0686239755b67ccafb2cadc16b4006296390103f81528a50ca8b5"
+content-hash = "a6f711443ae1e5066139398001bc25776d604b1637f73d0b01311c688b118f51"

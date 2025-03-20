@@ -7,7 +7,11 @@ from pandas import DataFrame
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 import yaml
-from obp.dataset import logistic_reward_function, SyntheticBanditDataset
+from obp.dataset import (
+    logistic_reward_function,
+    SyntheticBanditDataset,
+    OpenBanditDataset,
+)
 from obp.ope import (
     DirectMethod,
     InverseProbabilityWeighting,

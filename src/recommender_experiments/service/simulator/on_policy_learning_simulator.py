@@ -2,6 +2,11 @@ from typing import Callable, Literal
 import numpy as np
 import pydantic
 
+from recommender_experiments.service.opl.policy_strategy_interface import (
+    PolicyStrategyInterface,
+)
+from obp.dataset import SyntheticBanditDataset, logistic_reward_function
+
 
 class OnPolicyLearningSimulationResult(pydantic.BaseModel):
     simulation_idx: int
@@ -22,6 +27,7 @@ class OnPolicyLearningSimulationResult(pydantic.BaseModel):
 
 
 def run_on_policy_learning_single_simulation(
+    policy_strategy: PolicyStrategyInterface,
     n_simulations: int,
     n_actions: int,
     dim_context: int,
@@ -38,9 +44,19 @@ def run_on_policy_learning_single_simulation(
     n_epochs: int = 200,
     batch_size: int = 32,
     learning_rate_init: float = 0.00001,
-):
+) -> list[OnPolicyLearningSimulationResult]:
     results = []
     for simulation_idx in range(n_simulations):
+        dataset = SyntheticBanditDataset(
+            n_actions=n_actions,
+            dim_context=dim_context,
+            reward_type="binary",
+            reward_function=logistic_reward_function,
+            behavior_policy_function=logging_policy_function,
+            random_state=simulation_idx,
+            action_context=action_context,
+        )
+
         logging_policy_value = 1.0
         new_policy_value_before_deploy = 1.0
         new_policy_value_after_deploy = 1.0

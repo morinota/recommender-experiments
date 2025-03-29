@@ -5,7 +5,7 @@ import numpy as np
 
 
 @dataclass
-class PolicyStrategy(abc.ABC):
+class PolicyStrategyInterface(abc.ABC):
     """
     意思決定方策が実装する共通のインターフェース(Strategy patternにおけるStrategy)
     """
@@ -16,7 +16,11 @@ class PolicyStrategy(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def predict_proba(self) -> np.ndarray:
+    def predict_proba(
+        self,
+        context: np.ndarray,
+        action_context: np.ndarray,
+    ) -> np.ndarray:
         """contextを受け取って、方策による行動選択確率 \pi(a|x) を予測するメソッド
         Args:
             context (np.ndarray): コンテキスト特徴量の配列 (n_rounds, dim_context_features)

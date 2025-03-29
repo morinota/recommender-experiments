@@ -9,7 +9,7 @@ import torch.optim as optim
 
 from recommender_experiments.service.estimator import estimate_q_x_a_via_regression
 from recommender_experiments.service.opl.policy_strategy_interface import (
-    PolicyStrategy,
+    PolicyStrategyInterface,
 )
 from recommender_experiments.service.synthetic_bandit_feedback import BanditFeedbackDict
 
@@ -48,7 +48,7 @@ class NNPolicyDataset(torch.utils.data.Dataset):
 
 
 @dataclass
-class PolicyByTwoTowerModel(PolicyStrategy):
+class PolicyByTwoTowerModel(PolicyStrategyInterface):
     """Two-Towerモデルのオフ方策学習を行うクラス
     実装参考: https://github.com/usaito/www2024-lope/blob/main/notebooks/learning.py
     """

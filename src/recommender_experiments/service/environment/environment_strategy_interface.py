@@ -5,6 +5,7 @@ import numpy as np
 from recommender_experiments.service.opl.policy_strategy_interface import (
     PolicyStrategyInterface,
 )
+from recommender_experiments.service.synthetic_bandit_feedback import BanditFeedbackDict
 
 
 class EnvironmentStrategyInterface(abc.ABC):
@@ -17,7 +18,7 @@ class EnvironmentStrategyInterface(abc.ABC):
         self,
         logging_policy_strategy: PolicyStrategyInterface,
         n_rounds: int,
-    ) -> np.ndarray:
+    ) -> BanditFeedbackDict:
         """バンディットフィードバックを生成するメソッド
         Args:
             logging_policy_strategy (PolicyStrategyInterface): データ収集方策のstrategy

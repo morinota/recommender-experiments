@@ -29,16 +29,23 @@ class DummyPolicyStrategy(PolicyStrategyInterface):
 
 def test_擬似的な設定に基づいてバンディットフィードバックデータを生成できること():
     # Arrange
-    sut = SyntheticEnvironmentStrategy()
+    n_actions = 5
+    dim_context = 4
+    action_context = np.random.randn(n_actions, dim_context)
+    sut = SyntheticEnvironmentStrategy(
+        n_actions=n_actions,
+        dim_context=dim_context,
+        action_context=action_context,
+    )
 
     # Act
     actual = sut.obtain_batch_bandit_feedback(
         logging_policy_strategy=DummyPolicyStrategy(),
-        n_rounds=1000,
+        n_rounds=100,
     )
 
     # Assert
     assert isinstance(
         actual, BanditFeedbackModel
     ), "返り値がBanditFeedbackModel型であること"
-    assert actual.context.shape[0] == 1000, "コンテキストの数がn_roundsと一致すること"
+    assert actual.context.shape[0] == 100, "コンテキストの数がn_roundsと一致すること"

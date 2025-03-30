@@ -1,7 +1,7 @@
 from typing import Optional, TypedDict
 
 import numpy as np
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, ValidationInfo
 
 
 class BanditFeedbackDict(TypedDict):
@@ -15,7 +15,7 @@ class BanditFeedbackDict(TypedDict):
     position: Optional[np.ndarray]  # ポジション (shape: (n_rounds,) or None)
     reward: np.ndarray  # 報酬 (shape: (n_rounds,))
     expected_reward: np.ndarray  # 期待報酬 (shape: (n_rounds, n_actions))
-    pi_b: np.ndarray  # データ収集方策 P(a|x) (shape: (n_rounds, n_actions))
+    pi_b: np.ndarray  # データ収集方策 P(a|x) (shape: (n_rounds, n_actions,1))
     pscore: np.ndarray  # 傾向スコア (shape: (n_rounds,))
 
 
@@ -39,12 +39,29 @@ class BanditFeedbackModel(BaseModel):
         ..., description="期待報酬 (shape: (n_rounds, n_actions))"
     )
     pi_b: np.ndarray = Field(
-        ..., description="データ収集方策 P(a|x) (shape: (n_rounds, n_actions))"
+        ..., description="データ収集方策 P(a|x) (shape: (n_rounds, n_actions, 1))"
     )
     pscore: np.ndarray = Field(..., description="傾向スコア (shape: (n_rounds,))")
 
     class Config:
         arbitrary_types_allowed = True  # np.ndarrayを許可
+
+    @field_validator("action", "reward", "pscore")
+    def check_1d_array(cls, value: np.ndarray, field: ValidationInfo) -> np.ndarray:
+        """特定のフィールドのカスタムバリデータ"""
+        if value.ndim != 1:
+            raise ValueError(
+                f"{field.field_name} は1次元の配列を想定してます。しかし実際には{value.shape=}"
+            )
+        return value
+
+    @field_validator("context", "action_context", "expected_reward")
+    def check_2d_array(cls, value: np.ndarray, field: ValidationInfo) -> np.ndarray:
+        if value.ndim != 2:
+            raise ValueError(
+                f"{field.field_name} は2次元の配列を想定しています。しかし実際には{value.shape=}"
+            )
+        return value
 
 
 if __name__ == "__main__":

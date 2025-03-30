@@ -1,5 +1,5 @@
 import numpy as np
-from recommender_experiments.service.ranking_problem.ranking_synthetic_dataset import (
+from recommender_experiments.service.environment.ranking_synthetic_dataset import (
     RankingSyntheticBanditDataset,
 )
 

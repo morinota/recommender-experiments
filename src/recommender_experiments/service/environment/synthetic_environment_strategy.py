@@ -49,7 +49,7 @@ class SyntheticEnvironmentStrategy(EnvironmentStrategyInterface):
         expected_reward: np.ndarray,
         action_dist: np.ndarray,
     ) -> float:
-        # 　V(π) = E_{p(x, a ,r)}[r] = E_{p(x) \pi(a|x) p(r|x,a)}[r]
+        # V(π)の定義は $:= E_{p(x, a ,r)}[r] = E_{p(x) \pi(a|x) p(r|x,a)}[r]$ とする
         policy_value = np.average(
             expected_reward, weights=action_dist[:, :, 0], axis=1
         ).mean()

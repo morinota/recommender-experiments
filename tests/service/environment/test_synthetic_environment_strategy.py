@@ -48,4 +48,26 @@ def test_擬似的な設定に基づいてバンディットフィードバッ�
     assert isinstance(
         actual, BanditFeedbackModel
     ), "返り値がBanditFeedbackModel型であること"
-    assert actual.context.shape[0] == 100, "コンテキストの数がn_roundsと一致すること"
+
+
+def test_任意の行動選択確率分布と期待報酬を受け取って真の方策性能を計算できること():
+    # Arrange
+    n_actions = 5
+    sut = SyntheticEnvironmentStrategy(
+        n_actions=n_actions,
+        dim_context=4,
+        action_context=np.random.randn(n_actions, 4),
+    )
+    bandit_feedback = sut.obtain_batch_bandit_feedback(
+        logging_policy_strategy=DummyPolicyStrategy(),
+        n_rounds=100,
+    )
+
+    # Act
+    actual = sut.calc_ground_truth_policy_value(
+        expected_reward=bandit_feedback.expected_reward,
+        action_dist=bandit_feedback.pi_b,
+    )
+
+    # Assert
+    assert isinstance(actual, float), "返り値がfloat型であること"

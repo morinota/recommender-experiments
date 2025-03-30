@@ -44,5 +44,9 @@ class SyntheticEnvironmentStrategy(EnvironmentStrategyInterface):
         bandit_feedback_dict = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
         return BanditFeedbackModel(**bandit_feedback_dict)
 
-    def calc_ground_truth_policy_value(self, expected_reward, action_dist) -> float:
+    def calc_ground_truth_policy_value(
+        self,
+        expected_reward: np.ndarray,
+        action_dist: np.ndarray,
+    ) -> float:
         return 0.0

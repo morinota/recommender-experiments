@@ -6,13 +6,13 @@ from typing import Callable
 import numpy as np
 
 
-class ExpectedRewardFunctionInterface(abc.ABC):
+class ExpectedRewardFunctionStrategy(abc.ABC):
     @abc.abstractmethod
     def get_function(self) -> Callable[[np.ndarray, np.ndarray, int], np.ndarray]:
         raise NotImplementedError
 
 
-class ContextFreeBinary(ExpectedRewardFunctionInterface):
+class ContextFreeBinary(ExpectedRewardFunctionStrategy):
     """(アクションa, 文脈x)の各組み合わせに対する期待報酬 E_{p(r|x,a)}[r] を定義する関数。
     今回は、文脈xに依存しない、アクション毎に固定のcontext-freeな期待報酬関数を想定している。
     具体的には、アクションaのindexが0から大きくなるにつれて、期待報酬がupperからlowerに線形に減少するような関数を想定している。
@@ -50,7 +50,7 @@ class ContextFreeBinary(ExpectedRewardFunctionInterface):
         return _expected_reward_function
 
 
-class ContextAwareBinary(ExpectedRewardFunctionInterface):
+class ContextAwareBinary(ExpectedRewardFunctionStrategy):
     """(アクションa, 文脈x)の各組み合わせに対する期待報酬 E_{p(r|x,a)}[r] を定義する関数。
     今回は、文脈xに依存する、context-awareな期待報酬関数を想定している。
     具体的には、contextとaction_contextの内積をとり、

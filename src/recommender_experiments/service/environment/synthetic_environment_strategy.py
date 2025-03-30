@@ -5,7 +5,9 @@ from recommender_experiments.service.environment.environment_strategy_interface 
 from recommender_experiments.service.opl.policy_strategy_interface import (
     PolicyStrategyInterface,
 )
-from recommender_experiments.service.synthetic_bandit_feedback import BanditFeedbackDict
+from recommender_experiments.service.synthetic_bandit_feedback import (
+    BanditFeedbackModel,
+)
 from obp.dataset import SyntheticBanditDataset
 
 
@@ -25,7 +27,7 @@ class SyntheticEnvironmentStrategy(EnvironmentStrategyInterface):
         self,
         logging_policy_strategy: PolicyStrategyInterface,
         n_rounds: int,
-    ) -> BanditFeedbackDict:
+    ) -> BanditFeedbackModel:
         """バンディットフィードバックを生成するメソッド
         Args:
             logging_policy_strategy (PolicyStrategyInterface): データ収集方策のstrategy
@@ -39,8 +41,8 @@ class SyntheticEnvironmentStrategy(EnvironmentStrategyInterface):
             action_context=self.__action_context,
         )
 
-        bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
-        return bandit_feedback
+        bandit_feedback_dict = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
+        return BanditFeedbackModel(**bandit_feedback_dict)
 
     def calc_ground_truth_policy_value(self, expected_reward, action_dist) -> float:
         return 0.0

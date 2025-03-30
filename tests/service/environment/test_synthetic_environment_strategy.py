@@ -5,7 +5,9 @@ from recommender_experiments.service.environment.synthetic_environment_strategy 
 from recommender_experiments.service.opl.policy_strategy_interface import (
     PolicyStrategyInterface,
 )
-from recommender_experiments.service.synthetic_bandit_feedback import BanditFeedbackDict
+from recommender_experiments.service.synthetic_bandit_feedback import (
+    BanditFeedbackModel,
+)
 
 
 class DummyPolicyStrategy(PolicyStrategyInterface):
@@ -30,18 +32,13 @@ def test_擬似的な設定に基づいてバンディットフィードバッ�
     sut = SyntheticEnvironmentStrategy()
 
     # Act
-    bandit_feedback = sut.obtain_batch_bandit_feedback(
+    actual = sut.obtain_batch_bandit_feedback(
         logging_policy_strategy=DummyPolicyStrategy(),
         n_rounds=1000,
     )
 
     # Assert
     assert isinstance(
-        bandit_feedback, dict
-    ), "バンディットフィードバックが辞書型であること"
-    assert (
-        "context" in bandit_feedback
-    ), "バンディットフィードバックにcontextが含まれていること"
-    assert (
-        bandit_feedback["context"].shape[0] == 1000
-    ), "コンテキストの数がn_roundsと一致すること"
+        actual, BanditFeedbackModel
+    ), "返り値がBanditFeedbackModel型であること"
+    assert actual.context.shape[0] == 1000, "コンテキストの数がn_roundsと一致すること"

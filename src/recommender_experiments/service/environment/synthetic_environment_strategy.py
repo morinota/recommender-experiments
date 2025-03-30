@@ -10,6 +10,10 @@ from recommender_experiments.service.synthetic_bandit_feedback import (
 )
 from obp.dataset import SyntheticBanditDataset
 
+from recommender_experiments.service.utils.expected_reward_functions import (
+    ExpectedRewardStrategy,
+)
+
 
 class SyntheticEnvironmentStrategy(EnvironmentStrategyInterface):
 
@@ -18,10 +22,24 @@ class SyntheticEnvironmentStrategy(EnvironmentStrategyInterface):
         n_actions: int = 5,
         dim_context: int = 4,
         action_context: np.ndarray = None,
+        expected_reward_strategy: ExpectedRewardStrategy = None,
     ):
         self.__n_actions = n_actions
         self.__dim_context = dim_context
         self.__action_context = action_context
+        self.__expected_reward_function = (
+            expected_reward_strategy.get_function()
+            if expected_reward_strategy
+            else None
+        )
+
+    @property
+    def n_actions(self) -> int:
+        return self.__n_actions
+
+    @property
+    def dim_context(self) -> int:
+        return self.__dim_context
 
     def obtain_batch_bandit_feedback(
         self,
@@ -33,12 +51,14 @@ class SyntheticEnvironmentStrategy(EnvironmentStrategyInterface):
             logging_policy_strategy (PolicyStrategyInterface): データ収集方策のstrategy
             n_rounds (int): ラウンド数
         """
+
         dataset = SyntheticBanditDataset(
             n_actions=self.__n_actions,
             dim_context=self.__dim_context,
             reward_type="binary",
             behavior_policy_function=logging_policy_strategy.predict_proba,
             action_context=self.__action_context,
+            reward_function=self.__expected_reward_function,
         )
 
         bandit_feedback_dict = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)

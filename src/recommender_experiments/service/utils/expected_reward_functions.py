@@ -6,13 +6,19 @@ from typing import Callable
 import numpy as np
 
 
-class ExpectedRewardFunctionStrategy(abc.ABC):
+class ExpectedRewardStrategy(abc.ABC):
     @abc.abstractmethod
     def get_function(self) -> Callable[[np.ndarray, np.ndarray, int], np.ndarray]:
         raise NotImplementedError
 
+    @property
+    @abc.abstractmethod
+    def name(self) -> str:
+        """期待報酬関数の名前を表す文字列"""
+        raise NotImplementedError
 
-class ContextFreeBinary(ExpectedRewardFunctionStrategy):
+
+class ContextFreeBinary(ExpectedRewardStrategy):
     """(アクションa, 文脈x)の各組み合わせに対する期待報酬 E_{p(r|x,a)}[r] を定義する関数。
     今回は、文脈xに依存しない、アクション毎に固定のcontext-freeな期待報酬関数を想定している。
     具体的には、アクションaのindexが0から大きくなるにつれて、期待報酬がupperからlowerに線形に減少するような関数を想定している。
@@ -29,6 +35,10 @@ class ContextFreeBinary(ExpectedRewardFunctionStrategy):
     def __init__(self, lower: float = 0.0, upper: float = 1.0) -> None:
         self.lower = lower
         self.upper = upper
+
+    @property
+    def name(self) -> str:
+        return f"コンテキスト考慮なし(context-free)({self.lower} ~ {self.upper})"
 
     def get_function(self) -> Callable[[np.ndarray, np.ndarray, int], np.ndarray]:
         def _expected_reward_function(
@@ -50,7 +60,7 @@ class ContextFreeBinary(ExpectedRewardFunctionStrategy):
         return _expected_reward_function
 
 
-class ContextAwareBinary(ExpectedRewardFunctionStrategy):
+class ContextAwareBinary(ExpectedRewardStrategy):
     """(アクションa, 文脈x)の各組み合わせに対する期待報酬 E_{p(r|x,a)}[r] を定義する関数。
     今回は、文脈xに依存する、context-awareな期待報酬関数を想定している。
     具体的には、contextとaction_contextの内積をとり、
@@ -75,6 +85,10 @@ class ContextAwareBinary(ExpectedRewardFunctionStrategy):
         self.lower = lower
         self.upper = upper
         self.should_reverse = should_reverse
+
+    @property
+    def name(self) -> str:
+        return f"コンテキスト考慮あり(context-aware)({self.lower} ~ {self.upper})"
 
     def get_function(self) -> Callable[[np.ndarray, np.ndarray, int], np.ndarray]:
         def _expected_reward_function(

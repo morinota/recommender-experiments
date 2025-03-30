@@ -125,10 +125,6 @@ def run_opl_single_simulation(
                 context=bandit_feedback_test["context"],
                 action_context=bandit_feedback_test["action_context"],
             )
-        policy_value_before_fit = dataset.calc_ground_truth_policy_value(
-            expected_reward=bandit_feedback_test["expected_reward"],
-            action_dist=test_action_dist,
-        )
 
         # データ収集方策で集めたデータ(学習用)で、新方策のためのNNモデルのパラメータを更新
         bandit_feedback_train = dataset.obtain_batch_bandit_feedback(n_rounds_train)

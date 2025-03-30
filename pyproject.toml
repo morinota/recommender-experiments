@@ -25,6 +25,14 @@ tqdm-joblib = "^0.0.4"
 ipykernel = "^6.29.5"
 pytest = "^8.3.4"
 
+[tool.pytest.ini_options]
+filterwarnings = [
+  "ignore::DeprecationWarning",
+  "ignore::UserWarning",
+  "ignore::FutureWarning",
+]
+
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

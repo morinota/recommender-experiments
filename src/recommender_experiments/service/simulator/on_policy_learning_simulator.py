@@ -66,7 +66,8 @@ def run_on_policy_learning_single_simulation(
 
         # 新方策をオフ方策学習
         target_policy_strategy.fit(
-            bandit_feedback_before_deploy, bandit_feedback_test=None
+            bandit_feedback_train=bandit_feedback_before_deploy.model_dump(),
+            bandit_feedback_test=bandit_feedback_test.model_dump(),
         )
         # 新方策のデプロイ前の方策性能を評価
         new_policy_value_before_deploy = environment_strategy.calc_policy_value(
@@ -85,7 +86,10 @@ def run_on_policy_learning_single_simulation(
             )
         )
         # 新方策をオンライン学習
-        target_policy_strategy.fit(bandit_feedback_after_deploy)
+        target_policy_strategy.fit(
+            bandit_feedback_train=bandit_feedback_after_deploy.model_dump(),
+            bandit_feedback_test=bandit_feedback_test.model_dump(),
+        )
         # 新方策のデプロイ後の方策性能を評価
         new_policy_value_after_deploy = environment_strategy.calc_policy_value(
             expected_reward=bandit_feedback_test.expected_reward,

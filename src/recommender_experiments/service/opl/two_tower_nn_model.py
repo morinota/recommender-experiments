@@ -414,12 +414,12 @@ class PolicyByTwoTowerModel(PolicyStrategyInterface):
             # 各エポックの最初に、学習データとテストデータに対する真の方策性能を計算
             pi_train = self.predict_proba(
                 context=context, action_context=action_context
-            ).squeeze(-1)
+            )
             self.train_values.append((q_x_a_train * pi_train).sum(1).mean())
             pi_test = self.predict_proba(
                 context=bandit_feedback_test["context"],
                 action_context=bandit_feedback_test["action_context"],
-            ).squeeze(-1)
+            )
             self.test_values.append((q_x_a_test * pi_test).sum(1).mean())
 
             loss_epoch = 0.0
@@ -452,14 +452,12 @@ class PolicyByTwoTowerModel(PolicyStrategyInterface):
             self.train_losses.append(loss_epoch)
 
         # 学習完了後に、学習データとテストデータに対する真の方策性能を計算
-        pi_train = self.predict_proba(
-            context=context, action_context=action_context
-        ).squeeze(-1)
+        pi_train = self.predict_proba(context=context, action_context=action_context)
         self.train_values.append((q_x_a_train * pi_train).sum(1).mean())
         pi_test = self.predict_proba(
             context=bandit_feedback_test["context"],
             action_context=bandit_feedback_test["action_context"],
-        ).squeeze(-1)
+        )
         self.test_values.append((q_x_a_test * pi_test).sum(1).mean())
 
 

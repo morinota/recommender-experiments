@@ -15,6 +15,18 @@ class EnvironmentStrategyInterface(abc.ABC):
     環境が実装する共通のインターフェース(Strategy patternにおけるStrategy)
     """
 
+    @property
+    @abc.abstractmethod
+    def n_actions(self) -> int:
+        """アクション数"""
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
+    def dim_context(self) -> int:
+        """コンテキストの次元数"""
+        raise NotImplementedError
+
     @abc.abstractmethod
     def obtain_batch_bandit_feedback(
         self,
@@ -29,7 +41,7 @@ class EnvironmentStrategyInterface(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def calc_ground_truth_policy_value(
+    def calc_policy_value(
         self,
         expected_reward: np.ndarray,
         action_dist: np.ndarray,

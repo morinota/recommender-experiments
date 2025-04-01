@@ -64,7 +64,7 @@ def test_任意の行動選択確率分布と期待報酬を受け取って真�
     )
 
     # Act
-    actual = sut.calc_ground_truth_policy_value(
+    actual = sut.calc_policy_value(
         expected_reward=bandit_feedback.expected_reward,
         action_dist=bandit_feedback.pi_b,
     )

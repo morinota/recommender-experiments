@@ -1,5 +1,6 @@
 import abc
 from dataclasses import dataclass
+from typing import Optional
 
 import numpy as np
 
@@ -11,7 +12,11 @@ class PolicyStrategyInterface(abc.ABC):
     """
 
     @abc.abstractmethod
-    def fit(self) -> None:
+    def fit(
+        self,
+        bandit_feedback_train: dict,
+        bandit_feedback_test: Optional[dict] = None,
+    ) -> None:
         """bandit feedbackを受け取って方策を更新するメソッド"""
         raise NotImplementedError
 

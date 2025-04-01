@@ -64,11 +64,14 @@ class SyntheticEnvironmentStrategy(EnvironmentStrategyInterface):
         bandit_feedback_dict = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
         return BanditFeedbackModel(**bandit_feedback_dict)
 
-    def calc_ground_truth_policy_value(
+    def calc_policy_value(
         self,
         expected_reward: np.ndarray,
-        action_dist: np.ndarray,
+        action_dist: np.ndarray,  # (ラウンド数, アクション数)
     ) -> float:
+        if action_dist.ndim == 2:
+            # 2次元の場合は、次元を追加して3次元にする
+            action_dist = action_dist[:, :, np.newaxis]
         # V(π)の定義は $:= E_{p(x, a ,r)}[r] = E_{p(x) \pi(a|x) p(r|x,a)}[r]$ とする
         policy_value = np.average(
             expected_reward, weights=action_dist[:, :, 0], axis=1

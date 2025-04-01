@@ -197,12 +197,12 @@ class PolicyByTwoTowerModel(PolicyStrategyInterface):
             # 各エポックの最初に、学習データとテストデータに対する真の方策性能を計算
             pi_train = self.predict_proba(
                 context=context, action_context=action_context
-            ).squeeze(-1)
+            )
             self.train_values.append((q_x_a_train * pi_train).sum(1).mean())
             pi_test = self.predict_proba(
                 context=bandit_feedback_test["context"],
                 action_context=bandit_feedback_test["action_context"],
-            ).squeeze(-1)
+            )
             self.test_values.append((q_x_a_test * pi_test).sum(1).mean())
 
             loss_epoch = 0.0
@@ -230,14 +230,12 @@ class PolicyByTwoTowerModel(PolicyStrategyInterface):
             self.train_losses.append(loss_epoch)
 
         # 学習完了後に、学習データとテストデータに対する真の方策性能を計算
-        pi_train = self.predict_proba(
-            context=context, action_context=action_context
-        ).squeeze(-1)
+        pi_train = self.predict_proba(context=context, action_context=action_context)
         self.train_values.append((q_x_a_train * pi_train).sum(1).mean())
         pi_test = self.predict_proba(
             context=bandit_feedback_test["context"],
             action_context=bandit_feedback_test["action_context"],
-        ).squeeze(-1)
+        )
         self.test_values.append((q_x_a_test * pi_test).sum(1).mean())
 
     def _create_train_data_for_opl(
@@ -341,13 +339,14 @@ class PolicyByTwoTowerModel(PolicyStrategyInterface):
         self,
         context: np.ndarray,
         action_context: np.ndarray,
+        random_state: int = 0,
     ) -> np.ndarray:
         """方策による行動選択確率を予測するメソッド
         Args:
             context (np.ndarray): コンテキスト特徴量の配列 (n_rounds, dim_context_features)
             action_context (np.ndarray): アクション特徴量の配列 (n_actions, dim_action_features)
         Returns:
-            np.ndarray: 行動選択確率 \pi_{\theta}(a|x) の配列 (n_rounds, n_actions, 1)
+            np.ndarray: 行動選択確率 \pi_{\theta}(a|x) の配列 (n_rounds, n_actions)
         """
         assert context.shape[1] == self.dim_context_features
         assert action_context.shape[1] == self.dim_action_features
@@ -359,8 +358,8 @@ class PolicyByTwoTowerModel(PolicyStrategyInterface):
             action_context=torch.from_numpy(action_context).float(),
         )
         action_dist_ndarray = action_dist.squeeze(-1).detach().numpy()
-        # open bandit pipelineの合成データクラスの仕様に合わせて、1つ軸を追加してる
-        return action_dist_ndarray[:, :, np.newaxis]
+
+        return action_dist_ndarray
 
     def _fit_by_regression_based_approach(
         self,

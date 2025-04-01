@@ -27,6 +27,7 @@ class SyntheticEnvironmentStrategy(EnvironmentStrategyInterface):
         self.__n_actions = n_actions
         self.__dim_context = dim_context
         self.__action_context = action_context
+        self.__expected_reward_strategy = expected_reward_strategy
         self.__expected_reward_function = (
             expected_reward_strategy.get_function()
             if expected_reward_strategy
@@ -40,6 +41,13 @@ class SyntheticEnvironmentStrategy(EnvironmentStrategyInterface):
     @property
     def dim_context(self) -> int:
         return self.__dim_context
+
+    @property
+    def expected_reward_strategy_name(self) -> ExpectedRewardStrategy:
+        """期待報酬関数の名前を取得するプロパティ"""
+        if self.__expected_reward_strategy is None:
+            return "default expected reward function"
+        return self.__expected_reward_strategy.name
 
     def obtain_batch_bandit_feedback(
         self,

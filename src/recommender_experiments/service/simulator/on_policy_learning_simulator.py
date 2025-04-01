@@ -104,7 +104,7 @@ def run_on_policy_learning_single_simulation(
                 n_rounds_after_deploy=n_rounds_before_deploy,
                 off_policy_learning_method=off_policy_learning_method,
                 n_epochs=n_epochs,
-                expected_reward_name="default_reward",
+                expected_reward_name=environment_strategy.expected_reward_strategy_name,
                 learning_rate_init=learning_rate_init,
                 batch_size=batch_size,
                 logging_policy_value=logging_policy_value,

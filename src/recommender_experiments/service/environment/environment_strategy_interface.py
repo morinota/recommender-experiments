@@ -27,6 +27,12 @@ class EnvironmentStrategyInterface(abc.ABC):
         """コンテキストの次元数"""
         raise NotImplementedError
 
+    @property
+    @abc.abstractmethod
+    def expected_reward_strategy_name(self) -> str:
+        """期待報酬関数の名前を取得するプロパティ"""
+        raise NotImplementedError
+
     @abc.abstractmethod
     def obtain_batch_bandit_feedback(
         self,

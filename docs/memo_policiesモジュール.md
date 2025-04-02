@@ -76,7 +76,7 @@ def compute_batch_action_dist(
     - 探索度合いを調整するパラメータ。デフォルトは0。
   - `LogisticUCB`クラスは、`epsilon`パラメータを持つ。
     - 探索度合いを調整するパラメータ。デフォルトは0。
-  - `LogisticThompsonSampling`クラスは、特に固有のパラメータを持たない。
+  - `LogisticThompsonSampling`クラスは、特に固有のパラメータを持たない。(あ、ハイパーパラメータないのがTSの利点なんだっけ...!:thinking:)
 
 ### アクション選択ロジック: `select_action` メソッド
 

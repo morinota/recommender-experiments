@@ -1,11 +1,7 @@
 import numpy as np
 
 
-def random_policy(
-    context: np.ndarray,
-    action_context: np.ndarray,
-    random_state: int = None,
-) -> np.ndarray:
+def random_policy(context: np.ndarray, action_context: np.ndarray, random_state: int = None) -> np.ndarray:
     """一様ランダムにアイテムを選択するデータ収集方策"""
     n_rounds = context.shape[0]
     n_actions = action_context.shape[0]
@@ -17,9 +13,7 @@ def random_policy(
 
 
 def context_free_determinisitic_policy(
-    context: np.ndarray,
-    action_context: np.ndarray,
-    random_state: int = None,
+    context: np.ndarray, action_context: np.ndarray, random_state: int = None
 ) -> np.ndarray:
     """コンテキストを考慮せず、全てのcontextに対して必ず最後尾のアイテム $a_{|A|-1}$ を推薦する決定的方策"""
     n_rounds = context.shape[0]
@@ -35,9 +29,7 @@ def context_free_determinisitic_policy(
 
 
 def context_free_stochastic_policy(
-    context: np.ndarray,
-    action_context: np.ndarray,
-    random_state: int = None,
+    context: np.ndarray, action_context: np.ndarray, random_state: int = None
 ) -> np.ndarray:
     """コンテキストを考慮なしの確率的方策(epsilon-greedy)
     - epsilon=0.1とする。
@@ -58,9 +50,7 @@ def context_free_stochastic_policy(
 
 
 def context_aware_determinisitic_policy(
-    context: np.ndarray,
-    action_context: np.ndarray,
-    random_state: int = None,
+    context: np.ndarray, action_context: np.ndarray, random_state: int = None
 ) -> np.ndarray:
     """ユーザとアイテムのコンテキストを考慮し、
     コンテキストベクトル $x$ とアイテムコンテキストベクトル $e$ の内積が最も大きいアイテムを
@@ -86,9 +76,7 @@ def context_aware_determinisitic_policy(
 
 
 def context_aware_stochastic_policy(
-    context: np.ndarray,
-    action_context: np.ndarray,
-    random_state: int = None,
+    context: np.ndarray, action_context: np.ndarray, random_state: int = None
 ) -> np.ndarray:
     """ユーザとアイテムのコンテキストを考慮し、
     コンテキストベクトル $x$ とアイテムコンテキストベクトル $e$ の内積が最も大きいアイテムを

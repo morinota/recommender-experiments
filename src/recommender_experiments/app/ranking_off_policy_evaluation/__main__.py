@@ -120,18 +120,10 @@ def main():
         new_policy.update_params(action=action, reward=reward)
 
     # (3) テストデータを使ってオフ方策評価
-    action_dist = new_policy.compute_batch_action_dist(
-        n_rounds=bandit_feedback_test["n_rounds"],
-        n_sim=100000,
-    )
-    ope = OffPolicyEvaluation(
-        bandit_feedback=bandit_feedback_test,
-        ope_estimators=[IPW()],
-    )
+    action_dist = new_policy.compute_batch_action_dist(n_rounds=bandit_feedback_test["n_rounds"], n_sim=100000)
+    ope = OffPolicyEvaluation(bandit_feedback=bandit_feedback_test, ope_estimators=[IPW()])
     estimated_policy_value = ope.estimate_policy_values(action_dist=action_dist)
-    relative_policy_value_of_bernoulli_ts = (
-        estimated_policy_value["ipw"] / bandit_feedback_test["reward"].mean()
-    )
+    relative_policy_value_of_bernoulli_ts = estimated_policy_value["ipw"] / bandit_feedback_test["reward"].mean()
     print(f"{relative_policy_value_of_bernoulli_ts=}")
 
 

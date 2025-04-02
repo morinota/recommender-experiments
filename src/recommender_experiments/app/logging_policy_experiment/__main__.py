@@ -10,9 +10,7 @@ class BanditFeedbackDict(TypedDict):
     n_rounds: int  # ラウンド数
     n_actions: int  # アクション数
     context: np.ndarray  # 文脈 (shape: (n_rounds, dim_context))
-    action_context: (
-        np.ndarray
-    )  # アクション特徴量 (shape: (n_actions, dim_action_features))
+    action_context: np.ndarray  # アクション特徴量 (shape: (n_actions, dim_action_features))
     action: np.ndarray  # 実際に選択されたアクション (shape: (n_rounds,))
     position: Optional[np.ndarray]  # ポジション (shape: (n_rounds,) or None)
     reward: np.ndarray  # 報酬 (shape: (n_rounds,))
@@ -21,11 +19,7 @@ class BanditFeedbackDict(TypedDict):
     pscore: np.ndarray  # 傾向スコア (shape: (n_rounds,))
 
 
-def expected_reward_function(
-    context: np.ndarray,
-    action_context: np.ndarray,
-    random_state: int = None,
-) -> np.ndarray:
+def expected_reward_function(context: np.ndarray, action_context: np.ndarray, random_state: int = None) -> np.ndarray:
     """(アクションa, 文脈x)の各組み合わせに対する期待報酬 E_{p(r|x,a)}[r] を定義する関数
     今回の場合は、推薦候補4つの記事を送った場合の報酬rの期待値を、文脈xに依存しない固定値として設定する
     ニュース0: 0.2, ニュース1: 0.15, ニュース2: 0.1, ニュース3: 0.05
@@ -42,9 +36,7 @@ def expected_reward_function(
 
 
 def logging_policy_function_deterministic(
-    context: np.ndarray,
-    action_context: np.ndarray,
-    random_state: int = None,
+    context: np.ndarray, action_context: np.ndarray, random_state: int = None
 ) -> np.ndarray:
     """(アクションa, 文脈x)の各組み合わせに対して、選択確率 π(a|x) を定義する関数。
     - 返り値のshape: (n_rounds, n_actions)
@@ -66,17 +58,15 @@ def logging_policy_function_deterministic(
     action_dist = np.zeros((n_rounds, n_actions))
     action_dist[:, :] = p_scores
 
-    assert np.allclose(
-        action_dist.sum(axis=1), 1.0
-    ), "各ラウンドでの全てのアクションの選択確率の合計は1.0である必要があります"
+    assert np.allclose(action_dist.sum(axis=1), 1.0), (
+        "各ラウンドでの全てのアクションの選択確率の合計は1.0である必要があります"
+    )
 
     return action_dist
 
 
 def logging_policy_function_stochastic(
-    context: np.ndarray,
-    action_context: np.ndarray,
-    random_state: int = None,
+    context: np.ndarray, action_context: np.ndarray, random_state: int = None
 ) -> np.ndarray:
     """(アクションa, 文脈x)の各組み合わせに対して、選択確率 π(a|x) を定義する関数
     - 今回は、確率的なデータ収集方策を設定する。
@@ -92,18 +82,15 @@ def logging_policy_function_stochastic(
     action_dist = np.zeros((n_rounds, n_actions))
     action_dist[:, :] = p_scores
 
-    assert np.allclose(
-        action_dist.sum(axis=1), 1.0
-    ), "各ラウンドでの全てのアクションの選択確率の合計は1.0である必要があります"
+    assert np.allclose(action_dist.sum(axis=1), 1.0), (
+        "各ラウンドでの全てのアクションの選択確率の合計は1.0である必要があります"
+    )
     return action_dist
 
 
 # 評価方策(target policy)として、常にニュース0を選択する方策を設定
 def target_policy_1(
-    context: np.ndarray,
-    action_context: np.ndarray,
-    random_state: int = None,
-    recommend_arm_idx: int = 0,
+    context: np.ndarray, action_context: np.ndarray, random_state: int = None, recommend_arm_idx: int = 0
 ) -> np.ndarray:  # shape: (n_rounds, n_actions, len_list)
     """入力値として、各ラウンドの文脈とアクションの文脈を受け取り、各アクションの選択確率を返す関数
     - 返り値のshape: (n_rounds, n_actions, len_list)
@@ -120,9 +107,9 @@ def target_policy_1(
     action_dist = np.zeros((n_rounds, n_actions, 1))
     action_dist[:, :, 0] = p_scores
 
-    assert np.allclose(
-        action_dist.sum(axis=1), 1.0
-    ), "各ラウンドでの全てのアクションの選択確率の合計は1.0である必要があります"
+    assert np.allclose(action_dist.sum(axis=1), 1.0), (
+        "各ラウンドでの全てのアクションの選択確率の合計は1.0である必要があります"
+    )
 
     return action_dist
 
@@ -148,9 +135,9 @@ def target_policy_2(
     action_dist = np.zeros((n_rounds, n_actions, 1))
     action_dist[:, :, 0] = p_scores
 
-    assert np.allclose(
-        action_dist.sum(axis=1), 1.0
-    ), "各ラウンドでの全てのアクションの選択確率の合計は1.0である必要があります"
+    assert np.allclose(action_dist.sum(axis=1), 1.0), (
+        "各ラウンドでの全てのアクションの選択確率の合計は1.0である必要があります"
+    )
 
     return action_dist
 
@@ -199,13 +186,11 @@ def run_single_simulation(
     #     recommend_arm_idx=0,
     # )
     target_policy_action_dist = target_policy_2(
-        context=bandit_feedback["context"],
-        action_context=bandit_feedback["action_context"],
+        context=bandit_feedback["context"], action_context=bandit_feedback["action_context"]
     )
     # 真の期待報酬E[r|x,a]を使って、データ収集方策の代わりに評価方策を動かした場合の価値を算出
     ground_truth_policy_value = dataset.calc_ground_truth_policy_value(
-        expected_reward=bandit_feedback["expected_reward"],
-        action_dist=target_policy_action_dist,
+        expected_reward=bandit_feedback["expected_reward"], action_dist=target_policy_action_dist
     )
 
     # OPE推定量を準備(naive推定量とIPS推定量)
@@ -214,9 +199,7 @@ def run_single_simulation(
 
     # それぞれのOPE推定量を使って、データ収集方策の代わりに評価方策を動かした場合の価値を推定
     estimated_policy_value_by_naive = naive_estimator.estimate_policy_value(
-        reward=bandit_feedback["reward"],
-        action=bandit_feedback["action"],
-        action_dist=target_policy_action_dist,
+        reward=bandit_feedback["reward"], action=bandit_feedback["action"], action_dist=target_policy_action_dist
     )
     estimated_policy_value_by_ips = ips_estimator.estimate_policy_value(
         action=bandit_feedback["action"],

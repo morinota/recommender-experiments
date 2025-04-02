@@ -10,18 +10,14 @@ from sklearn.linear_model import LogisticRegression
 from obp.dataset import logistic_reward_function, SyntheticBanditDataset
 from obp.policy import IPWLearner, NNPolicyLearner, Random, LogisticTS, BernoulliTS
 
-from recommender_experiments.app.logging_policy_experiment.expected_reward_function import (
-    expected_reward_function,
-)
+from recommender_experiments.app.logging_policy_experiment.expected_reward_function import expected_reward_function
 
 
 class BanditFeedbackDict(TypedDict):
     n_rounds: int  # ラウンド数
     n_actions: int  # アクション数
     context: np.ndarray  # 文脈 (shape: (n_rounds, dim_context))
-    action_context: (
-        np.ndarray
-    )  # アクション特徴量 (shape: (n_actions, dim_action_features))
+    action_context: np.ndarray  # アクション特徴量 (shape: (n_actions, dim_action_features))
     action: np.ndarray  # 実際に選択されたアクション (shape: (n_rounds,))
     position: Optional[np.ndarray]  # ポジション (shape: (n_rounds,) or None)
     reward: np.ndarray  # 報酬 (shape: (n_rounds,))
@@ -59,8 +55,7 @@ def train_policies(
     }
 
     ipw_learner = IPWLearner(
-        n_actions=dataset.n_actions,
-        base_classifier=base_model_dict[base_model](**hyperparams["base_model"]),
+        n_actions=dataset.n_actions, base_classifier=base_model_dict[base_model](**hyperparams["base_model"])
     )
     ipw_learner.fit(
         context=bandit_feedback_train["context"],
@@ -86,20 +81,11 @@ def train_policies(
     # )
 
     # contexual bandtのLogisticTSを定義してパラメータ更新させてみる
-    logistic_ts = LogisticTS(
-        dim=dim_context,
-        n_actions=dataset.n_actions,
-        random_state=random_state,
-    )
-    logistic_ts.update_params(
-        action=0, reward=1.0, context=np.array([[0.0, 0.0, 0.0, 0.0, 0.0]])
-    )
+    logistic_ts = LogisticTS(dim=dim_context, n_actions=dataset.n_actions, random_state=random_state)
+    logistic_ts.update_params(action=0, reward=1.0, context=np.array([[0.0, 0.0, 0.0, 0.0, 0.0]]))
 
     # contextfree banditのBernoulliTSを定義してパラメータ更新させてみる
-    contextfree_ts = BernoulliTS(
-        n_actions=dataset.n_actions,
-        random_state=random_state,
-    )
+    contextfree_ts = BernoulliTS(n_actions=dataset.n_actions, random_state=random_state)
     contextfree_ts.update_params(action=0, reward=1.0)
 
     print(contextfree_ts)
@@ -116,36 +102,25 @@ def evaluate_policies(
 ) -> pl.DataFrame:
     """学習用データセットで学習した方策を、テスト用データセットで評価する"""
     # 各評価方策をテスト用データセットに適用した時のアクション選択確率を算出
-    random_action_dist = random_policy.compute_batch_action_dist(
-        n_rounds=len(bandit_feedback_test["context"])
-    )
+    random_action_dist = random_policy.compute_batch_action_dist(n_rounds=len(bandit_feedback_test["context"]))
     ipw_action_dist = ipw_learner.predict(context=bandit_feedback_test["context"])
-    nn_action_dist = nn_policy_learner.predict_proba(
-        context=bandit_feedback_test["context"]
-    )
+    nn_action_dist = nn_policy_learner.predict_proba(context=bandit_feedback_test["context"])
 
     # 真の即時報酬の期待値を使って、各方策の真の累積報酬の期待値を算出
     random_policy_value = dataset.calc_ground_truth_policy_value(
-        expected_reward=bandit_feedback_test["expected_reward"],
-        action_dist=random_action_dist,
+        expected_reward=bandit_feedback_test["expected_reward"], action_dist=random_action_dist
     )
     ipw_policy_value = dataset.calc_ground_truth_policy_value(
-        expected_reward=bandit_feedback_test["expected_reward"],
-        action_dist=ipw_action_dist,
+        expected_reward=bandit_feedback_test["expected_reward"], action_dist=ipw_action_dist
     )
     nn_policy_value = dataset.calc_ground_truth_policy_value(
-        expected_reward=bandit_feedback_test["expected_reward"],
-        action_dist=nn_action_dist,
+        expected_reward=bandit_feedback_test["expected_reward"], action_dist=nn_action_dist
     )
 
     return pl.DataFrame(
         {
             "policy": ["random_policy", "ipw_learner", "nn_policy_learner"],
-            "true_policy_value": [
-                random_policy_value,
-                ipw_policy_value,
-                nn_policy_value,
-            ],
+            "true_policy_value": [random_policy_value, ipw_policy_value, nn_policy_value],
         }
     )
 
@@ -160,12 +135,7 @@ def main() -> None:
     random_state = 12345
 
     # データセットをセットアップ
-    dataset = setup_dataset(
-        n_actions=n_actions,
-        dim_context=dim_context,
-        beta=beta,
-        random_state=random_state,
-    )
+    dataset = setup_dataset(n_actions=n_actions, dim_context=dim_context, beta=beta, random_state=random_state)
 
     # 学習用とテスト用のデータセットを生成
     bandit_feedback_train = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)

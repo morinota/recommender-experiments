@@ -12,25 +12,16 @@ import pydantic
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from tqdm import tqdm
-from recommender_experiments.service.opl.two_tower_nn_model import (
-    PolicyByTwoTowerModel,
-)
-from recommender_experiments.service.simulator.opl_simulator import (
-    run_opl_multiple_simulations_in_parallel,
-)
-from recommender_experiments.service.utils.expected_reward_functions import (
-    ContextFreeBinary,
-    ContextAwareBinary,
-)
+from recommender_experiments.service.opl.two_tower_nn_model import PolicyByTwoTowerModel
+from recommender_experiments.service.simulator.opl_simulator import run_opl_multiple_simulations_in_parallel
+from recommender_experiments.service.utils.expected_reward_functions import ContextFreeBinary, ContextAwareBinary
 
 
 class BanditFeedbackDict(TypedDict):
     n_rounds: int  # ラウンド数
     n_actions: int  # アクション数s
     context: np.ndarray  # 文脈 (shape: (n_rounds, dim_context))
-    action_context: (
-        np.ndarray
-    )  # アクション特徴量 (shape: (n_actions, dim_action_features))
+    action_context: np.ndarray  # アクション特徴量 (shape: (n_actions, dim_action_features))
     action: np.ndarray  # 実際に選択されたアクション (shape: (n_rounds,))
     position: Optional[np.ndarray]  # ポジション (shape: (n_rounds,) or None)
     reward: np.ndarray  # 報酬 (shape: (n_rounds,))
@@ -40,9 +31,7 @@ class BanditFeedbackDict(TypedDict):
 
 
 def _dot_product_based_logging_policy(
-    context: np.ndarray,
-    action_context: np.ndarray,
-    random_state: int = None,
+    context: np.ndarray, action_context: np.ndarray, random_state: int = None
 ) -> np.ndarray:
     """ユーザとニュースのコンテキストを考慮し、
     コンテキストベクトル $x$ とアイテムコンテキストベクトル $e$ の内積が最も大きいニュースを
@@ -61,9 +50,7 @@ def _dot_product_based_logging_policy(
 
     # 確率的方策: 確率0.1で全てのアクションを一様ランダムに選択し、確率0.6で最もスコアが高いアクションを決定的に選択
     action_dist = np.full((n_rounds, n_actions), epsilon / n_actions)
-    action_dist[np.arange(n_rounds), selected_actions] = (
-        1.0 - epsilon + epsilon / n_actions
-    )
+    action_dist[np.arange(n_rounds), selected_actions] = 1.0 - epsilon + epsilon / n_actions
     return action_dist
 
 

@@ -8,9 +8,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from recommender_experiments.service.estimator import estimate_q_x_a_via_regression
-from recommender_experiments.service.opl.policy_strategy_interface import (
-    PolicyStrategyInterface,
-)
+from recommender_experiments.service.opl.policy_strategy_interface import PolicyStrategyInterface
 from recommender_experiments.service.synthetic_bandit_feedback import BanditFeedbackDict
 
 
@@ -35,13 +33,7 @@ class NNPolicyDataset(torch.utils.data.Dataset):
         )
 
     def __getitem__(self, index):
-        return (
-            self.context[index],
-            self.action[index],
-            self.reward[index],
-            self.pscore[index],
-            self.q_x_a_hat[index],
-        )
+        return (self.context[index], self.action[index], self.reward[index], self.pscore[index], self.q_x_a_hat[index])
 
     def __len__(self):
         return self.context.shape[0]
@@ -82,14 +74,10 @@ class PolicyByTwoTowerModel(PolicyStrategyInterface):
         context_tower_layers = []
         input_size = self.dim_context_features
         for idx, layer_size in enumerate(self.hidden_layer_size):
-            context_tower_layers.append(
-                (f"context_l_{idx}", nn.Linear(input_size, layer_size))
-            )
+            context_tower_layers.append((f"context_l_{idx}", nn.Linear(input_size, layer_size)))
             context_tower_layers.append((f"context_a_{idx}", activation_layer()))
             input_size = layer_size
-        context_tower_layers.append(
-            ("embed", nn.Linear(input_size, self.dim_two_tower_embedding))
-        )
+        context_tower_layers.append(("embed", nn.Linear(input_size, self.dim_two_tower_embedding)))
         self.context_tower = nn.Sequential(OrderedDict(context_tower_layers))
 
         # Action Tower
@@ -99,17 +87,10 @@ class PolicyByTwoTowerModel(PolicyStrategyInterface):
             action_layers.append((f"action_l_{idx}", nn.Linear(input_size, layer_size)))
             action_layers.append((f"action_a_{idx}", activation_layer()))
             input_size = layer_size
-        action_layers.append(
-            ("embed", nn.Linear(input_size, self.dim_two_tower_embedding))
-        )
+        action_layers.append(("embed", nn.Linear(input_size, self.dim_two_tower_embedding)))
         self.action_tower = nn.Sequential(OrderedDict(action_layers))
 
-        self.nn_model = nn.ModuleDict(
-            {
-                "context_tower": self.context_tower,
-                "action_tower": self.action_tower,
-            }
-        )
+        self.nn_model = nn.ModuleDict({"context_tower": self.context_tower, "action_tower": self.action_tower})
 
         self.train_losses = []
         self.train_values = []
@@ -120,30 +101,22 @@ class PolicyByTwoTowerModel(PolicyStrategyInterface):
         return "two-tower-policy"
 
     def fit(
-        self,
-        bandit_feedback_train: BanditFeedbackDict,
-        bandit_feedback_test: Optional[BanditFeedbackDict] = None,
+        self, bandit_feedback_train: BanditFeedbackDict, bandit_feedback_test: Optional[BanditFeedbackDict] = None
     ) -> None:
         """推薦方策を学習するメソッド"""
         if self.off_policy_objective in ("ips", "dr"):
             self._fit_by_gradiant_based_approach(
-                bandit_feedback_train=bandit_feedback_train,
-                bandit_feedback_test=bandit_feedback_test,
+                bandit_feedback_train=bandit_feedback_train, bandit_feedback_test=bandit_feedback_test
             )
         elif self.off_policy_objective == "regression_based":
             self._fit_by_regression_based_approach(
-                bandit_feedback_train=bandit_feedback_train,
-                bandit_feedback_test=bandit_feedback_test,
+                bandit_feedback_train=bandit_feedback_train, bandit_feedback_test=bandit_feedback_test
             )
         else:
-            raise NotImplementedError(
-                "`off_policy_objective` must be one of 'ips', 'dr', or 'regression_based'"
-            )
+            raise NotImplementedError("`off_policy_objective` must be one of 'ips', 'dr', or 'regression_based'")
 
     def _fit_by_gradiant_based_approach(
-        self,
-        bandit_feedback_train: BanditFeedbackDict,
-        bandit_feedback_test: Optional[BanditFeedbackDict] = None,
+        self, bandit_feedback_train: BanditFeedbackDict, bandit_feedback_test: Optional[BanditFeedbackDict] = None
     ) -> None:
         """推薦方策を、勾配ベースアプローチで学習するメソッド"""
 
@@ -159,17 +132,9 @@ class PolicyByTwoTowerModel(PolicyStrategyInterface):
 
         # optimizerの設定
         if self.solver == "adagrad":
-            optimizer = optim.Adagrad(
-                self.nn_model.parameters(),
-                lr=self.learning_rate_init,
-                weight_decay=self.alpha,
-            )
+            optimizer = optim.Adagrad(self.nn_model.parameters(), lr=self.learning_rate_init, weight_decay=self.alpha)
         elif self.solver == "adam":
-            optimizer = optim.Adam(
-                self.nn_model.parameters(),
-                lr=self.learning_rate_init,
-                weight_decay=self.alpha,
-            )
+            optimizer = optim.Adam(self.nn_model.parameters(), lr=self.learning_rate_init, weight_decay=self.alpha)
         else:
             raise NotImplementedError("`solver` must be one of 'adam' or 'adagrad'")
 
@@ -181,13 +146,7 @@ class PolicyByTwoTowerModel(PolicyStrategyInterface):
         else:
             raise NotImplementedError
 
-        training_data_loader = self._create_train_data_for_opl(
-            context,
-            action,
-            reward,
-            pscore,
-            q_x_a_hat,
-        )
+        training_data_loader = self._create_train_data_for_opl(context, action, reward, pscore, q_x_a_hat)
         action_context_tensor = torch.from_numpy(action_context).float()
 
         # start policy training
@@ -195,13 +154,10 @@ class PolicyByTwoTowerModel(PolicyStrategyInterface):
         q_x_a_test = bandit_feedback_test["expected_reward"]
         for _ in range(self.max_iter):
             # 各エポックの最初に、学習データとテストデータに対する真の方策性能を計算
-            pi_train = self.predict_proba(
-                context=context, action_context=action_context
-            )
+            pi_train = self.predict_proba(context=context, action_context=action_context)
             self.train_values.append((q_x_a_train * pi_train).sum(1).mean())
             pi_test = self.predict_proba(
-                context=bandit_feedback_test["context"],
-                action_context=bandit_feedback_test["action_context"],
+                context=bandit_feedback_test["context"], action_context=bandit_feedback_test["action_context"]
             )
             self.test_values.append((q_x_a_test * pi_test).sum(1).mean())
 
@@ -210,18 +166,10 @@ class PolicyByTwoTowerModel(PolicyStrategyInterface):
             for x, a, r, p, q_x_a_hat_ in training_data_loader:
                 optimizer.zero_grad()
                 # 新方策の行動選択確率分布\pi(a|x)を計算
-                pi = self._predict_proba_as_tensor(
-                    x, action_context_tensor
-                )  # pi=(batch_size, n_actions)
+                pi = self._predict_proba_as_tensor(x, action_context_tensor)  # pi=(batch_size, n_actions)
 
                 # 方策勾配の推定値を計算 (方策性能を最大化したいのでマイナスをかけてlossとする)
-                loss = -self._estimate_policy_gradient(
-                    action=a,
-                    reward=r,
-                    pscore=p,
-                    q_x_a_hat=q_x_a_hat_,
-                    pi=pi,
-                ).mean()
+                loss = -self._estimate_policy_gradient(action=a, reward=r, pscore=p, q_x_a_hat=q_x_a_hat_, pi=pi).mean()
                 # lossを最小化するようにモデルパラメータを更新
                 loss.backward()
                 optimizer.step()
@@ -233,8 +181,7 @@ class PolicyByTwoTowerModel(PolicyStrategyInterface):
         pi_train = self.predict_proba(context=context, action_context=action_context)
         self.train_values.append((q_x_a_train * pi_train).sum(1).mean())
         pi_test = self.predict_proba(
-            context=bandit_feedback_test["context"],
-            action_context=bandit_feedback_test["action_context"],
+            context=bandit_feedback_test["context"], action_context=bandit_feedback_test["action_context"]
         )
         self.test_values.append((q_x_a_test * pi_test).sum(1).mean())
 
@@ -263,10 +210,7 @@ class PolicyByTwoTowerModel(PolicyStrategyInterface):
             torch.from_numpy(q_x_a_hat).float(),
         )
 
-        data_loader = torch.utils.data.DataLoader(
-            dataset,
-            batch_size=self.batch_size,
-        )
+        data_loader = torch.utils.data.DataLoader(dataset, batch_size=self.batch_size)
         return data_loader
 
     def _estimate_policy_gradient(
@@ -302,11 +246,7 @@ class PolicyByTwoTowerModel(PolicyStrategyInterface):
 
         return estimated_policy_grad_arr
 
-    def _predict_proba_as_tensor(
-        self,
-        context: torch.Tensor,
-        action_context: torch.Tensor,
-    ) -> torch.Tensor:
+    def _predict_proba_as_tensor(self, context: torch.Tensor, action_context: torch.Tensor) -> torch.Tensor:
         """方策による行動選択確率を予測するメソッド。
         行動選択確率は各アクションのロジット値を計算し、softmax関数を適用することで得られる。
         学習時にも推論時にも利用するために、PyTorchのテンソルを入出力とする。
@@ -316,31 +256,18 @@ class PolicyByTwoTowerModel(PolicyStrategyInterface):
         Returns:
             torch.Tensor: 行動選択確率 \pi_{\theta}(a|x) のテンソル (n_rounds, n_actions)
         """
-        context_embedding = self.nn_model["context_tower"](
-            context
-        )  # shape: (n_rounds, dim_two_tower_embedding)
-        action_embedding = self.nn_model["action_tower"](
-            action_context
-        )  # shape: (n_actions, dim_two_tower_embedding)
+        context_embedding = self.nn_model["context_tower"](context)  # shape: (n_rounds, dim_two_tower_embedding)
+        action_embedding = self.nn_model["action_tower"](action_context)  # shape: (n_actions, dim_two_tower_embedding)
 
         # context_embeddingとaction_embeddingの内積をスコアとして計算
-        logits = torch.matmul(
-            context_embedding, action_embedding.T
-        )  # shape: (n_rounds, n_actions)
+        logits = torch.matmul(context_embedding, action_embedding.T)  # shape: (n_rounds, n_actions)
 
         # 行動選択確率分布を得るためにsoftmax関数を適用
-        pi = torch.softmax(
-            logits / self.softmax_temprature, dim=1
-        )  # shape: (n_rounds, n_actions)
+        pi = torch.softmax(logits / self.softmax_temprature, dim=1)  # shape: (n_rounds, n_actions)
 
         return pi
 
-    def predict_proba(
-        self,
-        context: np.ndarray,
-        action_context: np.ndarray,
-        random_state: int = 0,
-    ) -> np.ndarray:
+    def predict_proba(self, context: np.ndarray, action_context: np.ndarray, random_state: int = 0) -> np.ndarray:
         """方策による行動選択確率を予測するメソッド
         Args:
             context (np.ndarray): コンテキスト特徴量の配列 (n_rounds, dim_context_features)
@@ -354,17 +281,14 @@ class PolicyByTwoTowerModel(PolicyStrategyInterface):
         self.nn_model.eval()
 
         action_dist = self._predict_proba_as_tensor(
-            context=torch.from_numpy(context).float(),
-            action_context=torch.from_numpy(action_context).float(),
+            context=torch.from_numpy(context).float(), action_context=torch.from_numpy(action_context).float()
         )
         action_dist_ndarray = action_dist.squeeze(-1).detach().numpy()
 
         return action_dist_ndarray
 
     def _fit_by_regression_based_approach(
-        self,
-        bandit_feedback_train: BanditFeedbackDict,
-        bandit_feedback_test: Optional[BanditFeedbackDict] = None,
+        self, bandit_feedback_train: BanditFeedbackDict, bandit_feedback_test: Optional[BanditFeedbackDict] = None
     ) -> None:
         """two-towerモデルに基づく推薦方策を、回帰ベースアプローチで学習するメソッド。
         ここでは、報酬rの予測問題としてクロスエントロピー誤差を最小化するように学習を行う。
@@ -384,17 +308,9 @@ class PolicyByTwoTowerModel(PolicyStrategyInterface):
 
         # optimizerの設定
         if self.solver == "adagrad":
-            optimizer = optim.Adagrad(
-                self.nn_model.parameters(),
-                lr=self.learning_rate_init,
-                weight_decay=self.alpha,
-            )
+            optimizer = optim.Adagrad(self.nn_model.parameters(), lr=self.learning_rate_init, weight_decay=self.alpha)
         elif self.solver == "adam":
-            optimizer = optim.Adam(
-                self.nn_model.parameters(),
-                lr=self.learning_rate_init,
-                weight_decay=self.alpha,
-            )
+            optimizer = optim.Adam(self.nn_model.parameters(), lr=self.learning_rate_init, weight_decay=self.alpha)
         else:
             raise NotImplementedError("`solver` must be one of 'adam' or 'adagrad'")
 
@@ -412,13 +328,10 @@ class PolicyByTwoTowerModel(PolicyStrategyInterface):
         q_x_a_test = bandit_feedback_test["expected_reward"]
         for _ in range(self.max_iter):
             # 各エポックの最初に、学習データとテストデータに対する真の方策性能を計算
-            pi_train = self.predict_proba(
-                context=context, action_context=action_context
-            )
+            pi_train = self.predict_proba(context=context, action_context=action_context)
             self.train_values.append((q_x_a_train * pi_train).sum(1).mean())
             pi_test = self.predict_proba(
-                context=bandit_feedback_test["context"],
-                action_context=bandit_feedback_test["action_context"],
+                context=bandit_feedback_test["context"], action_context=bandit_feedback_test["action_context"]
             )
             self.test_values.append((q_x_a_test * pi_test).sum(1).mean())
 
@@ -434,15 +347,10 @@ class PolicyByTwoTowerModel(PolicyStrategyInterface):
 
                 # 選択されたアクションに対応する\hat{q}(x,a)を取得
                 selected_action_idx_tensor = torch.arange(a.shape[0], dtype=torch.long)
-                q_x_a_hat_by_two_tower_of_selected_action = q_x_a_hat_by_two_tower[
-                    selected_action_idx_tensor,
-                    a,
-                ]
+                q_x_a_hat_by_two_tower_of_selected_action = q_x_a_hat_by_two_tower[selected_action_idx_tensor, a]
 
                 # 期待報酬の推定値 \hat{q}(x,a) と報酬rとのクロスエントロピー誤差を損失関数とする
-                loss = torch.nn.functional.binary_cross_entropy(
-                    q_x_a_hat_by_two_tower_of_selected_action, r
-                ).mean()
+                loss = torch.nn.functional.binary_cross_entropy(q_x_a_hat_by_two_tower_of_selected_action, r).mean()
 
                 # lossを最小化するようにモデルパラメータを更新
                 loss.backward()
@@ -455,8 +363,7 @@ class PolicyByTwoTowerModel(PolicyStrategyInterface):
         pi_train = self.predict_proba(context=context, action_context=action_context)
         self.train_values.append((q_x_a_train * pi_train).sum(1).mean())
         pi_test = self.predict_proba(
-            context=bandit_feedback_test["context"],
-            action_context=bandit_feedback_test["action_context"],
+            context=bandit_feedback_test["context"], action_context=bandit_feedback_test["action_context"]
         )
         self.test_values.append((q_x_a_test * pi_test).sum(1).mean())
 
@@ -490,11 +397,5 @@ if __name__ == "__main__":
     )
 
     # Assert
-    assert action_dist.shape == (
-        n_rounds,
-        n_actions,
-        1,
-    ), "各ラウンドごとに、確率の総和が1.0"
-    assert np.all(0 <= action_dist) and np.all(
-        action_dist <= 1
-    ), "各アクションの選択確率が0以上1以下であること"
+    assert action_dist.shape == (n_rounds, n_actions, 1), "各ラウンドごとに、確率の総和が1.0"
+    assert np.all(0 <= action_dist) and np.all(action_dist <= 1), "各アクションの選択確率が0以上1以下であること"

@@ -15,15 +15,9 @@ def estimate_q_x_a_via_regression(
     Returns:
         np.ndarray: 各学習データに対する各アクションの期待報酬の予測値 \hat{q}(x,a) (shape: (n_rounds, n_actions))
     """
-    n_data, n_actions = (
-        bandit_feedback_train["n_rounds"],
-        bandit_feedback_train["n_actions"],
-    )
+    n_data, n_actions = (bandit_feedback_train["n_rounds"], bandit_feedback_train["n_actions"])
     x, r = bandit_feedback_train["context"], bandit_feedback_train["reward"]
-    actions, a_feat = (
-        bandit_feedback_train["action"],
-        bandit_feedback_train["action_context"],
-    )
+    actions, a_feat = (bandit_feedback_train["action"], bandit_feedback_train["action_context"])
     x_a = np.concatenate([x, a_feat[actions]], axis=1)
 
     # 学習データに対して、期待報酬関数の予測モデル \hat{q}(x,a) を学習

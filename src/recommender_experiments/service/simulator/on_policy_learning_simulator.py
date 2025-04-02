@@ -2,12 +2,8 @@ from typing import Callable, Literal
 import numpy as np
 import pydantic
 
-from recommender_experiments.service.environment.environment_strategy_interface import (
-    EnvironmentStrategyInterface,
-)
-from recommender_experiments.service.opl.policy_strategy_interface import (
-    PolicyStrategyInterface,
-)
+from recommender_experiments.service.environment.environment_strategy_interface import EnvironmentStrategyInterface
+from recommender_experiments.service.opl.policy_strategy_interface import PolicyStrategyInterface
 
 
 class OnPolicyLearningSimulationResult(pydantic.BaseModel):
@@ -38,7 +34,6 @@ def run_on_policy_learning_single_simulation(
     batch_size: int = 32,
     learning_rate_init: float = 0.00001,
 ) -> list[OnPolicyLearningSimulationResult]:
-
     # 真の方策性能の評価用のbandit_feedbackを用意しておく
     bandit_feedback_test = environment_strategy.obtain_batch_bandit_feedback(
         logging_policy_strategy=logging_policy_strategy,  # ここはなんでもいい
@@ -47,20 +42,15 @@ def run_on_policy_learning_single_simulation(
 
     results = []
     for simulation_idx in range(n_simulations):
-
         # データ収集方策を学習
-        bandit_feedback_before_deploy = (
-            environment_strategy.obtain_batch_bandit_feedback(
-                logging_policy_strategy=logging_policy_strategy,
-                n_rounds=n_rounds_before_deploy,
-            )
+        bandit_feedback_before_deploy = environment_strategy.obtain_batch_bandit_feedback(
+            logging_policy_strategy=logging_policy_strategy, n_rounds=n_rounds_before_deploy
         )
         # データ収集方策の方策性能を評価
         logging_policy_value = environment_strategy.calc_policy_value(
             expected_reward=bandit_feedback_test.expected_reward,
             action_dist=logging_policy_strategy.predict_proba(
-                context=bandit_feedback_test.context,
-                action_context=bandit_feedback_test.action_context,
+                context=bandit_feedback_test.context, action_context=bandit_feedback_test.action_context
             ),
         )
 
@@ -73,17 +63,13 @@ def run_on_policy_learning_single_simulation(
         new_policy_value_before_deploy = environment_strategy.calc_policy_value(
             expected_reward=bandit_feedback_test.expected_reward,
             action_dist=target_policy_strategy.predict_proba(
-                context=bandit_feedback_test.context,
-                action_context=bandit_feedback_test.action_context,
+                context=bandit_feedback_test.context, action_context=bandit_feedback_test.action_context
             ),
         )
 
         # 新方策をデプロイして新たにbandit_feedbackを取得
-        bandit_feedback_after_deploy = (
-            environment_strategy.obtain_batch_bandit_feedback(
-                logging_policy_strategy=target_policy_strategy,
-                n_rounds=n_rounds_after_deploy,
-            )
+        bandit_feedback_after_deploy = environment_strategy.obtain_batch_bandit_feedback(
+            logging_policy_strategy=target_policy_strategy, n_rounds=n_rounds_after_deploy
         )
         # 新方策をオンライン学習
         target_policy_strategy.fit(
@@ -94,8 +80,7 @@ def run_on_policy_learning_single_simulation(
         new_policy_value_after_deploy = environment_strategy.calc_policy_value(
             expected_reward=bandit_feedback_test.expected_reward,
             action_dist=target_policy_strategy.predict_proba(
-                context=bandit_feedback_test.context,
-                action_context=bandit_feedback_test.action_context,
+                context=bandit_feedback_test.context, action_context=bandit_feedback_test.action_context
             ),
         )
 

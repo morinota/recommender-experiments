@@ -42,16 +42,9 @@ class NRMSPolicyLearner(NNPolicyLearner):
         )
 
         # Combine all layers
-        self.nn_model = nn.ModuleDict(
-            {
-                "user_encoder": self.user_encoder,
-                "news_encoder": self.news_encoder,
-            }
-        )
+        self.nn_model = nn.ModuleDict({"user_encoder": self.user_encoder, "news_encoder": self.news_encoder})
 
-    def _predict_proba_for_fit(
-        self, context: torch.Tensor, action_context: torch.Tensor
-    ) -> torch.Tensor:
+    def _predict_proba_for_fit(self, context: torch.Tensor, action_context: torch.Tensor) -> torch.Tensor:
         """
         Predict action probabilities based on user context and candidate news.
         """
@@ -106,18 +99,9 @@ class NRMSPolicyLearner(NNPolicyLearner):
 
                 # IPS推定量を用いて、方策勾配の推定値を計算
                 policy_grad_arr = self._estimate_policy_gradient(
-                    context=x,
-                    reward=r,
-                    action=a,
-                    pscore=p,
-                    action_dist=pi,
-                    position=pos,
+                    context=x, reward=r, action=a, pscore=p, action_dist=pi, position=pos
                 )
-                policy_constraint = self._estimate_policy_constraint(
-                    action=a,
-                    pscore=p,
-                    action_dist=pi,
-                )
+                policy_constraint = self._estimate_policy_constraint(action=a, pscore=p, action_dist=pi)
                 loss = -policy_grad_arr.mean()
                 loss += self.policy_reg_param * policy_constraint
                 loss += self.var_reg_param * torch.var(policy_grad_arr)
@@ -151,18 +135,12 @@ class PLMBasedNewsEncoder(nn.Module):
         plm_hidden_size = AutoConfig.from_pretrained(pretrained).hidden_size
 
         self.multihead_attention = nn.MultiheadAttention(
-            embed_dim=plm_hidden_size,
-            num_heads=multihead_attn_num_heads,
-            batch_first=True,
+            embed_dim=plm_hidden_size, num_heads=multihead_attn_num_heads, batch_first=True
         )
-        self.additive_attention = AdditiveAttention(
-            plm_hidden_size, additive_attn_hidden_dim
-        )
+        self.additive_attention = AdditiveAttention(plm_hidden_size, additive_attn_hidden_dim)
 
     def forward(self, input_val: torch.Tensor) -> torch.Tensor:
-        V = self.plm(
-            input_val
-        ).last_hidden_state  # [batch_size, seq_len] -> [batch_size, seq_len, hidden_size]
+        V = self.plm(input_val).last_hidden_state  # [batch_size, seq_len] -> [batch_size, seq_len, hidden_size]
         multihead_attn_output, _ = self.multihead_attention(
             V, V, V
         )  # [batch_size, seq_len, hidden_size] -> [batch_size, seq_len, hidden_size]
@@ -209,23 +187,16 @@ class AdditiveAttention(nn.Module):
 
 class UserEncoder(nn.Module):
     def __init__(
-        self,
-        hidden_size: int,
-        multihead_attn_num_heads: int = 16,
-        additive_attn_hidden_dim: int = 200,
+        self, hidden_size: int, multihead_attn_num_heads: int = 16, additive_attn_hidden_dim: int = 200
     ) -> None:
         super().__init__()
         self.hidden_size = hidden_size
         self.multihead_attention = nn.MultiheadAttention(
             embed_dim=hidden_size, num_heads=multihead_attn_num_heads, batch_first=True
         )
-        self.additive_attention = AdditiveAttention(
-            hidden_size, additive_attn_hidden_dim
-        )
+        self.additive_attention = AdditiveAttention(hidden_size, additive_attn_hidden_dim)
 
-    def forward(
-        self, news_histories: torch.Tensor, news_encoder: nn.Module
-    ) -> torch.Tensor:
+    def forward(self, news_histories: torch.Tensor, news_encoder: nn.Module) -> torch.Tensor:
         batch_size, hist_size, seq_len = news_histories.size()
         news_histories = news_histories.view(
             batch_size * hist_size, seq_len
@@ -266,12 +237,7 @@ class NRMS(nn.Module):
         self.hidden_size: int = hidden_size
         self.loss_fn = loss_fn
 
-    def forward(
-        self,
-        candidate_news: torch.Tensor,
-        news_histories: torch.Tensor,
-        target: torch.Tensor,
-    ) -> torch.Tensor:
+    def forward(self, candidate_news: torch.Tensor, news_histories: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         """
         Parameters
         ----------
@@ -303,9 +269,7 @@ class NRMS(nn.Module):
         output = torch.bmm(
             news_candidate_encoded, news_histories_encoded
         )  # [batch_size, (candidate_num), emb_dim] x [batch_size, emb_dim, 1] -> [batch_size, (1+npratio), 1, 1]
-        output = output.squeeze(-1).squeeze(
-            -1
-        )  # [batch_size, (1+npratio), 1, 1] -> [batch_size, (1+npratio)]
+        output = output.squeeze(-1).squeeze(-1)  # [batch_size, (1+npratio), 1, 1] -> [batch_size, (1+npratio)]
 
         # NOTE:
         # when "val" mode(self.training == False) → not calculate loss score

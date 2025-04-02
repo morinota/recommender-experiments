@@ -20,6 +20,3 @@ from recommender_experiments.service.utils.expected_reward_functions import (
     ContextAwareBinary,
 )
 from recommender_experiments.service.utils.logging_policies import random_policy
-
-class OPESimulationResult(pydantic.BaseModel):
-    

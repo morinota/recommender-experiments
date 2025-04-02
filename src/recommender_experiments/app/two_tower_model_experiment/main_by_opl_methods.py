@@ -1,7 +1,5 @@
 from pathlib import Path
-from recommender_experiments.service.simulator.opl_simulator import (
-    run_opl_multiple_simulations_in_parallel,
-)
+from recommender_experiments.service.simulator.opl_simulator import run_opl_multiple_simulations_in_parallel
 import recommender_experiments.service.utils.logging_policies as logging_policies
 import polars as pl
 

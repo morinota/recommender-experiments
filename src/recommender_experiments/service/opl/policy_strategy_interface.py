@@ -12,21 +12,12 @@ class PolicyStrategyInterface(abc.ABC):
     """
 
     @abc.abstractmethod
-    def fit(
-        self,
-        bandit_feedback_train: dict,
-        bandit_feedback_test: Optional[dict] = None,
-    ) -> None:
+    def fit(self, bandit_feedback_train: dict, bandit_feedback_test: Optional[dict] = None) -> None:
         """bandit feedbackを受け取って方策を更新するメソッド"""
         raise NotImplementedError
 
     @abc.abstractmethod
-    def predict_proba(
-        self,
-        context: np.ndarray,
-        action_context: np.ndarray,
-        random_state: int = 0,
-    ) -> np.ndarray:
+    def predict_proba(self, context: np.ndarray, action_context: np.ndarray, random_state: int = 0) -> np.ndarray:
         """contextを受け取って、方策による行動選択確率 \pi(a|x) を予測するメソッド
         Args:
             context (np.ndarray): コンテキスト特徴量の配列 (n_rounds, dim_context_features)

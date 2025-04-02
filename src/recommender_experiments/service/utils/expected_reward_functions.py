@@ -76,12 +76,7 @@ class ContextAwareBinary(ExpectedRewardStrategy):
         np.ndarray: 期待報酬 (n_rounds, n_actions) の配列。
     """
 
-    def __init__(
-        self,
-        lower: float = 0.0,
-        upper: float = 1.0,
-        should_reverse: bool = False,
-    ) -> None:
+    def __init__(self, lower: float = 0.0, upper: float = 1.0, should_reverse: bool = False) -> None:
         self.lower = lower
         self.upper = upper
         self.should_reverse = should_reverse
@@ -109,14 +104,10 @@ class ContextAwareBinary(ExpectedRewardStrategy):
 
             # 逆順を指定する場合は、期待報酬が内積が小さいペアほど上限値に近く、大きいペアほど下限値に近いようにする
             if self.should_reverse:
-                expected_rewards = (1 - normalized_dot) * (
-                    self.upper - self.lower
-                ) + self.lower
+                expected_rewards = (1 - normalized_dot) * (self.upper - self.lower) + self.lower
             else:
                 # 正規化された値をlowerからupperの範囲にスケーリング
-                expected_rewards = (
-                    normalized_dot * (self.upper - self.lower) + self.lower
-                )
+                expected_rewards = normalized_dot * (self.upper - self.lower) + self.lower
 
             assert expected_rewards.shape == (n_rounds, n_actions)
             return expected_rewards

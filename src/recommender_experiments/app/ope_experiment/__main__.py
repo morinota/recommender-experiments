@@ -7,11 +7,7 @@ from pandas import DataFrame
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 import yaml
-from obp.dataset import (
-    logistic_reward_function,
-    SyntheticBanditDataset,
-    OpenBanditDataset,
-)
+from obp.dataset import logistic_reward_function, SyntheticBanditDataset, OpenBanditDataset
 from obp.ope import (
     DirectMethod,
     InverseProbabilityWeighting,
@@ -29,9 +25,7 @@ from obp.policy import IPWLearner
 app = typer.Typer(pretty_exceptions_enable=False)
 
 
-def load_hyperparameters(
-    config_path: str = "./configs/ope_experiment/hyperparams.yml",
-) -> dict:
+def load_hyperparameters(config_path: str = "./configs/ope_experiment/hyperparams.yml") -> dict:
     """
     設定ファイルからハイパーパラメータを読み込む。
 
@@ -123,9 +117,7 @@ def run_single_simulation(
     bandit_feedback_train = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
     bandit_feedback_test = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
     logger.debug(f"bandit_feedback['action']: {bandit_feedback_train['action'].shape}")
-    logger.debug(
-        f"bandit_feedback['expected_reward']: {bandit_feedback_train['expected_reward'].shape}"
-    )
+    logger.debug(f"bandit_feedback['expected_reward']: {bandit_feedback_train['expected_reward'].shape}")
     logger.debug(f"dataset.n_actions: {dataset.n_actions}")
 
     # 評価方策のモデル構造を定義
@@ -147,9 +139,7 @@ def run_single_simulation(
 
     # テストデータの各タイムステップに対して、評価方策による行動選択の確率分布を推論
     ## predictメソッドは決定的な行動選択。sample_actionメソッドは確率的な行動選択。
-    action_dist = evaluation_policy.predict_proba(
-        context=bandit_feedback_test["context"]
-    )
+    action_dist = evaluation_policy.predict_proba(context=bandit_feedback_test["context"])
     ground_truth_policy_value = dataset.calc_ground_truth_policy_value(
         # あ、擬似データだから、各(context, action)ペアに対する期待報酬 E[r|a,x] が既知なんだ...!!
         expected_reward=bandit_feedback_test["expected_reward"],
@@ -162,9 +152,7 @@ def run_single_simulation(
     regression_model = RegressionModel(
         n_actions=dataset.n_actions,
         action_context=dataset.action_context,
-        base_model=base_model_dict[base_model_for_reg_model](
-            **hyperparams[base_model_for_reg_model]
-        ),
+        base_model=base_model_dict[base_model_for_reg_model](**hyperparams[base_model_for_reg_model]),
     )
     estimated_rewards_by_reg_model = regression_model.fit_predict(
         context=bandit_feedback_test["context"],
@@ -175,9 +163,7 @@ def run_single_simulation(
     )
 
     # オフライン評価(各OPE推定量で評価方策のオンライン性能を予測 & ground-truthと比較?)
-    ope = OffPolicyEvaluation(
-        bandit_feedback=bandit_feedback_test, ope_estimators=ope_estimators
-    )
+    ope = OffPolicyEvaluation(bandit_feedback=bandit_feedback_test, ope_estimators=ope_estimators)
 
     metric_i = ope.evaluate_performance_of_estimators(
         ground_truth_policy_value=ground_truth_policy_value,
@@ -188,8 +174,7 @@ def run_single_simulation(
         metric="relative-ee",  # OPE推定量の性能を評価するための指標
     )
     estimated_policy_value_by_ope = ope.estimate_policy_values(
-        action_dist=action_dist,
-        estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+        action_dist=action_dist, estimated_rewards_by_reg_model=estimated_rewards_by_reg_model
     )
     print(f"estimated_policy_value_by_ope: {estimated_policy_value_by_ope}")
 
@@ -248,9 +233,7 @@ def run_simulations_in_parallel(
     )
 
 
-def compile_results(
-    processed: list, ope_estimators: list, log_path: Path = Path("./logs")
-) -> None:
+def compile_results(processed: list, ope_estimators: list, log_path: Path = Path("./logs")) -> None:
     """
     シミュレーション結果を集計し、CSV形式で保存する。
 
@@ -276,26 +259,17 @@ def compile_results(
 @app.command()
 def main(
     n_runs: int = typer.Option(1, help="実験のシミュレーション回数。"),
-    n_rounds: int = typer.Option(
-        10000, help="収集されたバンディットデータのサンプル数。"
-    ),
+    n_rounds: int = typer.Option(10000, help="収集されたバンディットデータのサンプル数。"),
     n_actions: int = typer.Option(10, help="アクションの数。"),
     dim_context: int = typer.Option(5, help="文脈ベクトルの次元。"),
     beta: float = typer.Option(
-        3.0,
-        help="データ収集方策の逆温度パラメータ。大きいほど決定的な方策に、小さいほど探索的な方策になる。",
+        3.0, help="データ収集方策の逆温度パラメータ。大きいほど決定的な方策に、小さいほど探索的な方策になる。"
     ),
     base_model_for_evaluation_policy: str = typer.Option(
-        ...,
-        help="評価方策に使用するMLモデル。",
-        prompt=True,
-        metavar="logistic_regression|lightgbm|random_forest",
+        ..., help="評価方策に使用するMLモデル。", prompt=True, metavar="logistic_regression|lightgbm|random_forest"
     ),
     base_model_for_reg_model: str = typer.Option(
-        ...,
-        help="回帰モデルに使用するMLモデル。",
-        prompt=True,
-        metavar="logistic_regression|lightgbm|random_forest",
+        ..., help="回帰モデルに使用するMLモデル。", prompt=True, metavar="logistic_regression|lightgbm|random_forest"
     ),
     n_jobs: int = typer.Option(1, help="並列で実行する最大ジョブ数。"),
     random_state: int = typer.Option(12345, help="ランダムシード。"),

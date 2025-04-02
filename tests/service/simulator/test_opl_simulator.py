@@ -8,7 +8,6 @@ from recommender_experiments.service.simulator.opl_simulator import (
 
 
 class TestOPLSimulator:
-
     def test_単一設定のOPLシミュレーションが指定された回数だけ実行されること(self):
         # Arrange
         n_simulations = 2
@@ -49,9 +48,7 @@ class TestOPLSimulator:
 
         # Assert
         assert len(actual) == n_simulations, "指定回数のシミュレーション結果を返す"
-        assert all(
-            isinstance(result, OPLSimulationResult) for result in actual
-        ), "OPLSimulationResultのリストを返す"
+        assert all(isinstance(result, OPLSimulationResult) for result in actual), "OPLSimulationResultのリストを返す"
 
     def test_複数設定のOPLシミュレーションが並列で実行されること(self):
         # Arrange
@@ -68,8 +65,7 @@ class TestOPLSimulator:
         logging_policy_functions = [
             # データ収集方策は簡単のため、一様ランダムな方策のみ指定
             lambda context, action_context, random_state: np.full(
-                (context.shape[0], action_context.shape[0]),
-                1.0 / action_context.shape[0],
+                (context.shape[0], action_context.shape[0]), 1.0 / action_context.shape[0]
             )
         ]
         n_jobs = 2
@@ -104,6 +100,4 @@ class TestOPLSimulator:
             * len(new_policy_settings)
             * len(logging_policy_functions)
         ), "「指定回数 * 各設定の組み合わせ総数」のレコード数の結果を返す"
-        assert all(
-            isinstance(result, OPLSimulationResult) for result in actual
-        ), "OPLSimulationResultのリストを返す"
+        assert all(isinstance(result, OPLSimulationResult) for result in actual), "OPLSimulationResultのリストを返す"

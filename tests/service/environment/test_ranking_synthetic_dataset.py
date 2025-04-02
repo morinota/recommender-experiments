@@ -1,7 +1,5 @@
 import numpy as np
-from recommender_experiments.service.environment.ranking_synthetic_dataset import (
-    RankingSyntheticBanditDataset,
-)
+from recommender_experiments.service.environment.ranking_synthetic_dataset import RankingSyntheticBanditDataset
 
 
 def test_ほげ():
@@ -11,10 +9,7 @@ def test_ほげ():
     dim_context = 4
     action_context = np.random.randn(n_actions, dim_context)
     sut = RankingSyntheticBanditDataset(
-        n_actions=n_actions,
-        len_list=len_list,
-        dim_context=dim_context,
-        action_context=action_context,
+        n_actions=n_actions, len_list=len_list, dim_context=dim_context, action_context=action_context
     )
 
     # Act

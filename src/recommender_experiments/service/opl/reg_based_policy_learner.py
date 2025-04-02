@@ -30,7 +30,6 @@ class RegBasedPolicyLearner:
         self.q_x_a_model.fit(x_a, r)
 
     def predict(self, D_test: BanditFeedbackDict, tau: float = 0.01) -> np.ndarray:
-
         n_data, n_actions = D_test["n_rounds"], D_test["n_actions"]
         x, a_feat = D_test["context"], D_test["action_context"]
         q_x_a_hat = np.zeros((n_data, n_actions))

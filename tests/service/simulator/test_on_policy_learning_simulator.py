@@ -1,11 +1,7 @@
 import numpy as np
 
-from recommender_experiments.service.environment.synthetic_environment_strategy import (
-    SyntheticEnvironmentStrategy,
-)
-from recommender_experiments.service.opl.policy_strategy_interface import (
-    PolicyStrategyInterface,
-)
+from recommender_experiments.service.environment.synthetic_environment_strategy import SyntheticEnvironmentStrategy
+from recommender_experiments.service.opl.policy_strategy_interface import PolicyStrategyInterface
 from recommender_experiments.service.opl.two_tower_nn_model import PolicyByTwoTowerModel
 from recommender_experiments.service.simulator.on_policy_learning_simulator import (
     OnPolicyLearningSimulationResult,
@@ -17,9 +13,7 @@ class DummyPolicyStrategy(PolicyStrategyInterface):
     def fit(self, *args, **kwargs) -> None:
         pass
 
-    def predict_proba(
-        self, context: np.ndarray, action_context: np.ndarray, random_state: int = 0
-    ) -> np.ndarray:
+    def predict_proba(self, context: np.ndarray, action_context: np.ndarray, random_state: int = 0) -> np.ndarray:
         n_rounds = context.shape[0]
         n_actions = action_context.shape[0]
         # dummryなので、contextに依らず全てのroundで一様な行動選択確率を返す!
@@ -35,10 +29,7 @@ def test_単一設定のシミュレーションが指定された回数だけ�
     # Arrange
     n_simulations = 2
     environment_strategy = SyntheticEnvironmentStrategy(
-        n_actions=10,
-        dim_context=5,
-        action_context=np.random.random(size=(10, 5)),
-        expected_reward_strategy=None,
+        n_actions=10, dim_context=5, action_context=np.random.random(size=(10, 5)), expected_reward_strategy=None
     )
     n_round_before_deploy = 1000
     n_round_after_deploy = 1000
@@ -54,9 +45,9 @@ def test_単一設定のシミュレーションが指定された回数だけ�
     )
 
     # Assert
-    assert all(
-        isinstance(result, OnPolicyLearningSimulationResult) for result in actual
-    ), "OPLSimulationResultのリストを返す"
+    assert all(isinstance(result, OnPolicyLearningSimulationResult) for result in actual), (
+        "OPLSimulationResultのリストを返す"
+    )
     assert len(actual) == n_simulations, "指定回数のシミュレーション結果を返す"
 
 
@@ -64,15 +55,10 @@ def test_TwoTowerPolicyStrategyを方策とする場合でも正常に動作す�
     # Arrange
     n_simulations = 2
     environment_strategy = SyntheticEnvironmentStrategy(
-        n_actions=10,
-        dim_context=5,
-        action_context=np.random.random(size=(10, 5)),
-        expected_reward_strategy=None,
+        n_actions=10, dim_context=5, action_context=np.random.random(size=(10, 5)), expected_reward_strategy=None
     )
     two_tower_policy_strategy = PolicyByTwoTowerModel(
-        dim_context_features=5,
-        dim_action_features=5,
-        dim_two_tower_embedding=3,
+        dim_context_features=5, dim_action_features=5, dim_two_tower_embedding=3
     )
     n_round_before_deploy = 1000
     n_round_after_deploy = 1000
@@ -88,7 +74,7 @@ def test_TwoTowerPolicyStrategyを方策とする場合でも正常に動作す�
     )
 
     # Assert
-    assert all(
-        isinstance(result, OnPolicyLearningSimulationResult) for result in actual
-    ), "OPLSimulationResultのリストを返す"
+    assert all(isinstance(result, OnPolicyLearningSimulationResult) for result in actual), (
+        "OPLSimulationResultのリストを返す"
+    )
     assert len(actual) == n_simulations, "指定回数のシミュレーション結果を返す"

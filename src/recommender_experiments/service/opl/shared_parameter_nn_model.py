@@ -11,9 +11,7 @@ from tqdm import tqdm
 
 @dataclass
 class SharedParameterNNPolicyLearner(NNPolicyLearner):
-    n_actions: int = (
-        None  # dummyのパラメータ(アクション数がdynamicに変化する前提なので)
-    )
+    n_actions: int = None  # dummyのパラメータ(アクション数がdynamicに変化する前提なので)
     dim_context: int
     off_policy_objective: str = "ipw"
     lambda_: Optional[float] = None
@@ -113,18 +111,9 @@ class SharedParameterNNPolicyLearner(NNPolicyLearner):
 
                 # 方策勾配の推定値を計算
                 policy_grad_arr = self._estimate_policy_gradient(
-                    context=x,
-                    reward=r,
-                    action=a,
-                    pscore=p,
-                    action_dist=pi,
-                    position=pos,
+                    context=x, reward=r, action=a, pscore=p, action_dist=pi, position=pos
                 )
-                policy_constraint = self._estimate_policy_constraint(
-                    action=a,
-                    pscore=p,
-                    action_dist=pi,
-                )
+                policy_constraint = self._estimate_policy_constraint(action=a, pscore=p, action_dist=pi)
                 loss = -policy_grad_arr.mean()
                 loss += self.policy_reg_param * policy_constraint
                 loss += self.var_reg_param * torch.var(policy_grad_arr)
@@ -153,9 +142,7 @@ class SharedParameterNNPolicyLearner(NNPolicyLearner):
         # contextを複製してaction_contextと結合
         combined_input = torch.cat(
             [
-                context.unsqueeze(1).expand(
-                    -1, n_actions, -1
-                ),  # shape: (n_rounds, n_actions, dim_context)
+                context.unsqueeze(1).expand(-1, n_actions, -1),  # shape: (n_rounds, n_actions, dim_context)
                 action_context.unsqueeze(0).expand(
                     n_rounds, -1, -1
                 ),  # shape: (n_rounds, n_actions, dim_action_features)
@@ -167,9 +154,7 @@ class SharedParameterNNPolicyLearner(NNPolicyLearner):
         combined_input = combined_input.view(
             -1, combined_input.size(2)
         )  # shape: (n_rounds * n_actions, dim_context + dim_action_features)
-        scores = self.nn_model(combined_input).view(
-            n_rounds, n_actions
-        )  # shape: (n_rounds, n_actions)
+        scores = self.nn_model(combined_input).view(n_rounds, n_actions)  # shape: (n_rounds, n_actions)
 
         # 各ラウンドごとに、アクション選択確率の総和が1.0になるようにsoftmax関数を適用
         pi = torch.softmax(scores, dim=1)  # shape: (n_rounds, n_actions)

@@ -2,12 +2,8 @@ import abc
 
 import numpy as np
 
-from recommender_experiments.service.opl.policy_strategy_interface import (
-    PolicyStrategyInterface,
-)
-from recommender_experiments.service.synthetic_bandit_feedback import (
-    BanditFeedbackModel,
-)
+from recommender_experiments.service.opl.policy_strategy_interface import PolicyStrategyInterface
+from recommender_experiments.service.synthetic_bandit_feedback import BanditFeedbackModel
 
 
 class EnvironmentStrategyInterface(abc.ABC):
@@ -35,9 +31,7 @@ class EnvironmentStrategyInterface(abc.ABC):
 
     @abc.abstractmethod
     def obtain_batch_bandit_feedback(
-        self,
-        logging_policy_strategy: PolicyStrategyInterface,
-        n_rounds: int,
+        self, logging_policy_strategy: PolicyStrategyInterface, n_rounds: int
     ) -> BanditFeedbackModel:
         """バンディットフィードバックを生成するメソッド
         Args:
@@ -47,11 +41,7 @@ class EnvironmentStrategyInterface(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def calc_policy_value(
-        self,
-        expected_reward: np.ndarray,
-        action_dist: np.ndarray,
-    ) -> float:
+    def calc_policy_value(self, expected_reward: np.ndarray, action_dist: np.ndarray) -> float:
         """真の方策の価値を計算するメソッド
         Args:
             expected_reward (np.ndarray): 期待報酬関数 q(x,a) = E_{p(r|x,a)}[r] の配列 (n_rounds, n_actions)

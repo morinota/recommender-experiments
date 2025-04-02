@@ -33,13 +33,13 @@ class ContextualBanditPolicy(PolicyStrategyInterface):
 
     def fit(
         self,
-        bandit_feedback_train: BanditFeedbackModel,
-        bandit_feedback_test: Optional[BanditFeedbackModel] = None,
+        bandit_feedback_train: BanditFeedbackDict,
+        bandit_feedback_test: Optional[BanditFeedbackDict] = None,
     ) -> None:
 
-        contexts = list(bandit_feedback_train.context)
-        actions = list(bandit_feedback_train.action)
-        rewards = list(bandit_feedback_train.reward)
+        contexts = list(bandit_feedback_train["context"])
+        actions = list(bandit_feedback_train["action"])
+        rewards = list(bandit_feedback_train["reward"])
 
         for x, a, r in zip(contexts, actions, rewards):
             self.__model.update_params(

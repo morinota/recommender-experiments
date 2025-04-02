@@ -28,7 +28,7 @@ def test_ContexualBanditモデルがbandit_feedbackを元に学習されるこ�
     )
 
     # Act
-    sut.fit(bandit_feedback_train)
+    sut.fit(bandit_feedback_train.model_dump())
 
     # Assert
     assert sut.policy_name == "ContextualBanditPolicy"

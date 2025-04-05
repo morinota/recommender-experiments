@@ -4,7 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["morita <morinota416@gmail.com>"]
 readme = "README.md"
-packages = [{include = "recommender_experiments", from = "src"}]
+packages = [{ include = "recommender_experiments", from = "src" }]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.11"
@@ -19,6 +19,7 @@ japanize-matplotlib = "^1.1.3"
 obp = "^0.5.7"
 tqdm-joblib = "^0.0.4"
 ruff = "^0.11.2"
+multimethod = "1.9"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -26,6 +27,7 @@ ipykernel = "^6.29.5"
 pytest = "^8.3.4"
 
 [tool.pytest.ini_options]
+# pytest実行時のwarningを無視する
 filterwarnings = [
   "ignore::DeprecationWarning",
   "ignore::UserWarning",

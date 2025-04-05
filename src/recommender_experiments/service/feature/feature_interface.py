@@ -63,7 +63,7 @@ class SampleFeature(Feature):
     def __init__(
         self,
         output_dir: str | Path,
-        feature_cols: list[str] = ["feature1"],
+        feature_cols: list[str],
         user_col: str = "user_id",
         item_col: str = "content_id",
         key_cols: list[str] = ["user_id", "content_id"],
@@ -81,4 +81,5 @@ class SampleFeature(Feature):
 
     def fit(self) -> pl.DataFrame:
         df = self.df.with_columns(pl.lit(1).alias("feature1"))
+        df = df.with_columns(pl.lit(2).alias("feature2"))
         return df[self._key_cols + self.feature_cols]

@@ -2,8 +2,12 @@ import abc
 
 import numpy as np
 
-from recommender_experiments.service.opl.policy_strategy_interface import PolicyStrategyInterface
-from recommender_experiments.service.synthetic_bandit_feedback import BanditFeedbackModel
+from recommender_experiments.service.opl.policy_strategy_interface import (
+    PolicyStrategyInterface,
+)
+from recommender_experiments.service.synthetic_bandit_feedback import (
+    BanditFeedbackModel,
+)
 
 
 class EnvironmentStrategyInterface(abc.ABC):

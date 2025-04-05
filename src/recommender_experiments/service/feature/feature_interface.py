@@ -1,6 +1,7 @@
 import abc
 from pathlib import Path
 from typing import Literal
+
 import polars as pl
 
 

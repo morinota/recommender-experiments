@@ -12,6 +12,7 @@ class Feature(abc.ABC):
     def __init__(
         self,
         output_dir: str | Path,
+        # 生成する特徴量の名前たち
         feature_cols: list[str],
         user_col: str = "user_id",
         item_col: str = "content_id",

@@ -92,9 +92,7 @@ def test_バンディットフィードバックデータを元にIPS推定量�
     }
 
     # Act
-    sut._fit_by_gradiant_based_approach(
-        bandit_feedback_train=bandit_feedback_train, bandit_feedback_test=bandit_feedback_train
-    )
+    sut.fit(bandit_feedback_train, bandit_feedback_test=bandit_feedback_train)
 
     # Assert
     assert len(sut.train_losses) > 0, "学習時の損失が記録されていること"
@@ -128,7 +126,7 @@ def test_バンディットフィードバックデータを元にDR推定量で
     }
 
     # Act
-    sut.fit(bandit_feedback_train=bandit_feedback_train, bandit_feedback_test=bandit_feedback_train)
+    sut.fit(bandit_feedback_train, bandit_feedback_test=bandit_feedback_train)
 
     # Assert
     assert len(sut.train_losses) > 0, "学習時の損失が記録されていること"
@@ -162,7 +160,7 @@ def test_バンディットフィードバックデータを元に回帰ベー�
     }
 
     # Act
-    sut.fit(bandit_feedback_train=bandit_feedback_train, bandit_feedback_test=bandit_feedback_train)
+    sut.fit(bandit_feedback_train, bandit_feedback_test=bandit_feedback_train)
 
     # Assert
     assert len(sut.train_losses) > 0, "学習時の損失が記録されていること"

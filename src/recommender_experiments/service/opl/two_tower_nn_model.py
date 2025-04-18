@@ -1,9 +1,9 @@
 from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Optional
+
 import numpy as np
 import torch
-
 import torch.nn as nn
 import torch.optim as optim
 
@@ -95,6 +95,14 @@ class PolicyByTwoTowerModel(PolicyStrategyInterface):
         self.train_losses = []
         self.train_values = []
         self.test_values = []
+
+    def sample(
+        self,
+        context: np.ndarray,
+        action_context: np.ndarray,
+        random_state: int = 0,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        pass
 
     @property
     def policy_name(self) -> str:
@@ -366,36 +374,3 @@ class PolicyByTwoTowerModel(PolicyStrategyInterface):
             context=bandit_feedback_test["context"], action_context=bandit_feedback_test["action_context"]
         )
         self.test_values.append((q_x_a_test * pi_test).sum(1).mean())
-
-
-if __name__ == "__main__":
-    # Arrange
-    n_rounds = 20000
-    n_actions = 4
-    dim_context = 300
-    dim_action_features = 200
-    dim_two_tower_embedding = 120
-
-    sut = PolicyByTwoTowerModel(
-        dim_context=dim_context,
-        dim_action_features=dim_action_features,
-        dim_two_tower_embedding=dim_two_tower_embedding,
-        is_embedding_normed=True,
-        batch_size=20000,
-    )
-
-    # Act
-    sut._fit_by_gradiant_based_approach(
-        context=np.random.random((n_rounds, dim_context)),
-        action=np.random.randint(0, n_actions, n_rounds),
-        reward=np.random.binomial(1, 0.5, n_rounds),
-        action_context=np.random.random((n_actions, dim_action_features)),
-    )
-    action_dist = sut.predict_proba(
-        context=np.random.random((n_rounds, dim_context)),
-        action_context=np.random.random((n_actions, dim_action_features)),
-    )
-
-    # Assert
-    assert action_dist.shape == (n_rounds, n_actions, 1), "各ラウンドごとに、確率の総和が1.0"
-    assert np.all(0 <= action_dist) and np.all(action_dist <= 1), "各アクションの選択確率が0以上1以下であること"

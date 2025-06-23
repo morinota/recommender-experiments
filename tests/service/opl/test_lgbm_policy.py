@@ -49,7 +49,6 @@ def test_banditfeedbackを元に推薦方策の学習ができること():
     )
 
     # Assert
-    print(f"{action_dist=}")
     assert action_dist.shape == (n_rounds, n_actions), "出力の形状が(ラウンド数、アクション数)であること"
     assert np.allclose(action_dist.sum(axis=1), 1.0), "各ラウンドごとに、確率の総和が1.0"
     assert np.all(0 <= action_dist) and np.all(action_dist <= 1), "各アクションの選択確率が0.0以上1.0以下であること"

@@ -62,6 +62,7 @@ class LGBMPolicy(PolicyStrategyInterface):
         n_rounds = context.shape[0]
         n_actions = action_context.shape[0]
 
+        # action間でモデルパラメータをshareできる設計にしたいので、context特徴量とaction context特徴量をconcatしてTreeモデルの入力とする。
         selected_action_context = action_context[action]
         X = np.hstack([context, selected_action_context])
         self.model.fit(X, reward)

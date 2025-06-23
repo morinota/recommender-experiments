@@ -1,11 +1,9 @@
 import abc
-from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
 
 
-@dataclass
 class PolicyStrategyInterface(abc.ABC):
     """
     意思決定方策が実装する共通のインターフェース(Strategy patternにおけるStrategy)

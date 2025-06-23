@@ -29,7 +29,10 @@ class PolicyStrategyInterface(abc.ABC):
 
     @abc.abstractmethod
     def sample(
-        self, context: np.ndarray, action_context: np.ndarray, random_state: int = 0
+        self,
+        context: np.ndarray,
+        action_context: np.ndarray,
+        random_state: int = 0,
     ) -> tuple[np.ndarray, np.ndarray]:
         """contextを受け取って、方策による行動選択確率 \pi(a|x) に従ってactionをサンプリングするメソッド
         Args:

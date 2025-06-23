@@ -1,4 +1,6 @@
 import numpy as np
+from obp.dataset import SyntheticBanditDataset
+
 from recommender_experiments.service.environment.environment_strategy_interface import (
     EnvironmentStrategyInterface,
 )
@@ -8,8 +10,6 @@ from recommender_experiments.service.opl.policy_strategy_interface import (
 from recommender_experiments.service.synthetic_bandit_feedback import (
     BanditFeedbackModel,
 )
-from obp.dataset import SyntheticBanditDataset
-
 from recommender_experiments.service.utils.expected_reward_functions import (
     ExpectedRewardStrategy,
 )
@@ -27,11 +27,7 @@ class SyntheticEnvironmentStrategy(EnvironmentStrategyInterface):
         self.__dim_context = dim_context
         self.__action_context = action_context
         self.__expected_reward_strategy = expected_reward_strategy
-        self.__expected_reward_function = (
-            expected_reward_strategy.get_function()
-            if expected_reward_strategy
-            else None
-        )
+        self.__expected_reward_function = expected_reward_strategy.get_function() if expected_reward_strategy else None
 
     @property
     def n_actions(self) -> int:
@@ -42,7 +38,7 @@ class SyntheticEnvironmentStrategy(EnvironmentStrategyInterface):
         return self.__dim_context
 
     @property
-    def expected_reward_strategy_name(self) -> ExpectedRewardStrategy:
+    def expected_reward_strategy_name(self) -> str:
         """期待報酬関数の名前を取得するプロパティ"""
         if self.__expected_reward_strategy is None:
             return "default expected reward function"
@@ -78,7 +74,5 @@ class SyntheticEnvironmentStrategy(EnvironmentStrategyInterface):
             # 2次元の場合は、次元を追加して3次元にする
             action_dist = action_dist[:, :, np.newaxis]
         # V(π)の定義は $:= E_{p(x, a ,r)}[r] = E_{p(x) \pi(a|x) p(r|x,a)}[r]$ とする
-        policy_value = np.average(
-            expected_reward, weights=action_dist[:, :, 0], axis=1
-        ).mean()
+        policy_value = np.average(expected_reward, weights=action_dist[:, :, 0], axis=1).mean()
         return policy_value

@@ -1,21 +1,25 @@
 import itertools
-from pathlib import Path
 import random
-from tqdm_joblib import tqdm_joblib
-
+from pathlib import Path
 from typing import Callable, Literal, Optional, TypedDict
-from joblib import Parallel, delayed
+
 import numpy as np
-from obp.dataset import SyntheticBanditDataset, logistic_reward_function
-from obp.ope import ReplayMethod, InverseProbabilityWeighting, BaseOffPolicyEstimator
 import polars as pl
-from obp.policy import IPWLearner, NNPolicyLearner, Random, LogisticTS, BernoulliTS
 import pydantic
+from joblib import Parallel, delayed
+from obp.dataset import SyntheticBanditDataset, logistic_reward_function
+from obp.ope import BaseOffPolicyEstimator, InverseProbabilityWeighting, ReplayMethod
+from obp.policy import BernoulliTS, IPWLearner, LogisticTS, NNPolicyLearner, Random
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from tqdm import tqdm
+from tqdm_joblib import tqdm_joblib
+
 from recommender_experiments.service.opl.two_tower_nn_model import PolicyByTwoTowerModel
-from recommender_experiments.service.utils.expected_reward_functions import ContextFreeBinary, ContextAwareBinary
+from recommender_experiments.service.utils.expected_reward_functions import (
+    ContextAwareBinary,
+    ContextFreeBinary,
+)
 from recommender_experiments.service.utils.logging_policies import random_policy
 
 
@@ -101,14 +105,16 @@ def run_opl_single_simulation(
         bandit_feedback_test = dataset.obtain_batch_bandit_feedback(n_rounds_test)
         # データ収集方策の性能を確認
         logging_policy_value = dataset.calc_ground_truth_policy_value(
-            expected_reward=bandit_feedback_test["expected_reward"], action_dist=bandit_feedback_test["pi_b"]
+            expected_reward=bandit_feedback_test["expected_reward"],
+            action_dist=bandit_feedback_test["pi_b"],
         )
         # 新方策の学習前の性能を確認
         if isinstance(new_policy, NNPolicyLearner):
             test_action_dist = new_policy.predict_proba(context=bandit_feedback_test["context"])
         elif isinstance(new_policy, PolicyByTwoTowerModel):
             test_action_dist = new_policy.predict_proba(
-                context=bandit_feedback_test["context"], action_context=bandit_feedback_test["action_context"]
+                context=bandit_feedback_test["context"],
+                action_context=bandit_feedback_test["action_context"],
             )
 
         # データ収集方策で集めたデータ(学習用)で、新方策のためのNNモデルのパラメータを更新
@@ -121,17 +127,22 @@ def run_opl_single_simulation(
                 pscore=bandit_feedback_train["pscore"],
             )
         elif isinstance(new_policy, PolicyByTwoTowerModel):
-            new_policy.fit(bandit_feedback_train=bandit_feedback_train, bandit_feedback_test=bandit_feedback_test)
+            new_policy.fit(
+                bandit_feedback_train=bandit_feedback_train,
+                bandit_feedback_test=bandit_feedback_test,
+            )
 
         # 学習後の新方策の真の性能を確認
         if isinstance(new_policy, NNPolicyLearner):
             test_action_dist = new_policy.predict_proba(context=bandit_feedback_test["context"])
         elif isinstance(new_policy, PolicyByTwoTowerModel):
             test_action_dist = new_policy.predict_proba(
-                context=bandit_feedback_test["context"], action_context=bandit_feedback_test["action_context"]
+                context=bandit_feedback_test["context"],
+                action_context=bandit_feedback_test["action_context"],
             )
         new_policy_value = dataset.calc_ground_truth_policy_value(
-            expected_reward=bandit_feedback_test["expected_reward"], action_dist=test_action_dist
+            expected_reward=bandit_feedback_test["expected_reward"],
+            action_dist=test_action_dist,
         )
 
         # 結果を保存

@@ -96,4 +96,17 @@ class LGBMPolicy(PolicyStrategyInterface):
         action_context: np.ndarray,
         random_state: int = 0,
     ) -> tuple[np.ndarray, np.ndarray]:
-        pass
+        """
+        各ラウンドごとにアクションを確率的にサンプリングして、そのインデックスと傾向スコアを返すよ！
+        """
+        rng = np.random.default_rng(random_state)
+        action_probs = self.predict_proba(context, action_context, random_state)
+        n_rounds, n_actions = action_probs.shape
+
+        # 1ラウンドごとにアクションをサンプリングする関数
+        def sample_action(probs: np.ndarray) -> int:
+            return rng.choice(n_actions, p=probs)
+
+        action_indices = np.apply_along_axis(sample_action, 1, action_probs)
+        action_pscores = action_probs[np.arange(n_rounds), action_indices]
+        return action_indices, action_pscores

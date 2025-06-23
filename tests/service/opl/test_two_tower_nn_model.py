@@ -167,3 +167,23 @@ def test_バンディットフィードバックデータを元に回帰ベー�
     assert all([loss is not np.nan for loss in sut.train_losses]), "学習時の損失がnanでないこと"
     assert len(sut.train_values) > 0, "学習データに対する方策性能の推移が記録されていること"
     assert len(sut.test_values) > 0, "テストデータに対する方策性能の推移が記録されていること"
+
+
+def test_アクション選択のサンプリングメソッドが正しく動作すること():
+    # Arrange
+    n_rounds = 10
+    n_actions = 4
+    dim_context_features = 200
+    dim_action_features = 150
+    dim_two_tower_embedding = 100
+    sut = PolicyByTwoTowerModel(dim_context_features, dim_action_features, dim_two_tower_embedding)
+
+    # Act
+    action_indices, action_pscores = sut.sample(
+        context=np.random.random((n_rounds, dim_context_features)),
+        action_context=np.random.random((n_actions, dim_action_features)),
+    )
+
+    # Assert
+    assert action_indices.shape == (n_rounds,), "選択されたアクションのインデックスが(n_rounds,)の形状であること"
+    assert action_pscores.shape == (n_rounds,), "選択されたアクションの傾向スコアが(n_rounds,)の形状であること"

@@ -3,7 +3,7 @@ import numpy as np
 from recommender_experiments.service.environment.ranking_synthetic_dataset import RankingSyntheticBanditDataset
 
 
-def test_ほげ():
+def test_ランキング問題用の合成バンディットフィードバックデータを生成できること():
     # Arrange
     num_data = 3
     dim_context = 4

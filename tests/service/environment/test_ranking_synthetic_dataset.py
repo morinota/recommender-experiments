@@ -34,7 +34,6 @@ def test_ランキング問題用の合成バンディットフィードバッ�
         p_rand=p_rand,
         action_context=action_context,
         random_state=12345,
-        is_test=True,  # テストモード
     )
 
     # Act

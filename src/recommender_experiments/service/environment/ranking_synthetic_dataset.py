@@ -5,6 +5,7 @@ from typing import Callable, TypedDict
 
 import numpy as np
 from obp.dataset import OpenBanditDataset, SyntheticBanditDataset, logistic_reward_function
+from pydantic import BaseModel
 from scipy.stats import rankdata
 from sklearn.utils import check_random_state
 
@@ -12,13 +13,13 @@ from sklearn.utils import check_random_state
 class RankingBanditFeedback(TypedDict):
     n_rounds: int  # ラウンド数
     n_actions: int  # アクション数
+    len_list: int  # ランキングの長さ
     dim_context: int  # 特徴量の次元数
     action_context: np.ndarray  # アクション特徴量 (shape: (n_actions, dim_action_features))
-    ranking_candidates: list[list[int]]  # ランキング候補の一覧
-    action: np.ndarray  # 実際に選択されたアクション (shape: (n_rounds,))
+    action: np.ndarray  # 実際に選択されたアクション (shape: (n_rounds * len_list,))
     position: np.ndarray  # ポジション (shape: (n_rounds,))
-    reward: np.ndarray  # ポジションレベルの報酬 (shape: (n_rounds * len_list)
-    pi_b: np.ndarray  # データ収集方策 P(a|x) (shape: (n_rounds, n_actions))
+    reward: np.ndarray  # ポジションレベルの観測報酬 (shape: (n_rounds * len_list)
+    pi_b: np.ndarray  # データ収集方策のアクション選択確率 P(a|x) (shape: (n_rounds, n_actions))
     pscore: np.ndarray  # 傾向スコア (shape: (n_rounds,))
 
 
@@ -114,6 +115,9 @@ def generate_synthetic_ranking_feedback(
         reward_noise (float): 観測報酬のばらつき度合い(標準偏差)。
         p (list[float]): ユーザ行動モデルの選択確率。
             [independent, cascade, all]の順で、独立、カスケード、全ての行動を選択する確率。
+            - 独立性の仮定(independent): ユーザの各アクションに対する報酬は、全てのポジションで独立。
+            - カスケード性の仮定(cascade): ユーザの各アクションに対する報酬は、前のポジションのアクションにのみ依存する。
+            - ユーザ行動を仮定しない(all): ユーザの各アクションに対する報酬は、他の全てのポジションのアクションに依存する。
             ex. [0.8, 0.1, 0.1]ならば、80%の確率で独立、10%の確率でカスケード、10%の確率で全ての行動を選択する。
         p_rand (float):
             ランダムユーザ行動(外れユーザ)の確率。変なユーザ行動パターンを混ぜる用。

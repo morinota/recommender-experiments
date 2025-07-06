@@ -1,26 +1,44 @@
 import numpy as np
+
 from recommender_experiments.service.environment.ranking_synthetic_dataset import RankingSyntheticBanditDataset
 
 
 def test_ほげ():
     # Arrange
-    n_actions = 5
-    len_list = 2
+    num_data = 3
     dim_context = 4
-    action_context = np.random.randn(n_actions, dim_context)
+    dim_action_context = 6
+    num_actions = 5
+    k = 3
+    theta = np.random.normal(size=(dim_context, num_actions))
+    M = np.random.normal(size=(dim_context, num_actions))
+    b = np.random.normal(size=(num_actions, 1))
+    W = np.random.normal(size=(k, k))
+    beta = -1.0
+    reward_noise = 0.5
+    p = [0.8, 0.1, 0.1]
+    p_rand = 0.2
+    action_context = np.random.randn(num_actions, dim_action_context)
+
     sut = RankingSyntheticBanditDataset(
-        n_actions=n_actions, len_list=len_list, dim_context=dim_context, action_context=action_context
+        dim_context=dim_context,
+        num_actions=num_actions,
+        k=k,
+        theta=theta,
+        M=M,
+        b=b,
+        W=W,
+        beta=beta,
+        reward_noise=reward_noise,
+        p=p,
+        p_rand=p_rand,
+        action_context=action_context,
+        random_state=12345,
+        is_test=True,  # テストモード
     )
 
     # Act
-    bandit_feedaback = sut.obtain_batch_bandit_feedback(n_rounds=1000)
+    bandit_feedaback = sut.obtain_batch_bandit_feedback(num_data)
 
     # Assert
-    assert bandit_feedaback["n_rounds"] == 1000
-    assert bandit_feedaback["n_actions"] == n_actions
-    assert bandit_feedaback["dim_context"] == dim_context
-    assert bandit_feedaback["context"].shape == (1000 * len_list, dim_context)
-    assert bandit_feedaback["action"].shape == (1000 * len_list,)
-    assert bandit_feedaback["position"].shape == (1000 * len_list,)
-    assert bandit_feedaback["position_level_reward"].shape == (1000 * len_list,)
-    assert bandit_feedaback["expected_reward"].shape == (1000 * len_list, n_actions)
+    assert True

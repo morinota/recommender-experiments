@@ -129,7 +129,7 @@ def generate_synthetic_ranking_feedback(
             - a_k: 選択されたアクション (shape: (num_data, K))
             - r_k: 各アクションに対する報酬 (shape: (num_data, K))
             - C: ユーザ行動モデルの行動行列 (shape: (num_data, K, K))
-            - pi_0: データ収集方策 (shape: (num_data, num_actions))
+            - pi_0: データ収集方策の各アクションに対する選択確率 (shape: (num_data, num_actions))
             - q_k: 各アクションに対する期待報酬 (shape: (num_data, K))
             - base_q_func: 基本的な期待報酬関数 (shape: (num_data, num_actions))
     """
@@ -155,6 +155,7 @@ def generate_synthetic_ranking_feedback(
     is_rand = random_.binomial(2, p=p_rand, size=num_data).reshape(num_data, 1, 1)
     C = np.clip(C_ + is_rand * C_rand, 0, 1)
 
+    # データ収集方策 pi_0 を定義
     if is_test:
         pi_0 = _eps_greedy_policy(base_q_func)
     else:

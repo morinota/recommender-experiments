@@ -11,8 +11,8 @@ from recommender_experiments.service.opl.policy_strategy_interface import Policy
 
 class ContextGNNNetwork(nn.Module):
     """
-    Simple neural network for context-based recommendation.
-    This is a simplified version without the full graph structure.
+    コンテキストベースの推薦のためのシンプルなニューラルネットワーク。
+    完全なグラフ構造を持たない簡略化されたバージョン。
     """
 
     def __init__(self, context_dim: int, action_dim: int, hidden_dim: int = 64):
@@ -29,26 +29,28 @@ class ContextGNNNetwork(nn.Module):
 
     def forward(self, context: torch.Tensor, action_context: torch.Tensor) -> torch.Tensor:
         """
+        フォワードパス処理
+        
         Args:
-            context: (batch_size, context_dim)
-            action_context: (n_actions, action_dim)
+            context: ユーザーコンテキスト特徴量 (batch_size, context_dim)
+            action_context: アクション特徴量 (n_actions, action_dim)
         Returns:
-            scores: (batch_size, n_actions)
+            scores: 各アクションに対するスコア (batch_size, n_actions)
         """
         batch_size = context.size(0)
         n_actions = action_context.size(0)
 
-        # Encode context and actions
+        # コンテキストとアクションをエンコード
         context_encoded = self.context_encoder(context)  # (batch_size, hidden_dim)
         action_encoded = self.action_encoder(action_context)  # (n_actions, hidden_dim)
 
-        # Expand for pairwise computation
+        # ペアワイズ計算のために次元を拡張
         context_expanded = context_encoded.unsqueeze(1).expand(
             batch_size, n_actions, -1
         )  # (batch_size, n_actions, hidden_dim)
         action_expanded = action_encoded.unsqueeze(0).expand(batch_size, -1, -1)  # (batch_size, n_actions, hidden_dim)
 
-        # Concatenate and score
+        # 結合してスコアを計算
         combined = torch.cat([context_expanded, action_expanded], dim=-1)  # (batch_size, n_actions, hidden_dim * 2)
         scores = self.scorer(combined).squeeze(-1)  # (batch_size, n_actions)
 
@@ -76,53 +78,53 @@ class PolicyByContextGnn(PolicyStrategyInterface):
         bandit_feedback_test: dict | None = None,
     ) -> None:
         """
-        Train the ContextGNN model using bandit feedback data.
+        バンディットフィードバックデータを使ってContextGNNモデルを学習する。
 
         Args:
-            bandit_feedback_train: Dictionary containing training data with keys:
-                - 'context': np.ndarray of shape (n_rounds, context_dim)
-                - 'action_context': np.ndarray of shape (n_actions, action_dim)
-                - 'action': np.ndarray of shape (n_rounds,) - selected actions
-                - 'reward': np.ndarray of shape (n_rounds,) - observed rewards
-            bandit_feedback_test: Optional test data (not used in training)
+            bandit_feedback_train: 学習データを含む辞書（以下のキーを含む）:
+                - 'context': ユーザーコンテキスト特徴量 (n_rounds, context_dim)
+                - 'action_context': アクション特徴量 (n_actions, action_dim)
+                - 'action': 選択されたアクション (n_rounds,)
+                - 'reward': 観測された報酬 (n_rounds,)
+            bandit_feedback_test: テストデータ（この実装では使用しない）
         """
-        # bandit_feedback_test is not used in this implementation
+        # bandit_feedback_testはこの実装では使用しない
         del bandit_feedback_test
         context = bandit_feedback_train["context"]
         action_context = bandit_feedback_train["action_context"]
         actions = bandit_feedback_train["action"]
         rewards = bandit_feedback_train["reward"]
 
-        # Normalize features
+        # 特徴量の正規化
         context_normalized = self.context_scaler.fit_transform(context)
         action_context_normalized = self.action_scaler.fit_transform(action_context)
 
-        # Initialize model
+        # モデルの初期化
         context_dim = context_normalized.shape[1]
         action_dim = action_context_normalized.shape[1]
         self.model = ContextGNNNetwork(context_dim, action_dim, self.hidden_dim).to(self.device)
 
-        # Convert to tensors
+        # テンソルに変換
         context_tensor = torch.FloatTensor(context_normalized).to(self.device)
         action_context_tensor = torch.FloatTensor(action_context_normalized).to(self.device)
         actions_tensor = torch.LongTensor(actions).to(self.device)
         rewards_tensor = torch.FloatTensor(rewards).to(self.device)
 
-        # Training setup
+        # 学習の設定
         optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
         criterion = nn.BCEWithLogitsLoss()
 
-        # Training loop
+        # 学習ループ
         self.model.train()
         for epoch in range(self.epochs):
             optimizer.zero_grad()
 
-            # Forward pass
+            # フォワードパス
             scores = self.model(context_tensor, action_context_tensor)  # (n_rounds, n_actions)
             selected_scores = scores[torch.arange(len(actions_tensor)), actions_tensor]  # (n_rounds,)
 
-            # Use rewards as binary labels (assuming rewards are 0 or 1)
-            # If rewards are continuous, you might want to threshold them
+            # 報酬をバイナリラベルとして使用（報酬が0または1と仮定）
+            # 連続値の報酬の場合は閾値処理を検討
             binary_rewards = (rewards_tensor > 0).float()
 
             loss = criterion(selected_scores, binary_rewards)
@@ -141,35 +143,35 @@ class PolicyByContextGnn(PolicyStrategyInterface):
         random_state: int = 0,
     ) -> np.ndarray:
         """
-        Predict action selection probabilities.
+        アクション選択確率を予測する。
 
         Args:
-            context: (n_rounds, context_dim)
-            action_context: (n_actions, action_dim)
-            random_state: Random seed (not used in this implementation)
+            context: ユーザーコンテキスト特徴量 (n_rounds, context_dim)
+            action_context: アクション特徴量 (n_actions, action_dim)
+            random_state: 乱数シード（この実装では使用しない）
 
         Returns:
-            np.ndarray: Action probabilities of shape (n_rounds, n_actions, 1)
+            np.ndarray: アクション選択確率 (n_rounds, n_actions, 1)
         """
-        # random_state is not used in this implementation
+        # random_stateはこの実装では使用しない
         del random_state
         if not self.is_fitted or self.model is None:
             raise ValueError("Model must be fitted before making predictions")
 
-        # Normalize features using fitted scalers
+        # 学習済みスケーラーを使って特徴量を正規化
         context_normalized = self.context_scaler.transform(context)
         action_context_normalized = self.action_scaler.transform(action_context)
 
-        # Convert to tensors
+        # テンソルに変換
         context_tensor = torch.FloatTensor(context_normalized).to(self.device)
         action_context_tensor = torch.FloatTensor(action_context_normalized).to(self.device)
 
         self.model.eval()
         with torch.no_grad():
             scores = self.model(context_tensor, action_context_tensor)  # (n_rounds, n_actions)
-            probs = torch.softmax(scores, dim=-1)  # Convert to probabilities
+            probs = torch.softmax(scores, dim=-1)  # 確率に変換
 
-        # Return with shape (n_rounds, n_actions, 1) as expected by the interface
+        # インターフェースで期待される形状 (n_rounds, n_actions, 1) で返す
         return probs.cpu().numpy()[:, :, np.newaxis]
 
     def sample(
@@ -179,29 +181,29 @@ class PolicyByContextGnn(PolicyStrategyInterface):
         random_state: int = 0,
     ) -> tuple[np.ndarray, np.ndarray]:
         """
-        Sample actions according to the learned policy.
+        学習した方策に従ってアクションをサンプリングする。
 
         Args:
-            context: (n_rounds, context_dim)
-            action_context: (n_actions, action_dim)
-            random_state: Random seed
+            context: ユーザーコンテキスト特徴量 (n_rounds, context_dim)
+            action_context: アクション特徴量 (n_actions, action_dim)
+            random_state: 乱数シード
 
         Returns:
-            tuple: (selected_actions, action_probabilities)
-                - selected_actions: (n_rounds,) indices of selected actions
-                - action_probabilities: (n_rounds,) probabilities of selected actions
+            tuple: (選択アクション, アクション確率)
+                - selected_actions: 選択されたアクションのインデックス (n_rounds,)
+                - action_probabilities: 選択されたアクションの確率 (n_rounds,)
         """
         np.random.seed(random_state)
 
-        # Get action probabilities
+        # アクション選択確率を取得
         action_probs = self.predict_proba(context, action_context, random_state)  # (n_rounds, n_actions, 1)
-        action_probs = action_probs[:, :, 0]  # Remove last dimension: (n_rounds, n_actions)
+        action_probs = action_probs[:, :, 0]  # 最後の次元を削除: (n_rounds, n_actions)
 
         n_rounds = action_probs.shape[0]
         selected_actions = np.zeros(n_rounds, dtype=int)
         selected_probs = np.zeros(n_rounds)
 
-        # Sample actions for each round
+        # 各ラウンドでアクションをサンプリング
         for i in range(n_rounds):
             probs = action_probs[i]
             selected_actions[i] = np.random.choice(len(probs), p=probs)

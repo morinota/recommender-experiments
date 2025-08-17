@@ -1,32 +1,15 @@
-from datetime import datetime
 import numpy as np
+import polars as pl
+
+from recommender_experiments.service.dataloader.dataloader import (
+    DataLoaderInterface,
+)
 from recommender_experiments.service.environment.environment_strategy_interface import (
     EnvironmentStrategyInterface,
 )
 from recommender_experiments.service.synthetic_bandit_feedback import (
     BanditFeedbackModel,
 )
-import polars as pl
-from pandera.polars import DataFrameSchema
-
-
-class ItemMetadataSchema:
-    content_id: str
-    content_type: str
-    title: str
-    summary: str
-    embedding: list[float]
-    tags: list[str]
-    publisher: str
-    published_at: datetime
-
-
-class UserItemInteractionSchema:
-    user_id: str
-    content_id: str
-    interaction_type: str
-    timestamp: datetime
-    interacted_in: str
 
 
 class NewsEnvironmentStrategy(EnvironmentStrategyInterface):
@@ -37,15 +20,17 @@ class NewsEnvironmentStrategy(EnvironmentStrategyInterface):
 
     def __init__(
         self,
-        item_metadata_df: pl.DataFrame,
-        user_item_interaction_df: pl.DataFrame,
+        item_metadata_loader: DataLoaderInterface,
     ):
-        self.item_metadata_df = item_metadata_df
-        self.user_item_interaction_df = user_item_interaction_df
+        pass
 
     @property
     def n_actions(self) -> int:
-        return 10
+        return self.__item_metadata_df.shape[0]
+
+    @property
+    def n_users(self) -> int:
+        return self.__user_metadata_df.shape[0]
 
     @property
     def dim_context(self) -> int:
@@ -54,10 +39,6 @@ class NewsEnvironmentStrategy(EnvironmentStrategyInterface):
     @property
     def expected_reward_strategy_name(self) -> str:
         return "実際のデータなので、期待報酬関数は不明"
-
-    @property
-    def item_metadata_df(self) -> pl.DataFrame:
-        pass
 
     def obtain_batch_bandit_feedback(self, n_rounds: int) -> BanditFeedbackModel:
         return BanditFeedbackModel(

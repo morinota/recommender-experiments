@@ -1,77 +1,100 @@
-import polars as pl
+import numpy as np
 
-from recommender_experiments.service.dataloader.dataloader import (
-    DataLoaderInterface,
-)
+from recommender_experiments.service.dataloader.dataloader import MINDDataLoader
 from recommender_experiments.service.environment.news_environment_strategy import (
     NewsEnvironmentStrategy,
 )
 
 
-class DummyDataLoader(DataLoaderInterface):
-    """TDD用のダミーデータローダー"""
-
-    def load_train_interactions(self) -> pl.DataFrame:
-        return pl.DataFrame({})
-
-    def load_test_interactions(self) -> pl.DataFrame:
-        return pl.DataFrame({})
-
-    def load_all_interactions(self) -> pl.DataFrame:
-        return pl.DataFrame({})
-
-    def load_news_metadata(self) -> pl.DataFrame:
-        # 3つのニュースアイテムを返す
-        return pl.DataFrame(
-            {
-                "content_id": ["1", "2", "3"],
-                "title": ["Title 1", "Title 2", "Title 3"],
-                "category": ["news", "movie", "audio"],
-            }
-        )
-
-    def load_user_metadata(self) -> pl.DataFrame:
-        # 2人のユーザーを返す
-        return pl.DataFrame(
-            {
-                "user_id": ["user1", "user2"],
-                "profile": ["profile1", "profile2"],
-            }
-        )
-
-
-def test_初期化時にニュースメタデータからアクション数が正しく設定される():
-    """TDD: NewsEnvironmentStrategyのn_actionsとn_usersプロパティが正しく動作すること"""
+def test_実際のMINDデータを使って初期化できること():
+    """
+    実際のMINDデータセットを使用してNewsEnvironmentStrategyが初期化でき、
+    正しいプロパティ値を持つことを確認する
+    """
     # Arrange
-    data_loader = DummyDataLoader()
+    data_dir = "data"
+    mind_data_loader = MINDDataLoader(data_dir=data_dir)
 
     # Act
     sut = NewsEnvironmentStrategy(
-        mind_data_loader=data_loader,
+        mind_data_loader=mind_data_loader,
     )
 
-    # Assert
-    assert sut.n_actions == 3, "ニュースメタデータの件数（3件）がアクション数になること"
-    assert sut.n_users == 2, "ユーザメタデータの件数（2件）がユーザ数になること"
+    # Assert - プロパティの確認
+    assert sut.n_actions > 0, "アクション数（ニュース記事数）が正の値であること"
+    assert sut.n_actions == 51282, "MINDデータセットのニュース記事数（51,282件）と一致すること"
+    
+    assert sut.n_users > 0, "ユーザ数が正の値であること"
+    assert sut.n_users == 94057, "MINDデータセットのユーザ数（94,057人）と一致すること"
+    
+    assert sut.dim_context == 100, "コンテキストの次元数が100であること"
+    
+    assert sut.expected_reward_strategy_name == "実際のデータなので、期待報酬関数は不明", "期待報酬戦略名が正しいこと"
 
 
-def test_バンディットフィードバックを取得できること():
-    """TDD: NewsEnvironmentStrategyがバンディットフィードバックを取得できること"""
+def test_実際のMINDデータを使ってバンディットフィードバックを取得できること():
+    """
+    実際のMINDデータセットを使用してバンディットフィードバックが生成でき、
+    期待する形状と制約を満たすことを確認する
+    """
     # Arrange
-    data_loader = DummyDataLoader()
+    data_dir = "data"
+    mind_data_loader = MINDDataLoader(data_dir=data_dir)
     sut = NewsEnvironmentStrategy(
-        mind_data_loader=data_loader,
+        mind_data_loader=mind_data_loader,
     )
+    n_rounds = 100
 
     # Act
-    feedback = sut.obtain_batch_bandit_feedback(n_rounds=5)
+    feedback = sut.obtain_batch_bandit_feedback(n_rounds=n_rounds)
 
-    # Assert
-    assert feedback.n_rounds == 5, "指定したラウンド数がフィードバックに反映されること"
+    # Assert - 基本的な属性
+    assert feedback.n_rounds == n_rounds, f"指定したラウンド数（{n_rounds}）がフィードバックに反映されること"
     assert feedback.n_actions == sut.n_actions, "フィードバックのアクション数が環境のアクション数と一致すること"
-    assert feedback.context.shape == (5, sut.dim_context), "コンテキストの形状が正しいこと"
-    assert feedback.action_context.shape == (sut.n_actions, sut.dim_context), "アクションコンテキストの形状が正しいこと"
-    assert feedback.action.shape == (5,), "アクションの形状が正しいこと"
-    assert feedback.reward.shape == (5,), "報酬の形状が正しいこと"
-    assert feedback.pscore.shape == (5,), "傾向スコアの形状が正しいこと"
-    assert all(0 <= a < sut.n_actions for a in feedback.action), "全てのアクションが有効な範囲内にあること"
+    
+    # Assert - 各配列の形状
+    assert feedback.context.shape == (n_rounds, sut.dim_context), f"コンテキストの形状が({n_rounds}, {sut.dim_context})であること"
+    assert feedback.action_context.shape == (sut.n_actions, sut.dim_context), f"アクションコンテキストの形状が({sut.n_actions}, {sut.dim_context})であること"
+    assert feedback.action.shape == (n_rounds,), f"アクションの形状が({n_rounds},)であること"
+    assert feedback.reward.shape == (n_rounds,), f"報酬の形状が({n_rounds},)であること"
+    assert feedback.pscore.shape == (n_rounds,), f"傾向スコアの形状が({n_rounds},)であること"
+    
+    # Assert - 値の妥当性
+    assert all(0 <= a < sut.n_actions for a in feedback.action), "全てのアクションが有効な範囲内（0以上n_actions未満）にあること"
+    assert all(r in [0, 1] for r in feedback.reward), "報酬が0または1のバイナリ値であること"
+    assert all(0 <= p <= 1 for p in feedback.pscore), "傾向スコアが0以上1以下の範囲にあること"
+    
+    # Assert - Noneフィールドの確認（実データなので期待報酬などは不明）
+    assert feedback.position is None, "positionがNoneであること（使用しない）"
+    assert feedback.expected_reward is None, "expected_rewardがNoneであること（実データなので不明）"
+    assert feedback.pi_b is None, "pi_bがNoneであること（実データなので不明）"
+    
+    # Assert - データ型の確認
+    assert feedback.context.dtype == np.float64, "コンテキストがfloat64型であること"
+    assert feedback.action_context.dtype == np.float64, "アクションコンテキストがfloat64型であること"
+    assert feedback.action.dtype in [np.int32, np.int64], "アクションが整数型であること"
+    assert feedback.reward.dtype in [np.int32, np.int64], "報酬が整数型であること"
+    assert feedback.pscore.dtype == np.float64, "傾向スコアがfloat64型であること"
+
+
+def test_異なるラウンド数でバンディットフィードバックを取得できること():
+    """
+    様々なラウンド数でバンディットフィードバックが正しく生成されることを確認する
+    """
+    # Arrange
+    data_dir = "data"
+    mind_data_loader = MINDDataLoader(data_dir=data_dir)
+    sut = NewsEnvironmentStrategy(
+        mind_data_loader=mind_data_loader,
+    )
+    test_rounds = [1, 10, 100, 1000]
+
+    for n_rounds in test_rounds:
+        # Act
+        feedback = sut.obtain_batch_bandit_feedback(n_rounds=n_rounds)
+
+        # Assert
+        assert feedback.n_rounds == n_rounds, f"n_rounds={n_rounds}の場合、フィードバックのラウンド数が一致すること"
+        assert len(feedback.action) == n_rounds, f"n_rounds={n_rounds}の場合、アクション配列の長さが一致すること"
+        assert len(feedback.reward) == n_rounds, f"n_rounds={n_rounds}の場合、報酬配列の長さが一致すること"
+        assert feedback.context.shape[0] == n_rounds, f"n_rounds={n_rounds}の場合、コンテキストの行数が一致すること"

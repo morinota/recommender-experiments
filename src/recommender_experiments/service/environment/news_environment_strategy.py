@@ -22,7 +22,10 @@ class NewsEnvironmentStrategy(EnvironmentStrategyInterface):
         self,
         item_metadata_loader: DataLoaderInterface,
     ):
-        pass
+        # データローダーからニュースメタデータを読み込む
+        self.__item_metadata_df = item_metadata_loader.load_news_metadata()
+        # データローダーからユーザメタデータを読み込む
+        self.__user_metadata_df = item_metadata_loader.load_user_metadata()
 
     @property
     def n_actions(self) -> int:

@@ -54,7 +54,7 @@ class DataLoaderInterface(abc.ABC):
         raise NotImplementedError
 
 
-class MINDDataLoader(abc.ABC):
+class MINDDataLoader(DataLoaderInterface):
     BEHAVIOR_COLUMNS = ["impression_id", "user_id", "time", "history", "impressions"]
     NEWS_COLUMNS = [
         "content_id",

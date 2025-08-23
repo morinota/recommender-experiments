@@ -43,7 +43,16 @@ class NewsEnvironmentStrategy(EnvironmentStrategyInterface):
     def expected_reward_strategy_name(self) -> str:
         return "実際のデータなので、期待報酬関数は不明"
 
-    def obtain_batch_bandit_feedback(self, n_rounds: int) -> BanditFeedbackModel:
+    def obtain_batch_bandit_feedback(
+        self,
+        n_rounds: int,
+        is_test_data: bool = False,
+    ) -> BanditFeedbackModel:
+        """実際のMINDデータなので、mind_data_loaderから読み込んだデータを使ってバンディットフィードバックを返す
+        Args:
+            n_rounds (int): 取得するラウンド数
+            is_test_data (bool, optional): テストデータを使うかどうか. Defaults to False.
+        """
         return BanditFeedbackModel(
             n_rounds=n_rounds,
             n_actions=self.n_actions,

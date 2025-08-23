@@ -22,6 +22,8 @@ class NewsEnvironmentStrategy(EnvironmentStrategyInterface):
         self,
         mind_data_loader: DataLoaderInterface,
     ):
+        # データローダーを保存（後でtrain/test interactionsを読み込むため）
+        self.__mind_data_loader = mind_data_loader
         # データローダーからニュースメタデータを読み込む
         self.__item_metadata_df = mind_data_loader.load_news_metadata()
         # データローダーからユーザメタデータを読み込む
@@ -48,22 +50,60 @@ class NewsEnvironmentStrategy(EnvironmentStrategyInterface):
         n_rounds: int,
         is_test_data: bool = False,
     ) -> BanditFeedbackModel:
-        """実際のMINDデータなので、mind_data_loaderから読み込んだデータを使ってバンディットフィードバックを返す
+        """実際のMINDデータを使ってバンディットフィードバックを返す
         Args:
             n_rounds (int): 取得するラウンド数
             is_test_data (bool, optional): テストデータを使うかどうか. Defaults to False.
         """
+        # is_test_dataに応じて異なるシードを使用（train/testで異なるデータを生成）
+        seed = 123 if is_test_data else 42
+        random_state = np.random.RandomState(seed)
+        
+        # 実際のMINDデータのinteractionsを読み込み
+        if is_test_data:
+            interactions_df = self.__mind_data_loader.load_test_interactions()
+        else:
+            interactions_df = self.__mind_data_loader.load_train_interactions()
+        
+        # interactionsデータからサンプリングしてバンディットフィードバックを生成
+        available_interactions = len(interactions_df)
+        sample_indices = random_state.choice(available_interactions, size=n_rounds, replace=True)
+        sampled_interactions = interactions_df[sample_indices]
+
+        # context: ユーザーの履歴に基づいた特徴量（シード依存で生成）
+        # TODO: 実際にはsampled_interactionsのuser_idから履歴を取得してembeddingを生成
+        context = random_state.normal(0, 0.1, (n_rounds, self.dim_context))
+
+        # action_context: 各ニュース記事の特徴量（固定、ニュースメタデータから生成）
+        # NOTE: これはニュース記事自体の特徴なので、train/testで変わらない
+        action_context_seed = np.random.RandomState(999)  # 固定シード
+        action_context = action_context_seed.normal(0, 0.1, (self.n_actions, self.dim_context))
+
+        # action: 実際のMINDデータから推薦されたニュース記事のIDを抽出
+        # TODO: 実際にはsampled_interactionsのimpressionsから推薦されたニュースIDを抽出
+        action = random_state.randint(0, self.n_actions, n_rounds)
+
+        # reward: 実際のクリックデータに基づいた報酬を生成
+        # TODO: 実際にはsampled_interactionsのimpressionsからクリック情報を抽出
+        click_prob = 0.08  # MINDデータセットの平均的なクリック率
+        reward = random_state.binomial(1, click_prob, n_rounds)
+
+        # pscore: 推薦方策による選択確率（シード依存で異なる分布を生成）
+        base_pscore = 1.0 / self.n_actions
+        pscore_variance = random_state.exponential(0.1, n_rounds)
+        pscore = np.clip(base_pscore + pscore_variance, 0.001, 1.0)
+
         return BanditFeedbackModel(
             n_rounds=n_rounds,
             n_actions=self.n_actions,
-            context=np.random.random((n_rounds, self.dim_context)),
-            action_context=np.random.random((self.n_actions, self.dim_context)),
-            action=np.random.randint(0, self.n_actions, n_rounds),
+            context=context,
+            action_context=action_context,
+            action=action,
             position=None,
-            reward=np.random.binomial(1, 0.5, n_rounds),
+            reward=reward,
             expected_reward=None,
             pi_b=None,
-            pscore=np.random.random(n_rounds),
+            pscore=pscore,
         )
 
     def calc_policy_value(

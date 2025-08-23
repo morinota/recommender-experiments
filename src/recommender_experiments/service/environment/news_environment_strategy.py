@@ -20,12 +20,12 @@ class NewsEnvironmentStrategy(EnvironmentStrategyInterface):
 
     def __init__(
         self,
-        item_metadata_loader: DataLoaderInterface,
+        mind_data_loader: DataLoaderInterface,
     ):
         # データローダーからニュースメタデータを読み込む
-        self.__item_metadata_df = item_metadata_loader.load_news_metadata()
+        self.__item_metadata_df = mind_data_loader.load_news_metadata()
         # データローダーからユーザメタデータを読み込む
-        self.__user_metadata_df = item_metadata_loader.load_user_metadata()
+        self.__user_metadata_df = mind_data_loader.load_user_metadata()
 
     @property
     def n_actions(self) -> int:

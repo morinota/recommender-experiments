@@ -25,7 +25,7 @@ def test_実際のMINDデータを使って初期化できること():
     assert sut.n_users > 0, "ユーザ数が正の値であること"
     assert sut.n_users == 94057, "MINDデータセットのユーザ数（94,057人）と一致すること"
 
-    assert sut.dim_context == 100, "コンテキストの次元数が100であること"
+    assert sut.dim_context == 281, "コンテキストの次元数が実際のカテゴリ数（17）+サブカテゴリ数（264）=281であること"
 
     assert sut.expected_reward_strategy_name == "実際のデータなので、期待報酬関数は不明", "期待報酬戦略名が正しいこと"
 

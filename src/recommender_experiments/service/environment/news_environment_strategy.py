@@ -43,7 +43,10 @@ class NewsEnvironmentStrategy(EnvironmentStrategyInterface):
 
     @property
     def dim_context(self) -> int:
-        return 100
+        # 実際のカテゴリ数 + サブカテゴリ数
+        categories = self.__item_metadata_df["category"].unique()
+        subcategories = self.__item_metadata_df["subcategory"].unique()
+        return len(categories) + len(subcategories)
 
     @property
     def expected_reward_strategy_name(self) -> str:
@@ -78,10 +81,9 @@ class NewsEnvironmentStrategy(EnvironmentStrategyInterface):
         # TODO: 実際にはsampled_interactionsのuser_idから履歴を取得してembeddingを生成
         context = random_state.normal(0, 0.1, (n_rounds, self.dim_context))
 
-        # action_context: 各ニュース記事の特徴量（固定、ニュースメタデータから生成）
+        # action_context: 各ニュース記事の実際の特徴量（ニュースメタデータから生成）
         # NOTE: これはニュース記事自体の特徴なので、train/testで変わらない
-        action_context_seed = np.random.RandomState(999)  # 固定シード
-        action_context = action_context_seed.normal(0, 0.1, (self.n_actions, self.dim_context))
+        action_context = self.__create_action_context_from_news_metadata()
 
         # impressionsから実際のアクションとrewardを抽出
         action, reward = self.__extract_actions_and_rewards_from_impressions(sampled_interactions, random_state)
@@ -140,6 +142,36 @@ class NewsEnvironmentStrategy(EnvironmentStrategyInterface):
                 rewards.append(0)
 
         return np.array(actions), np.array(rewards)
+
+    def __create_action_context_from_news_metadata(self) -> np.ndarray:
+        """ニュースメタデータから実際の特徴量を生成する
+
+        Returns:
+            np.ndarray: ニュース記事の特徴量 (shape: (n_actions, dim_context))
+        """
+        # カテゴリとサブカテゴリのワンホットエンコーディングを作成
+        categories = self.__item_metadata_df["category"].unique().to_list()
+        subcategories = self.__item_metadata_df["subcategory"].unique().to_list()
+
+        # カテゴリ・サブカテゴリのマッピング辞書を作成
+        category_to_idx = {cat: idx for idx, cat in enumerate(categories)}
+        subcategory_to_idx = {subcat: idx + len(categories) for idx, subcat in enumerate(subcategories)}
+
+        action_context = np.zeros((self.n_actions, self.dim_context))
+
+        for i, row in enumerate(self.__item_metadata_df.iter_rows(named=True)):
+            category = row["category"]
+            subcategory = row["subcategory"]
+
+            # カテゴリのワンホット
+            if category in category_to_idx:
+                action_context[i, category_to_idx[category]] = 1.0
+
+            # サブカテゴリのワンホット
+            if subcategory in subcategory_to_idx:
+                action_context[i, subcategory_to_idx[subcategory]] = 1.0
+
+        return action_context
 
     def calc_policy_value(
         self,

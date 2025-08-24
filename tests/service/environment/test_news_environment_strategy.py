@@ -58,16 +58,15 @@ def test_実際のMINDデータを使ってバンディットフィードバッ�
     )
     assert feedback.action.shape == (n_rounds,), f"アクションの形状が({n_rounds},)であること"
     assert feedback.reward.shape == (n_rounds,), f"報酬の形状が({n_rounds},)であること"
-    assert feedback.pscore.shape == (n_rounds,), f"傾向スコアの形状が({n_rounds},)であること"
 
     ## 値の妥当性
     assert all(r in [0, 1] for r in feedback.reward), "報酬が0または1のバイナリ値であること"
-    assert all(0 <= p <= 1 for p in feedback.pscore), "傾向スコアが0以上1以下の範囲にあること"
 
     ## Noneフィールドの確認（実データなので期待報酬などは不明なので）
     assert feedback.position is None, "position(表示位置)がNoneであること（MINDデータセットでは不明）"
     assert feedback.expected_reward is None, "expected_reward(真の期待報酬)がNoneであること（実データなので未知）"
     assert feedback.pi_b is None, "pi_b(データ収集方策の確率分布)がNoneであること（MINDデータセットでは不明）"
+    assert feedback.pscore is None, "pscore(傾向スコア)がNoneであること（実データなので未知）"
 
     ## MINDデータセットには51,282件のニュース記事があるので、その範囲内のIDであるべき
     news_metadata = mind_data_loader.load_news_metadata()
@@ -81,8 +80,8 @@ def test_実際のMINDデータを使ってバンディットフィードバッ�
         f"クリック率がMINDデータセットの現実的な範囲（5-15%）にあること: {click_rate:.2%}"
     )
 
-    # 傾向スコアが一様分布でないこと（推薦方策の多様性を反映）
-    assert np.std(feedback.pscore) > 0.01, "傾向スコアに適度な分散があること（推薦方策の多様性を反映）"
+    # 傾向スコア（pscore）は実データでは未知なのでNoneとして削除
+    # assert np.std(feedback.pscore) > 0.01, "傾向スコアに適度な分散があること（推薦方策の多様性を反映）"
 
 
 def test_is_test_dataパラメータによってtrain_testデータが切り替わること():
@@ -98,27 +97,30 @@ def test_is_test_dataパラメータによってtrain_testデータが切り替�
 
     # Act - train dataでバンディットフィードバックを取得
     train_feedback = sut.obtain_batch_bandit_feedback(n_rounds=n_rounds, is_test_data=False)
-    
+
     # Act - test dataでバンディットフィードバックを取得
     test_feedback = sut.obtain_batch_bandit_feedback(n_rounds=n_rounds, is_test_data=True)
 
     # Assert - 基本的な形状は同じ
     assert train_feedback.n_rounds == test_feedback.n_rounds == n_rounds
     assert train_feedback.n_actions == test_feedback.n_actions == sut.n_actions
-    
+
     # Assert - train/testで異なるデータが使用されていること
     # (実際のMINDデータのtrain/test interactionsを使用している場合、データが異なるはず)
-    assert not np.array_equal(train_feedback.context, test_feedback.context), \
+    assert not np.array_equal(train_feedback.context, test_feedback.context), (
         "train_dataとtest_dataで異なるcontextが生成されること"
-    assert not np.array_equal(train_feedback.action, test_feedback.action), \
+    )
+    assert not np.array_equal(train_feedback.action, test_feedback.action), (
         "train_dataとtest_dataで異なるactionが選択されること"
-    assert not np.array_equal(train_feedback.reward, test_feedback.reward), \
+    )
+    assert not np.array_equal(train_feedback.reward, test_feedback.reward), (
         "train_dataとtest_dataで異なるrewardが生成されること"
-    
+    )
+
     # Assert - それぞれが実際のMINDデータの特性を持つこと
     train_click_rate = np.mean(train_feedback.reward)
     test_click_rate = np.mean(test_feedback.reward)
-    
+
     # どちらも現実的なクリック率範囲内（異なるシードなので多少の差は許容）
     assert 0.03 <= train_click_rate <= 0.15, f"trainデータのクリック率が現実的範囲内: {train_click_rate:.2%}"
     assert 0.03 <= test_click_rate <= 0.15, f"testデータのクリック率が現実的範囲内: {test_click_rate:.2%}"

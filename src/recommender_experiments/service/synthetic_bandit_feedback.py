@@ -42,14 +42,18 @@ class BanditFeedbackModel(BaseModel):
         ...,
         description="データ収集方策 P(a|x) (shape: (n_rounds, n_actions, 1)). 現実の場合はNoneになり得る",
     )
-    pscore: np.ndarray = Field(..., description="傾向スコア (shape: (n_rounds,))")
+    pscore: np.ndarray | None = Field(
+        ..., description="傾向スコア (shape: (n_rounds,)). 現実の場合はNoneになり得る"
+    )
 
     class Config:
         arbitrary_types_allowed = True  # np.ndarrayを許可
 
     @field_validator("action", "reward", "pscore")
-    def check_1d_array(cls, value: np.ndarray, field: ValidationInfo) -> np.ndarray:
+    def check_1d_array(cls, value: np.ndarray | None, field: ValidationInfo) -> np.ndarray | None:
         """特定のフィールドのカスタムバリデータ"""
+        if field.field_name == "pscore" and value is None:
+            return value
         if value.ndim != 1:
             raise ValueError(
                 f"{field.field_name} は1次元の配列を想定してます。しかし実際には{value.shape=}"

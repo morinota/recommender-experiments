@@ -58,13 +58,13 @@ class NewsEnvironmentStrategy(EnvironmentStrategyInterface):
         # is_test_dataに応じて異なるシードを使用（train/testで異なるデータを生成）
         seed = 123 if is_test_data else 42
         random_state = np.random.RandomState(seed)
-        
+
         # 実際のMINDデータのinteractionsを読み込み
         if is_test_data:
             interactions_df = self.__mind_data_loader.load_test_interactions()
         else:
             interactions_df = self.__mind_data_loader.load_train_interactions()
-        
+
         # interactionsデータからサンプリングしてバンディットフィードバックを生成
         available_interactions = len(interactions_df)
         sample_indices = random_state.choice(available_interactions, size=n_rounds, replace=True)
@@ -88,11 +88,6 @@ class NewsEnvironmentStrategy(EnvironmentStrategyInterface):
         click_prob = 0.08  # MINDデータセットの平均的なクリック率
         reward = random_state.binomial(1, click_prob, n_rounds)
 
-        # pscore: 推薦方策による選択確率（シード依存で異なる分布を生成）
-        base_pscore = 1.0 / self.n_actions
-        pscore_variance = random_state.exponential(0.1, n_rounds)
-        pscore = np.clip(base_pscore + pscore_variance, 0.001, 1.0)
-
         return BanditFeedbackModel(
             n_rounds=n_rounds,
             n_actions=self.n_actions,
@@ -103,7 +98,7 @@ class NewsEnvironmentStrategy(EnvironmentStrategyInterface):
             reward=reward,
             expected_reward=None,
             pi_b=None,
-            pscore=pscore,
+            pscore=None,  # MINDデータでは未知
         )
 
     def calc_policy_value(

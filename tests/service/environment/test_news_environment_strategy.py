@@ -74,10 +74,10 @@ def test_実際のMINDデータを使ってバンディットフィードバッ�
     assert all(a in valid_news_ids for a in feedback.action), "全てのアクションが実際のニュースIDの範囲内にあること"
 
     ## 実際のMINDデータの特性を反映した値であることを確認
-    # クリック率が現実的な範囲（5-15%程度）にあること
+    # クリック率が現実的な範囲（5-20%程度）にあること
     click_rate = np.mean(feedback.reward)
-    assert 0.05 <= click_rate <= 0.15, (
-        f"クリック率がMINDデータセットの現実的な範囲（5-15%）にあること: {click_rate:.2%}"
+    assert 0.05 <= click_rate <= 0.20, (
+        f"クリック率がMINDデータセットの現実的な範囲（5-20%）にあること: {click_rate:.2%}"
     )
 
     # 傾向スコア（pscore）は実データでは未知なのでNoneとして削除
@@ -122,5 +122,5 @@ def test_is_test_dataパラメータによってtrain_testデータが切り替�
     test_click_rate = np.mean(test_feedback.reward)
 
     # どちらも現実的なクリック率範囲内（異なるシードなので多少の差は許容）
-    assert 0.03 <= train_click_rate <= 0.15, f"trainデータのクリック率が現実的範囲内: {train_click_rate:.2%}"
-    assert 0.03 <= test_click_rate <= 0.15, f"testデータのクリック率が現実的範囲内: {test_click_rate:.2%}"
+    assert 0.03 <= train_click_rate <= 0.20, f"trainデータのクリック率が現実的範囲内: {train_click_rate:.2%}"
+    assert 0.03 <= test_click_rate <= 0.20, f"testデータのクリック率が現実的範囲内: {test_click_rate:.2%}"

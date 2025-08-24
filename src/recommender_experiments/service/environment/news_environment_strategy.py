@@ -28,6 +28,10 @@ class NewsEnvironmentStrategy(EnvironmentStrategyInterface):
         self.__item_metadata_df = mind_data_loader.load_news_metadata()
         # データローダーからユーザメタデータを読み込む
         self.__user_metadata_df = mind_data_loader.load_user_metadata()
+        # ニュースIDからインデックスへのマッピングを作成
+        self.__news_id_to_index = {
+            news_id: idx for idx, news_id in enumerate(self.__item_metadata_df["content_id"].to_list())
+        }
 
     @property
     def n_actions(self) -> int:
@@ -79,14 +83,8 @@ class NewsEnvironmentStrategy(EnvironmentStrategyInterface):
         action_context_seed = np.random.RandomState(999)  # 固定シード
         action_context = action_context_seed.normal(0, 0.1, (self.n_actions, self.dim_context))
 
-        # action: 実際のMINDデータから推薦されたニュース記事のIDを抽出
-        # TODO: 実際にはsampled_interactionsのimpressionsから推薦されたニュースIDを抽出
-        action = random_state.randint(0, self.n_actions, n_rounds)
-
-        # reward: 実際のクリックデータに基づいた報酬を生成
-        # TODO: 実際にはsampled_interactionsのimpressionsからクリック情報を抽出
-        click_prob = 0.08  # MINDデータセットの平均的なクリック率
-        reward = random_state.binomial(1, click_prob, n_rounds)
+        # impressionsから実際のアクションとrewardを抽出
+        action, reward = self.__extract_actions_and_rewards_from_impressions(sampled_interactions, random_state)
 
         return BanditFeedbackModel(
             n_rounds=n_rounds,
@@ -100,6 +98,48 @@ class NewsEnvironmentStrategy(EnvironmentStrategyInterface):
             pi_b=None,
             pscore=None,  # MINDデータでは未知
         )
+
+    def __extract_actions_and_rewards_from_impressions(
+        self, sampled_interactions: pl.DataFrame, random_state: np.random.RandomState
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """MINDデータセットのimpressionsからアクションと報酬を抽出する
+
+        Args:
+            sampled_interactions: サンプリングされたinteractionデータ
+            random_state: ランダム状態
+
+        Returns:
+            tuple[np.ndarray, np.ndarray]: (actions, rewards)
+        """
+        actions = []
+        rewards = []
+
+        for impressions_str in sampled_interactions["impressions"].to_list():
+            # impressions形式: "N55689-1 N35729-0" (ニュースID-クリックフラグ)
+            impression_items = impressions_str.split()
+
+            # 有効なニュースIDが見つかるまでリトライ
+            # Why: MINDデータセットでは一部のニュースIDがnews.tsvに存在しないことがある
+            # （特にtest_interactionsで顕著）ため、有効なニュースIDを確実に取得する必要がある
+            valid_found = False
+            for _ in range(len(impression_items)):
+                selected_impression = random_state.choice(impression_items)
+                news_id, click_flag = selected_impression.rsplit("-", 1)
+
+                # ニュースIDをインデックスに変換
+                if news_id in self.__news_id_to_index:
+                    action_idx = self.__news_id_to_index[news_id]
+                    actions.append(action_idx)
+                    rewards.append(int(click_flag))
+                    valid_found = True
+                    break
+
+            if not valid_found:
+                # 全てのニュースIDが未知の場合はランダムに選択
+                actions.append(random_state.randint(0, self.n_actions))
+                rewards.append(0)
+
+        return np.array(actions), np.array(rewards)
 
     def calc_policy_value(
         self,

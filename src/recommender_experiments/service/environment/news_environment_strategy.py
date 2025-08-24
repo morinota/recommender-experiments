@@ -77,9 +77,8 @@ class NewsEnvironmentStrategy(EnvironmentStrategyInterface):
         sample_indices = random_state.choice(available_interactions, size=n_rounds, replace=True)
         sampled_interactions = interactions_df[sample_indices]
 
-        # context: ユーザーの履歴に基づいた特徴量（シード依存で生成）
-        # TODO: 実際にはsampled_interactionsのuser_idから履歴を取得してembeddingを生成
-        context = random_state.normal(0, 0.1, (n_rounds, self.dim_context))
+        # context: ユーザーの履歴に基づいた特徴量を生成
+        context = self.__create_context_from_user_history(sampled_interactions, random_state)
 
         # action_context: 各ニュース記事の実際の特徴量（ニュースメタデータから生成）
         # NOTE: これはニュース記事自体の特徴なので、train/testで変わらない
@@ -172,6 +171,51 @@ class NewsEnvironmentStrategy(EnvironmentStrategyInterface):
                 action_context[i, subcategory_to_idx[subcategory]] = 1.0
 
         return action_context
+
+    def __create_context_from_user_history(
+        self, sampled_interactions: pl.DataFrame, random_state: np.random.RandomState
+    ) -> np.ndarray:
+        """ユーザーの履歴からcontext特徴量を生成する
+
+        Args:
+            sampled_interactions: サンプリングされたinteractionデータ
+            random_state: ランダム状態（履歴がない場合の補完用）
+
+        Returns:
+            np.ndarray: ユーザーのcontext特徴量 (shape: (n_rounds, dim_context))
+        """
+        n_rounds = len(sampled_interactions)
+        context = np.zeros((n_rounds, self.dim_context))
+
+        # action_contextを取得（ニュース記事の特徴量マトリックス）
+        action_context = self.__create_action_context_from_news_metadata()
+
+        for i, row in enumerate(sampled_interactions.iter_rows(named=True)):
+            history_str = row["history"]
+
+            if history_str and history_str.strip():
+                # 履歴からニュースIDを取得
+                history_news_ids = history_str.strip().split()
+
+                # 履歴のニュースIDをインデックスに変換
+                valid_history_indices = []
+                for news_id in history_news_ids:
+                    if news_id in self.__news_id_to_index:
+                        valid_history_indices.append(self.__news_id_to_index[news_id])
+
+                if valid_history_indices:
+                    # 履歴のニュース記事の特徴量を平均してユーザープロファイルを作成
+                    history_features = action_context[valid_history_indices]
+                    user_profile = np.mean(history_features, axis=0)
+                    context[i] = user_profile
+                else:
+                    # 履歴にあるニュースIDが全て未知の場合はランダム特徴量
+                    context[i] = random_state.normal(0, 0.1, self.dim_context)
+            else:
+                # 履歴が空の場合はランダム特徴量
+                context[i] = random_state.normal(0, 0.1, self.dim_context)
+
+        return context
 
     def calc_policy_value(
         self,

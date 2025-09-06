@@ -62,20 +62,20 @@ class RankingSyntheticBanditDataset(BaseModel):
         dim_context (int): コンテキスト特徴量の次元数
         num_actions (int): 選択可能な行動（アイテム）の総数
         k (int): ランキングで表示する上位ポジション数（推薦リストの長さ）
-        action_context (np.ndarray, shape: (num_actions, action_dim)): 
+        action_context (np.ndarray, shape: (num_actions, action_dim)):
                       各行動のコンテキスト特徴量
 
         [期待報酬関数の設定値群]
-        theta (np.ndarray, shape: (dim_context, num_actions)): 
+        theta (np.ndarray, shape: (dim_context, num_actions)):
               Q関数の線形項に使用するパラメータ行列
               コンテキストと行動の基本的な関係性を定義
-        quadratic_weights (np.ndarray, shape: (dim_context, num_actions)): 
+        quadratic_weights (np.ndarray, shape: (dim_context, num_actions)):
                           Q関数の二次項に使用する重み行列
                           非線形な関係性を表現するための重み
-        action_bias (np.ndarray, shape: (num_actions, 1)): 
+        action_bias (np.ndarray, shape: (num_actions, 1)):
                     各行動に対する固有のバイアス項
                     行動固有の選択されやすさを調整
-        position_interaction_weights (np.ndarray, shape: (k, k)): 
+        position_interaction_weights (np.ndarray, shape: (k, k)):
                                      ランキング位置間の相互作用重み行列
                                      ポジション間の影響度を定義
 
@@ -103,15 +103,15 @@ class RankingSyntheticBanditDataset(BaseModel):
     k: int
     action_context: np.ndarray
     theta: np.ndarray
-    quadratic_weights: np.ndarray  # 二次項の重み行列 (d, num_actions)
-    action_bias: np.ndarray  # 各行動のバイアス項 (num_actions, 1)
-    position_interaction_weights: np.ndarray  # ランキング位置間の相互作用を表す重み行列 (k, k)
-    beta: float = -1.0  # データ収集方策の設定値1つ目
-    reward_noise: float = 0.5  # 観測報酬のばらつき度合い(標準偏差)
-    p: list[float] = [0.8, 0.1, 0.1]  # ユーザ行動モデルの選択確率
-    p_rand: float = 0.2  # ランダムに選択される確率
+    quadratic_weights: np.ndarray
+    action_bias: np.ndarray
+    position_interaction_weights: np.ndarray
+    beta: float = -1.0
+    reward_noise: float = 0.5
+    p: list[float] = [0.8, 0.1, 0.1]
+    p_rand: float = 0.2
     random_state: int = 12345
-    is_test: bool = False  # テストモードかどうか
+    is_test: bool = False
 
     class Config:
         arbitrary_types_allowed = True  # np.ndarrayを許可

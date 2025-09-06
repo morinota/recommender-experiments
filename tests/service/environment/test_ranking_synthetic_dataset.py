@@ -6,8 +6,7 @@ from recommender_experiments.service.environment.ranking_synthetic_dataset impor
 )
 
 
-def test_合成データ生成の基本動作():
-    """RankingSyntheticBanditDatasetが正しくSyntheticRankingDataを返し、基本的な制約を満たすことをテストする。"""
+def test_設定をもとにランキングタスクの合成ログデータが生成されること():
     # Arrange
     num_data = 10
     dim_context = 3

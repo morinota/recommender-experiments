@@ -20,6 +20,7 @@ obp = "^0.5.7"
 tqdm-joblib = "^0.0.4"
 ruff = "^0.11.2"
 multimethod = "1.9"
+marimo = "^0.15.2"
 
 
 [tool.poetry.group.dev.dependencies]

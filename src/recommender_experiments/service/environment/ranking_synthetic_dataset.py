@@ -17,38 +17,38 @@ class SyntheticRankingData(BaseModel):
     ----------
     num_data : int
         データ数
-    K : int
+    ranking_positions : int
         ランキングポジション数
     num_actions : int
         行動数
-    x : np.ndarray
+    context_features : np.ndarray
         コンテキスト特徴量 (num_data x dim_context)
-    a_k : np.ndarray
-        各ポジションで選択された行動 (num_data x K)
-    r_k : np.ndarray
-        各ポジションで観測された報酬 (num_data x K)
-    C : np.ndarray
-        ユーザ行動行列 (num_data x K x K)
-    pi_0 : np.ndarray
+    selected_actions : np.ndarray
+        各ポジションで選択された行動 (num_data x ranking_positions)
+    observed_rewards : np.ndarray
+        各ポジションで観測された報酬 (num_data x ranking_positions)
+    user_behavior_matrix : np.ndarray
+        ユーザ行動行列 (num_data x ranking_positions x ranking_positions)
+    logging_policy : np.ndarray
         使用された方策 (num_data x num_actions)
-    q_k : np.ndarray
-        各ポジションの期待報酬 (num_data x K)
-    base_q_func : np.ndarray
+    expected_rewards : np.ndarray
+        各ポジションの期待報酬 (num_data x ranking_positions)
+    base_q_function : np.ndarray
         基本Q関数の値 (num_data x num_actions)
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     num_data: int
-    K: int
+    ranking_positions: int
     num_actions: int
-    x: np.ndarray
-    a_k: np.ndarray
-    r_k: np.ndarray
-    C: np.ndarray
-    pi_0: np.ndarray
-    q_k: np.ndarray
-    base_q_func: np.ndarray
+    context_features: np.ndarray
+    selected_actions: np.ndarray
+    observed_rewards: np.ndarray
+    user_behavior_matrix: np.ndarray
+    logging_policy: np.ndarray
+    expected_rewards: np.ndarray
+    base_q_function: np.ndarray
 
 
 class RankingSyntheticBanditDataset(BaseModel):
@@ -117,15 +117,15 @@ class RankingSyntheticBanditDataset(BaseModel):
 
         return SyntheticRankingData(
             num_data=num_data,
-            K=self.k,
+            ranking_positions=self.k,
             num_actions=self.num_actions,
-            x=x,
-            a_k=a_k,
-            r_k=r_k,
-            C=C,
-            pi_0=pi_0,
-            q_k=q_k,
-            base_q_func=base_q_func,
+            context_features=x,
+            selected_actions=a_k,
+            observed_rewards=r_k,
+            user_behavior_matrix=C,
+            logging_policy=pi_0,
+            expected_rewards=q_k,
+            base_q_function=base_q_func,
         )
 
     def _compute_base_q_function(

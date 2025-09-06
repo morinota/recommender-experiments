@@ -51,8 +51,6 @@ class SyntheticRankingData(BaseModel):
     base_q_func: np.ndarray
 
 
-
-
 class RankingSyntheticBanditDataset(BaseModel):
     """ランキング問題の擬似的なバンディットデータセットを生成するクラス
     実装参考: https://github.com/ghmagazine/cfml_book/blob/main/ch2/dataset.py
@@ -75,6 +73,60 @@ class RankingSyntheticBanditDataset(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True  # np.ndarrayを許可
+
+    def obtain_batch_bandit_feedback(self, num_data: int) -> SyntheticRankingData:
+        """バンディットフィードバックデータを生成する.
+
+        リファクタリングしたgenerate_synthetic_data関数を使用して、
+        型安全なSyntheticRankingDataオブジェクトを返す。
+
+        Parameters
+        ----------
+        num_data : int
+            生成するデータ数
+
+        Returns
+        -------
+        SyntheticRankingData
+            生成されたランキングデータ
+        """
+        # 乱数生成器の初期化
+        random_ = check_random_state(self.random_state)
+
+        # コンテキスト特徴量の生成
+        x = random_.normal(size=(num_data, self.dim_context))
+
+        # 基本Q関数の計算
+        base_q_func = self._compute_base_q_function(
+            x, self.theta, self.quadratic_weights, self.action_bias, self.num_actions
+        )
+
+        # ユーザ行動行列のサンプリング
+        C = self._sample_user_behavior_matrix(num_data, self.k, self.p, self.p_rand, random_)
+
+        # 方策の選択
+        pi_0 = self._select_policy(base_q_func, self.beta, self.is_test)
+
+        # 行動のサンプリング
+        a_k = self._sample_actions(pi_0, num_data, self.k, self.random_state)
+
+        # 報酬の生成
+        r_k, q_k = self._generate_rewards(
+            num_data, self.k, a_k, base_q_func, C, self.position_interaction_weights, self.reward_noise, random_
+        )
+
+        return SyntheticRankingData(
+            num_data=num_data,
+            K=self.k,
+            num_actions=self.num_actions,
+            x=x,
+            a_k=a_k,
+            r_k=r_k,
+            C=C,
+            pi_0=pi_0,
+            q_k=q_k,
+            base_q_func=base_q_func,
+        )
 
     def _compute_base_q_function(
         self,
@@ -348,55 +400,3 @@ class RankingSyntheticBanditDataset(BaseModel):
             r_k[:, k] = random_.normal(q_func_factual, scale=reward_noise)
 
         return r_k, q_k
-
-    def obtain_batch_bandit_feedback(self, num_data: int) -> SyntheticRankingData:
-        """バンディットフィードバックデータを生成する.
-
-        リファクタリングしたgenerate_synthetic_data関数を使用して、
-        型安全なSyntheticRankingDataオブジェクトを返す。
-
-        Parameters
-        ----------
-        num_data : int
-            生成するデータ数
-
-        Returns
-        -------
-        SyntheticRankingData
-            生成されたランキングデータ
-        """
-        # 乱数生成器の初期化
-        random_ = check_random_state(self.random_state)
-
-        # コンテキスト特徴量の生成
-        x = random_.normal(size=(num_data, self.dim_context))
-
-        # 基本Q関数の計算
-        base_q_func = self._compute_base_q_function(x, self.theta, self.quadratic_weights, self.action_bias, self.num_actions)
-
-        # ユーザ行動行列のサンプリング
-        C = self._sample_user_behavior_matrix(num_data, self.k, self.p, self.p_rand, random_)
-
-        # 方策の選択
-        pi_0 = self._select_policy(base_q_func, self.beta, self.is_test)
-
-        # 行動のサンプリング
-        a_k = self._sample_actions(pi_0, num_data, self.k, self.random_state)
-
-        # 報酬の生成
-        r_k, q_k = self._generate_rewards(num_data, self.k, a_k, base_q_func, C, self.position_interaction_weights, self.reward_noise, random_)
-
-        return SyntheticRankingData(
-            num_data=num_data,
-            K=self.k,
-            num_actions=self.num_actions,
-            x=x,
-            a_k=a_k,
-            r_k=r_k,
-            C=C,
-            pi_0=pi_0,
-            q_k=q_k,
-            base_q_func=base_q_func,
-        )
-
-

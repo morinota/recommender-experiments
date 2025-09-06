@@ -56,8 +56,7 @@ def test_設定をもとにランキングタスクの合成ログデータが�
     assert np.all(result.base_q_func >= 0) and np.all(result.base_q_func <= 1)  # sigmoid出力
 
 
-def test_再現性が保たれること():
-    """同じrandom_stateを使用した場合に同じ結果が得られることをテストする。"""
+def test_再現性_同じrandom_stateを使用した場合に同じ結果が得られること():
     # Arrange
     num_data = 5
     dim_context = 2

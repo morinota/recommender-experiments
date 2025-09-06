@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import TYPE_CHECKING, Optional, Tuple
 
 import numpy as np
 from pydantic import BaseModel, ConfigDict
@@ -10,6 +10,9 @@ from recommender_experiments.service.utils.math_functions import (
     sigmoid,
     softmax,
 )
+
+if TYPE_CHECKING:
+    from recommender_experiments.service.algorithms.bandit_algorithm_interface import BanditAlgorithmInterface
 
 
 class SyntheticRankingData(BaseModel):
@@ -124,7 +127,9 @@ class RankingSyntheticBanditDataset(BaseModel):
     class Config:
         arbitrary_types_allowed = True  # np.ndarrayを許可
 
-    def obtain_batch_bandit_feedback(self, num_data: int) -> SyntheticRankingData:
+    def obtain_batch_bandit_feedback(
+        self, num_data: int, policy_algorithm: Optional["BanditAlgorithmInterface"] = None
+    ) -> SyntheticRankingData:
         """バンディットフィードバックデータを生成する.
 
         リファクタリングしたgenerate_synthetic_data関数を使用して、
@@ -134,6 +139,9 @@ class RankingSyntheticBanditDataset(BaseModel):
         ----------
         num_data : int
             生成するデータ数
+        policy_algorithm : Optional[BanditAlgorithmInterface]
+            データ収集方策として使用するバンディットアルゴリズム
+            Noneの場合は従来のsoftmax/ε-greedy方策を使用
 
         Returns
         -------
@@ -157,11 +165,14 @@ class RankingSyntheticBanditDataset(BaseModel):
         # ユーザ行動行列のサンプリング
         C = self._sample_user_behavior_matrix(num_data, self.k, self.p, self.p_rand, random_)
 
-        # 方策の選択（利用可能actionのみ考慮）
-        pi_0 = self._select_policy_with_mask(base_q_func, available_action_mask, self.beta, self.is_test)
-
-        # 行動のサンプリング（利用可能actionのみから）
-        a_k = self._sample_actions_with_mask(pi_0, available_action_mask, num_data, self.k, self.random_state)
+        # 方策とaction選択の分岐
+        if policy_algorithm is not None:
+            # バンディットアルゴリズムを使用
+            a_k, pi_0 = self._select_actions_with_bandit_algorithm(x, available_action_mask, policy_algorithm)
+        else:
+            # 従来の方策（softmax/ε-greedy）を使用
+            pi_0 = self._select_policy_with_mask(base_q_func, available_action_mask, self.beta, self.is_test)
+            a_k = self._sample_actions_with_mask(pi_0, available_action_mask, num_data, self.k, self.random_state)
 
         # 報酬の生成
         r_k, q_k = self._generate_rewards(
@@ -544,6 +555,64 @@ class RankingSyntheticBanditDataset(BaseModel):
             policy[i, available_actions] = policy_available
 
         return policy
+
+    def _select_actions_with_bandit_algorithm(
+        self,
+        x: np.ndarray,
+        available_action_mask: np.ndarray,
+        policy_algorithm: "BanditAlgorithmInterface",
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """バンディットアルゴリズムを使用してactionを選択する.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            コンテキスト特徴量 (num_data x dim_context)
+        available_action_mask : np.ndarray
+            利用可能actionマスク (num_data x num_actions)
+        policy_algorithm : BanditAlgorithmInterface
+            使用するバンディットアルゴリズム
+
+        Returns
+        -------
+        tuple[np.ndarray, np.ndarray]
+            (selected_actions, logging_policy) のタプル
+            selected_actions: 選択されたaction (num_data x k)
+            logging_policy: ログ方策 (num_data x num_actions)
+        """
+        num_data, num_actions = available_action_mask.shape
+        selected_actions = np.zeros((num_data, self.k), dtype=int)
+        logging_policy = np.zeros((num_data, num_actions))
+
+        for i in range(num_data):
+            # 利用可能actionを取得
+            available_actions = np.where(available_action_mask[i] == 1)[0]
+
+            if len(available_actions) == 0:
+                continue
+
+            # バンディットアルゴリズムでaction選択（学習しない固定状態）
+            selected_action_list = policy_algorithm.select_actions(
+                context=x[i], available_actions=available_actions, k=self.k
+            )
+
+            # 選択されたactionを記録
+            for j, action_id in enumerate(selected_action_list):
+                if j < self.k:
+                    selected_actions[i, j] = action_id
+
+            # ログ方策を計算（選択されたactionに均等な確率を割り当て）
+            # 注意: 実際のバンディットアルゴリズムは方策確率を直接提供しないため、
+            # 選択されたactionに基づいて近似的な方策を構築
+            selected_count = min(len(selected_action_list), self.k)
+            if selected_count > 0:
+                prob_per_selected = 1.0 / selected_count
+                for j in range(selected_count):
+                    if j < len(selected_action_list):
+                        action_id = selected_action_list[j]
+                        logging_policy[i, action_id] = prob_per_selected
+
+        return selected_actions, logging_policy
 
     def _sample_actions_with_mask(
         self,

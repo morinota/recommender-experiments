@@ -59,45 +59,50 @@ class RankingSyntheticBanditDataset(BaseModel):
 
     Args:
         [環境設定]
-        dim_context: コンテキスト特徴量の次元数
-        num_actions: 選択可能な行動（アイテム）の総数
-        k: ランキングで表示する上位ポジション数（推薦リストの長さ）
-        action_context: 各行動のコンテキスト特徴量 (num_actions, action_dim)
+        dim_context (int): コンテキスト特徴量の次元数
+        num_actions (int): 選択可能な行動（アイテム）の総数
+        k (int): ランキングで表示する上位ポジション数（推薦リストの長さ）
+        action_context (np.ndarray, shape: (num_actions, action_dim)): 
+                      各行動のコンテキスト特徴量
 
         [期待報酬関数の設定値群]
-        theta: Q関数の線形項に使用するパラメータ行列 (dim_context, num_actions)
-               コンテキストと行動の基本的な関係性を定義
-        quadratic_weights: Q関数の二次項に使用する重み行列 (dim_context, num_actions)
+        theta (np.ndarray, shape: (dim_context, num_actions)): 
+              Q関数の線形項に使用するパラメータ行列
+              コンテキストと行動の基本的な関係性を定義
+        quadratic_weights (np.ndarray, shape: (dim_context, num_actions)): 
+                          Q関数の二次項に使用する重み行列
                           非線形な関係性を表現するための重み
-        action_bias: 各行動に対する固有のバイアス項 (num_actions, 1)
+        action_bias (np.ndarray, shape: (num_actions, 1)): 
+                    各行動に対する固有のバイアス項
                     行動固有の選択されやすさを調整
-        position_interaction_weights: ランキング位置間の相互作用重み行列 (k, k)
+        position_interaction_weights (np.ndarray, shape: (k, k)): 
+                                     ランキング位置間の相互作用重み行列
                                      ポジション間の影響度を定義
 
         [データ収集方策の設定値群]
-        beta: 方策のソフトマックス温度パラメータ
-              負値で決定論的、正値で確率的な行動選択
-        is_test: テストモード（True: ε-greedy方策、False: softmax方策）
+        beta (float): 方策のソフトマックス温度パラメータ
+                     負値で決定論的、正値で確率的な行動選択
+        is_test (bool): テストモード（True: ε-greedy方策、False: softmax方策）
 
         [ユーザ行動モデルの設定値群]
-        p: ユーザ行動モデルの選択確率 [independent, cascade, all]
-           independent: 各ポジションを独立して評価
-           cascade: 上位から順次評価（途中で止める可能性）
-           all: すべてのポジションを評価
-        p_rand: ランダム行動パターンを混入する確率
-               ノイズのあるユーザ行動をシミュレート
+        p (list[float], length: 3): ユーザ行動モデルの選択確率 [independent, cascade, all]
+                                   independent: 各ポジションを独立して評価
+                                   cascade: 上位から順次評価（途中で止める可能性）
+                                   all: すべてのポジションを評価
+        p_rand (float): ランダム行動パターンを混入する確率
+                       ノイズのあるユーザ行動をシミュレート
 
         [ノイズ・再現性の設定値群]
-        reward_noise: 観測報酬に加えるガウシアンノイズの標準偏差
-                     実世界の不確実性をシミュレート
-        random_state: 再現性確保のための乱数シード
+        reward_noise (float): 観測報酬に加えるガウシアンノイズの標準偏差
+                             実世界の不確実性をシミュレート
+        random_state (int): 再現性確保のための乱数シード
     """
 
     dim_context: int
     num_actions: int
     k: int
     action_context: np.ndarray
-    theta: np.ndarray  # 擬似的な期待報酬を生成するための設定値1つ目(d, num_actions)
+    theta: np.ndarray
     quadratic_weights: np.ndarray  # 二次項の重み行列 (d, num_actions)
     action_bias: np.ndarray  # 各行動のバイアス項 (num_actions, 1)
     position_interaction_weights: np.ndarray  # ランキング位置間の相互作用を表す重み行列 (k, k)

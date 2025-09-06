@@ -53,7 +53,37 @@ class SyntheticRankingData(BaseModel):
 
 class RankingSyntheticBanditDataset(BaseModel):
     """ランキング問題の擬似的なバンディットデータセットを生成するクラス
+    
+    このクラスは、ランキング問題におけるバンディット環境をシミュレートし、
+    オフ方策評価用の合成データを生成します。
+    
     実装参考: https://github.com/ghmagazine/cfml_book/blob/main/ch2/dataset.py
+    
+    Args:
+        dim_context: コンテキスト特徴量の次元数
+        num_actions: 選択可能な行動（アイテム）の総数
+        k: ランキングで表示する上位ポジション数（推薦リストの長さ）
+        action_context: 各行動のコンテキスト特徴量 (num_actions, action_dim)
+        theta: Q関数の線形項に使用するパラメータ行列 (dim_context, num_actions)
+               コンテキストと行動の基本的な関係性を定義
+        quadratic_weights: Q関数の二次項に使用する重み行列 (dim_context, num_actions)
+                          非線形な関係性を表現するための重み
+        action_bias: 各行動に対する固有のバイアス項 (num_actions, 1)
+                    行動固有の選択されやすさを調整
+        position_interaction_weights: ランキング位置間の相互作用重み行列 (k, k)
+                                     ポジション間の影響度を定義
+        beta: 方策のソフトマックス温度パラメータ
+              負値で決定論的、正値で確率的な行動選択
+        reward_noise: 観測報酬に加えるガウシアンノイズの標準偏差
+                     実世界の不確実性をシミュレート
+        p: ユーザ行動モデルの選択確率 [independent, cascade, all]
+           independent: 各ポジションを独立して評価
+           cascade: 上位から順次評価（途中で止める可能性）
+           all: すべてのポジションを評価
+        p_rand: ランダム行動パターンを混入する確率
+               ノイズのあるユーザ行動をシミュレート
+        random_state: 再現性確保のための乱数シード
+        is_test: テストモード（True: ε-greedy方策、False: softmax方策）
     """
 
     dim_context: int

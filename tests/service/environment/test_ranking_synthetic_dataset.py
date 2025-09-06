@@ -42,8 +42,8 @@ def test_設定をもとにランキングタスクの合成ログデータが�
 
     # Assert - データの形状
     assert result.context_features.shape == (num_data, dim_context)
-    assert result.selected_actions.shape == (num_data, K)
-    assert result.observed_rewards.shape == (num_data, K)
+    assert result.selected_action_vectors.shape == (num_data, K)
+    assert result.observed_reward_vectors.shape == (num_data, K)
     assert result.user_behavior_matrix.shape == (num_data, K, K)
     assert result.logging_policy.shape == (num_data, num_actions)
     assert result.expected_rewards.shape == (num_data, K)
@@ -51,7 +51,7 @@ def test_設定をもとにランキングタスクの合成ログデータが�
 
     # Assert - データの値域制約
     assert np.all(result.user_behavior_matrix >= 0) and np.all(result.user_behavior_matrix <= 1)  # ユーザ行動行列は[0,1]
-    assert np.all(result.selected_actions >= 0) and np.all(result.selected_actions < num_actions)  # 行動は有効範囲内
+    assert np.all(result.selected_action_vectors >= 0) and np.all(result.selected_action_vectors < num_actions)  # 行動は有効範囲内
     assert np.allclose(result.logging_policy.sum(axis=1), 1.0, atol=1e-6)  # 方策は確率分布
     assert np.all(result.base_q_function >= 0) and np.all(result.base_q_function <= 1)  # sigmoid出力
 
@@ -90,8 +90,8 @@ def test_再現性_同じrandom_stateを使用した場合に同じ結果が得�
 
     # Assert - すべてのデータが一致
     assert np.array_equal(result1.context_features, result2.context_features)
-    assert np.array_equal(result1.selected_actions, result2.selected_actions)
-    assert np.array_equal(result1.observed_rewards, result2.observed_rewards)
+    assert np.array_equal(result1.selected_action_vectors, result2.selected_action_vectors)
+    assert np.array_equal(result1.observed_reward_vectors, result2.observed_reward_vectors)
     assert np.array_equal(result1.user_behavior_matrix, result2.user_behavior_matrix)
     assert np.array_equal(result1.logging_policy, result2.logging_policy)
     assert np.array_equal(result1.expected_rewards, result2.expected_rewards)

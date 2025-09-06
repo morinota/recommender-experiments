@@ -23,9 +23,9 @@ class SyntheticRankingData(BaseModel):
         行動数
     context_features : np.ndarray
         コンテキスト特徴量 (num_data x dim_context)
-    selected_actions : np.ndarray
+    selected_action_vectors : np.ndarray
         各ポジションで選択された行動 (num_data x ranking_positions)
-    observed_rewards : np.ndarray
+    observed_reward_vectors : np.ndarray
         各ポジションで観測された報酬 (num_data x ranking_positions)
     user_behavior_matrix : np.ndarray
         ユーザ行動行列 (num_data x ranking_positions x ranking_positions)
@@ -43,8 +43,8 @@ class SyntheticRankingData(BaseModel):
     ranking_positions: int
     num_actions: int
     context_features: np.ndarray
-    selected_actions: np.ndarray
-    observed_rewards: np.ndarray
+    selected_action_vectors: np.ndarray
+    observed_reward_vectors: np.ndarray
     user_behavior_matrix: np.ndarray
     logging_policy: np.ndarray
     expected_rewards: np.ndarray
@@ -120,8 +120,8 @@ class RankingSyntheticBanditDataset(BaseModel):
             ranking_positions=self.k,
             num_actions=self.num_actions,
             context_features=x,
-            selected_actions=a_k,
-            observed_rewards=r_k,
+            selected_action_vectors=a_k,
+            observed_reward_vectors=r_k,
             user_behavior_matrix=C,
             logging_policy=pi_0,
             expected_rewards=q_k,

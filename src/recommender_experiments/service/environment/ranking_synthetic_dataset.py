@@ -137,9 +137,7 @@ def _generate_random_behavior_matrices(K: int, random_: np.random.RandomState) -
         ランダムユーザ行動パターン行列 (7 x K x K)
     """
     # -1, 0, 1の値をランダムに選んで7パターン生成
-    return random_.choice(
-        [-1, 0, 1], p=[0.2, 0.4, 0.4], size=7 * K * K
-    ).reshape((7, K, K))
+    return random_.choice([-1, 0, 1], p=[0.2, 0.4, 0.4], size=7 * K * K).reshape((7, K, K))
 
 
 def _sample_user_behavior_matrix(

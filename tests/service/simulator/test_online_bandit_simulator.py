@@ -5,21 +5,19 @@ import pytest
 
 from recommender_experiments.service.algorithms.bandit_algorithm_interface import (
     BanditAlgorithmInterface,
+    OnlineEvaluationResults,
 )
 from recommender_experiments.service.algorithms.thompson_sampling_ranking import (
     ThompsonSamplingRanking,
 )
-from recommender_experiments.service.environment.ranking_synthetic_dataset import (
-    RankingSyntheticBanditDataset,
-)
 from recommender_experiments.service.environment.bandit_environment import (
     RankingSyntheticEnvironment,
 )
+from recommender_experiments.service.environment.ranking_synthetic_dataset import (
+    RankingSyntheticBanditDataset,
+)
 from recommender_experiments.service.simulator.online_bandit_simulator import (
     OnlineBanditSimulator,
-)
-from recommender_experiments.service.algorithms.bandit_algorithm_interface import (
-    OnlineEvaluationResults,
 )
 
 
@@ -111,9 +109,7 @@ def test_動的action変化環境でのオンライン学習が機能するこ�
     num_trials = 100
 
     # Act
-    results = simulator.evaluate_online_learning(
-        algorithm=algorithm, num_trials=num_trials
-    )
+    results = simulator.evaluate_online_learning(algorithm=algorithm, num_trials=num_trials)
 
     # Assert
     # 動的変化環境でもシミュレーションが正常完了すること
@@ -175,9 +171,7 @@ def test_複数のアルゴリズムの性能比較ができること():
     num_trials = 50
 
     # Act
-    comparison_results = simulator.compare_algorithms(
-        algorithms=algorithms, num_trials=num_trials
-    )
+    comparison_results = simulator.compare_algorithms(algorithms=algorithms, num_trials=num_trials)
 
     # Assert
     assert "thompson_sampling" in comparison_results, "Thompson Samplingの結果が含まれること"

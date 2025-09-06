@@ -19,7 +19,7 @@ def test_設定をもとにランキングタスクの合成ログデータが�
     action_context = np.random.normal(size=(num_actions, 6))
     random_state = 12345
 
-    dataset = RankingSyntheticBanditDataset(
+    sut = RankingSyntheticBanditDataset(
         dim_context=dim_context,
         num_actions=num_actions,
         k=K,
@@ -32,7 +32,7 @@ def test_設定をもとにランキングタスクの合成ログデータが�
     )
 
     # Act
-    result = dataset.obtain_batch_bandit_feedback(num_data)
+    result = sut.obtain_batch_bandit_feedback(num_data)
 
     # Assert - 返り値の型と基本属性
     assert isinstance(result, SyntheticRankingData)
@@ -81,12 +81,12 @@ def test_再現性_同じrandom_stateを使用した場合に同じ結果が得�
         "random_state": random_state,
     }
 
-    dataset1 = RankingSyntheticBanditDataset(**dataset_params)
-    dataset2 = RankingSyntheticBanditDataset(**dataset_params)
+    sut1 = RankingSyntheticBanditDataset(**dataset_params)
+    sut2 = RankingSyntheticBanditDataset(**dataset_params)
 
     # Act
-    result1 = dataset1.obtain_batch_bandit_feedback(num_data)
-    result2 = dataset2.obtain_batch_bandit_feedback(num_data)
+    result1 = sut1.obtain_batch_bandit_feedback(num_data)
+    result2 = sut2.obtain_batch_bandit_feedback(num_data)
 
     # Assert - すべてのデータが一致
     assert np.array_equal(result1.x, result2.x)

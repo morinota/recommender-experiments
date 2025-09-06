@@ -1,26 +1,7 @@
-import collections
-import itertools
-from dataclasses import dataclass
-from typing import Callable, TypedDict
-
 import numpy as np
-from obp.dataset import OpenBanditDataset, SyntheticBanditDataset, logistic_reward_function
 from pydantic import BaseModel, ConfigDict
 from scipy.stats import rankdata
 from sklearn.utils import check_random_state
-
-
-class RankingBanditFeedback(TypedDict):
-    n_rounds: int  # ラウンド数
-    n_actions: int  # アクション数
-    len_list: int  # ランキングの長さ
-    dim_context: int  # 特徴量の次元数
-    action_context: np.ndarray  # アクション特徴量 (shape: (n_actions, dim_action_features))
-    action: np.ndarray  # 実際に選択されたアクション (shape: (n_rounds * len_list,))
-    position: np.ndarray  # ポジション (shape: (n_rounds,))
-    reward: np.ndarray  # ポジションレベルの観測報酬 (shape: (n_rounds * len_list)
-    pi_b: np.ndarray  # データ収集方策のアクション選択確率 P(a|x) (shape: (n_rounds, n_actions))
-    pscore: np.ndarray  # 傾向スコア (shape: (n_rounds,))
 
 
 class SyntheticRankingData(BaseModel):
@@ -281,7 +262,9 @@ def _compute_position_reward(
     # 他のポジションとの相互作用を考慮
     for position in range(K):
         if position != k:
-            interaction_term = C[:, k, position] * position_interaction_weights[k, position] * base_q_func[idx, a_k[:, position]]
+            interaction_term = (
+                C[:, k, position] * position_interaction_weights[k, position] * base_q_func[idx, a_k[:, position]]
+            )
             distance_penalty = np.abs(position - k)
             q_func_factual += interaction_term / distance_penalty
 

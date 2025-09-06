@@ -1,18 +1,16 @@
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 from pydantic import BaseModel, ConfigDict
 from sklearn.utils import check_random_state
 
+from recommender_experiments.service.algorithms.bandit_algorithm_interface import BanditAlgorithmInterface
 from recommender_experiments.service.utils.math_functions import (
     eps_greedy_policy,
     sample_action_fast,
     sigmoid,
     softmax,
 )
-
-if TYPE_CHECKING:
-    from recommender_experiments.service.algorithms.bandit_algorithm_interface import BanditAlgorithmInterface
 
 
 class SyntheticRankingData(BaseModel):
@@ -121,14 +119,13 @@ class RankingSyntheticBanditDataset(BaseModel):
     p_rand: float = 0.2
     random_state: int = 12345
     is_test: bool = False
-    # action_availability_rate: float = 1.0  # TODO: 将来的に確率的なaction除外が必要になったら有効化
     action_churn_schedule: Optional[dict] = None  # デフォルトではスケジュールなし
 
     class Config:
         arbitrary_types_allowed = True  # np.ndarrayを許可
 
     def obtain_batch_bandit_feedback(
-        self, num_data: int, policy_algorithm: Optional["BanditAlgorithmInterface"] = None
+        self, num_data: int, policy_algorithm: Optional[BanditAlgorithmInterface] = None
     ) -> SyntheticRankingData:
         """バンディットフィードバックデータを生成する.
 
@@ -503,11 +500,6 @@ class RankingSyntheticBanditDataset(BaseModel):
                     # スケジュールが見つからない場合はデフォルトで全action利用可能
                     mask[i, :] = 1
 
-        # TODO: 将来的に確率的なaction除外が必要になったら有効化
-        # elif self.action_availability_rate < 1.0:
-        #     availability_mask = random_.binomial(1, self.action_availability_rate, size=(num_data, self.num_actions))
-        #     mask = availability_mask.astype(int)
-
         # 最低1つのactionは利用可能にする（ゼロ除算回避）
         for i in range(num_data):
             if np.sum(mask[i]) == 0:
@@ -560,7 +552,7 @@ class RankingSyntheticBanditDataset(BaseModel):
         self,
         x: np.ndarray,
         available_action_mask: np.ndarray,
-        policy_algorithm: "BanditAlgorithmInterface",
+        policy_algorithm: BanditAlgorithmInterface,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """バンディットアルゴリズムを使用してactionを選択する.
 

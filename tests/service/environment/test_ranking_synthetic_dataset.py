@@ -105,61 +105,6 @@ def test_再現性_同じrandom_stateを使用した場合に同じ結果が得�
     assert np.array_equal(result1.base_q_function, result2.base_q_function)
 
 
-# TODO: 将来的に確率的なaction除外が必要になったら有効化
-# def test_動的action変化_利用可能性率に基づいてactionが選択されること():
-#     # Arrange
-#     num_data = 100  # 十分なデータ数でテスト
-#     dim_context = 3
-#     num_actions = 10
-#     K = 2
-#     theta = np.random.normal(size=(dim_context, num_actions))
-#     quadratic_weights = np.random.normal(size=(dim_context, num_actions))
-#     action_bias = np.random.normal(size=(num_actions, 1))
-#     position_interaction_weights = np.random.normal(size=(K, K))
-#     action_context = np.random.normal(size=(num_actions, 6))
-
-#     # action_availability_rate を設定（50%の確率でactionが利用可能）
-#     action_availability_rate = 0.5
-
-#     sut = RankingSyntheticBanditDataset(
-#         dim_context=dim_context,
-#         num_actions=num_actions,
-#         k=K,
-#         theta=theta,
-#         quadratic_weights=quadratic_weights,
-#         action_bias=action_bias,
-#         position_interaction_weights=position_interaction_weights,
-#         action_context=action_context,
-#         action_availability_rate=action_availability_rate,
-#         random_state=42,
-#     )
-
-#     # Act
-#     result = sut.obtain_batch_bandit_feedback(num_data)
-
-#     # Assert
-#     assert hasattr(result, "available_action_mask"), "available_action_maskが存在すること"
-#     assert result.available_action_mask.shape == (num_data, num_actions), "マスクの形状が正しいこと"
-#     assert np.all((result.available_action_mask == 0) | (result.available_action_mask == 1)), (
-#         "マスクは0または1の値であること"
-#     )
-
-#     # 利用可能性率がおおよそ設定値に近いことを確認
-#     availability_ratio = np.mean(result.available_action_mask)
-#     assert abs(availability_ratio - action_availability_rate) < 0.1, (
-#         f"利用可能性率が設定値に近いこと: {availability_ratio}"
-#     )
-
-#     # 選択されたactionが利用可能なactionの範囲内であることを確認
-#     for i in range(num_data):
-#         available_actions = np.where(result.available_action_mask[i] == 1)[0]
-#         for k in range(K):
-#             selected_action = result.selected_action_vectors[i, k]
-#             assert selected_action in available_actions, (
-#                 f"選択されたaction {selected_action} が利用可能なactionの範囲内であること"
-#             )
-
-
 def test_動的action変化_時間軸でのaction入れ替わりが機能すること():
     # Arrange
     num_data = 20

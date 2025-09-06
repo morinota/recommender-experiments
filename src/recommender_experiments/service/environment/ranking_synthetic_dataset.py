@@ -67,8 +67,8 @@ class SyntheticRankingData(BaseModel):
 def _compute_base_q_function(
     x: np.ndarray,
     theta: np.ndarray,
-    M: np.ndarray,
-    b: np.ndarray,
+    quadratic_weights: np.ndarray,
+    action_bias: np.ndarray,
     num_actions: int,
 ) -> np.ndarray:
     """ベースとなるQ関数を計算する.
@@ -79,10 +79,10 @@ def _compute_base_q_function(
         コンテキスト特徴量 (num_data x dim_context)
     theta : np.ndarray
         パラメータ行列 (dim_context x num_actions)
-    M : np.ndarray
-        パラメータ行列 (dim_context x num_actions)
-    b : np.ndarray
-        バイアス項 (num_actions x 1)
+    quadratic_weights : np.ndarray
+        二次項の重み行列 (dim_context x num_actions)
+    action_bias : np.ndarray
+        各行動のバイアス項 (num_actions x 1)
     num_actions : int
         行動数
 
@@ -94,8 +94,8 @@ def _compute_base_q_function(
     e_a = np.eye(num_actions)
     # 非線形変換を適用してQ関数を計算
     linear_term = (x**3 + x**2 - x) @ theta
-    quadratic_term = (x - x**2) @ M @ e_a
-    return _sigmoid(linear_term + quadratic_term + b.T)
+    quadratic_term = (x - x**2) @ quadratic_weights @ e_a
+    return _sigmoid(linear_term + quadratic_term + action_bias.T)
 
 
 def _create_user_behavior_matrices(K: int) -> np.ndarray:
@@ -248,7 +248,7 @@ def _compute_position_reward(
     a_k: np.ndarray,
     base_q_func: np.ndarray,
     C: np.ndarray,
-    W: np.ndarray,
+    position_interaction_weights: np.ndarray,
     K: int,
 ) -> np.ndarray:
     """特定のポジションkにおける報酬を計算する.
@@ -265,8 +265,8 @@ def _compute_position_reward(
         基本Q関数
     C : np.ndarray
         ユーザ行動行列
-    W : np.ndarray
-        ポジション間の相互作用重み
+    position_interaction_weights : np.ndarray
+        ポジション間の相互作用重み行列 (K x K)
     K : int
         総ポジション数
 
@@ -281,7 +281,7 @@ def _compute_position_reward(
     # 他のポジションとの相互作用を考慮
     for position in range(K):
         if position != k:
-            interaction_term = C[:, k, position] * W[k, position] * base_q_func[idx, a_k[:, position]]
+            interaction_term = C[:, k, position] * position_interaction_weights[k, position] * base_q_func[idx, a_k[:, position]]
             distance_penalty = np.abs(position - k)
             q_func_factual += interaction_term / distance_penalty
 
@@ -294,7 +294,7 @@ def _generate_rewards(
     a_k: np.ndarray,
     base_q_func: np.ndarray,
     C: np.ndarray,
-    W: np.ndarray,
+    position_interaction_weights: np.ndarray,
     reward_noise: float,
     random_: np.random.RandomState,
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -312,8 +312,8 @@ def _generate_rewards(
         基本Q関数
     C : np.ndarray
         ユーザ行動行列
-    W : np.ndarray
-        ポジション間の相互作用重み
+    position_interaction_weights : np.ndarray
+        ポジション間の相互作用重み行列 (K x K)
     reward_noise : float
         報酬ノイズの標準偏差
     random_ : np.random.RandomState
@@ -329,7 +329,7 @@ def _generate_rewards(
     idx = np.arange(num_data)
 
     for k in range(K):
-        q_func_factual = _compute_position_reward(k, idx, a_k, base_q_func, C, W, K)
+        q_func_factual = _compute_position_reward(k, idx, a_k, base_q_func, C, position_interaction_weights, K)
         q_k[:, k] = q_func_factual
         # ノイズを加えて実際の報酬を生成
         r_k[:, k] = random_.normal(q_func_factual, scale=reward_noise)
@@ -343,9 +343,9 @@ def generate_synthetic_data(
     num_actions: int,
     K: int,
     theta: np.ndarray,  # d x |A|
-    M: np.ndarray,  # d x |A|
-    b: np.ndarray,  # |A| x 1
-    W: np.ndarray,  # K x K
+    quadratic_weights: np.ndarray,  # d x |A|
+    action_bias: np.ndarray,  # |A| x 1
+    position_interaction_weights: np.ndarray,  # K x K
     beta: float = -1.0,
     reward_noise: float = 0.5,
     p: list = [1.0, 0.0, 0.0],  # independent, cascade, all
@@ -370,12 +370,12 @@ def generate_synthetic_data(
         ランキングのポジション数（表示するアイテム数）
     theta : np.ndarray
         線形項のパラメータ行列 (dim_context x num_actions)
-    M : np.ndarray
-        二次項のパラメータ行列 (dim_context x num_actions)
-    b : np.ndarray
-        バイアス項 (num_actions x 1)
-    W : np.ndarray
-        ポジション間の相互作用を表す重み行列 (K x K)
+    quadratic_weights : np.ndarray
+        二次項の重み行列 (dim_context x num_actions)
+    action_bias : np.ndarray
+        各行動のバイアス項 (num_actions x 1)
+    position_interaction_weights : np.ndarray
+        ポジション間の相互作用重み行列 (K x K)
     beta : float, default=-1.0
         方策のsoftmax温度パラメータ（負の値で決定的に）
     reward_noise : float, default=0.5
@@ -412,7 +412,7 @@ def generate_synthetic_data(
     x = random_.normal(size=(num_data, dim_context))
 
     # 基本Q関数の計算
-    base_q_func = _compute_base_q_function(x, theta, M, b, num_actions)
+    base_q_func = _compute_base_q_function(x, theta, quadratic_weights, action_bias, num_actions)
 
     # ユーザ行動行列のサンプリング
     C = _sample_user_behavior_matrix(num_data, K, p, p_rand, random_)
@@ -424,7 +424,7 @@ def generate_synthetic_data(
     a_k = _sample_actions(pi_0, num_data, K, random_state)
 
     # 報酬の生成
-    r_k, q_k = _generate_rewards(num_data, K, a_k, base_q_func, C, W, reward_noise, random_)
+    r_k, q_k = _generate_rewards(num_data, K, a_k, base_q_func, C, position_interaction_weights, reward_noise, random_)
 
     return SyntheticRankingData(
         num_data=num_data,
@@ -450,9 +450,9 @@ class RankingSyntheticBanditDataset(BaseModel):
     k: int
     action_context: np.ndarray
     theta: np.ndarray  # 擬似的な期待報酬を生成するための設定値1つ目(d, num_actions)
-    M: np.ndarray  # 擬似的な期待報酬を生成するための設定値2つ目 (d, num_actions)
-    b: np.ndarray  # 擬似的な期待報酬を生成するための設定値3つ目 (num_actions, 1)
-    W: np.ndarray  # ランキング位置間の相互作用を表す重み行列 (k, k)
+    quadratic_weights: np.ndarray  # 二次項の重み行列 (d, num_actions)
+    action_bias: np.ndarray  # 各行動のバイアス項 (num_actions, 1)
+    position_interaction_weights: np.ndarray  # ランキング位置間の相互作用を表す重み行列 (k, k)
     beta: float = -1.0  # データ収集方策の設定値1つ目
     reward_noise: float = 0.5  # 観測報酬のばらつき度合い(標準偏差)
     p: list[float] = [0.8, 0.1, 0.1]  # ユーザ行動モデルの選択確率
@@ -485,9 +485,9 @@ class RankingSyntheticBanditDataset(BaseModel):
             num_actions=self.num_actions,
             K=self.k,
             theta=self.theta,
-            M=self.M,
-            b=self.b,
-            W=self.W,
+            quadratic_weights=self.quadratic_weights,
+            action_bias=self.action_bias,
+            position_interaction_weights=self.position_interaction_weights,
             beta=self.beta,
             reward_noise=self.reward_noise,
             p=self.p,

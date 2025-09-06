@@ -13,9 +13,9 @@ def test_設定をもとにランキングタスクの合成ログデータが�
     num_actions = 5
     K = 2
     theta = np.random.normal(size=(dim_context, num_actions))
-    M = np.random.normal(size=(dim_context, num_actions))
-    b = np.random.normal(size=(num_actions, 1))
-    W = np.random.normal(size=(K, K))
+    quadratic_weights = np.random.normal(size=(dim_context, num_actions))
+    action_bias = np.random.normal(size=(num_actions, 1))
+    position_interaction_weights = np.random.normal(size=(K, K))
     action_context = np.random.normal(size=(num_actions, 6))
     random_state = 12345
 
@@ -24,9 +24,9 @@ def test_設定をもとにランキングタスクの合成ログデータが�
         num_actions=num_actions,
         k=K,
         theta=theta,
-        M=M,
-        b=b,
-        W=W,
+        quadratic_weights=quadratic_weights,
+        action_bias=action_bias,
+        position_interaction_weights=position_interaction_weights,
         action_context=action_context,
         random_state=random_state,
     )
@@ -64,9 +64,9 @@ def test_再現性が保たれること():
     num_actions = 3
     K = 2
     theta = np.random.normal(size=(dim_context, num_actions))
-    M = np.random.normal(size=(dim_context, num_actions))
-    b = np.random.normal(size=(num_actions, 1))
-    W = np.random.normal(size=(K, K))
+    quadratic_weights = np.random.normal(size=(dim_context, num_actions))
+    action_bias = np.random.normal(size=(num_actions, 1))
+    position_interaction_weights = np.random.normal(size=(K, K))
     action_context = np.random.normal(size=(num_actions, 4))
     random_state = 999
 
@@ -75,9 +75,9 @@ def test_再現性が保たれること():
         "num_actions": num_actions,
         "k": K,
         "theta": theta,
-        "M": M,
-        "b": b,
-        "W": W,
+        "quadratic_weights": quadratic_weights,
+        "action_bias": action_bias,
+        "position_interaction_weights": position_interaction_weights,
         "action_context": action_context,
         "random_state": random_state,
     }

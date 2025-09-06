@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 from pydantic import BaseModel, ConfigDict
 from sklearn.utils import check_random_state
@@ -35,6 +37,9 @@ class SyntheticRankingData(BaseModel):
         各ポジションの期待報酬 (num_data x ranking_positions)
     base_q_function : np.ndarray
         基本Q関数の値 (num_data x num_actions)
+    available_action_mask : np.ndarray
+        各データポイントで利用可能なactionのマスク (num_data x num_actions)
+        1: 利用可能, 0: 利用不可
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -49,6 +54,7 @@ class SyntheticRankingData(BaseModel):
     logging_policy: np.ndarray
     expected_rewards: np.ndarray
     base_q_function: np.ndarray
+    available_action_mask: np.ndarray
 
 
 class RankingSyntheticBanditDataset(BaseModel):
@@ -112,6 +118,8 @@ class RankingSyntheticBanditDataset(BaseModel):
     p_rand: float = 0.2
     random_state: int = 12345
     is_test: bool = False
+    # action_availability_rate: float = 1.0  # TODO: 将来的に確率的なaction除外が必要になったら有効化
+    action_churn_schedule: Optional[dict] = None  # デフォルトではスケジュールなし
 
     class Config:
         arbitrary_types_allowed = True  # np.ndarrayを許可
@@ -138,6 +146,9 @@ class RankingSyntheticBanditDataset(BaseModel):
         # コンテキスト特徴量の生成
         x = random_.normal(size=(num_data, self.dim_context))
 
+        # 動的action変化マスクの生成
+        available_action_mask = self._generate_available_action_mask(num_data, random_)
+
         # 基本Q関数の計算
         base_q_func = self._compute_base_q_function(
             x, self.theta, self.quadratic_weights, self.action_bias, self.num_actions
@@ -146,11 +157,11 @@ class RankingSyntheticBanditDataset(BaseModel):
         # ユーザ行動行列のサンプリング
         C = self._sample_user_behavior_matrix(num_data, self.k, self.p, self.p_rand, random_)
 
-        # 方策の選択
-        pi_0 = self._select_policy(base_q_func, self.beta, self.is_test)
+        # 方策の選択（利用可能actionのみ考慮）
+        pi_0 = self._select_policy_with_mask(base_q_func, available_action_mask, self.beta, self.is_test)
 
-        # 行動のサンプリング
-        a_k = self._sample_actions(pi_0, num_data, self.k, self.random_state)
+        # 行動のサンプリング（利用可能actionのみから）
+        a_k = self._sample_actions_with_mask(pi_0, available_action_mask, num_data, self.k, self.random_state)
 
         # 報酬の生成
         r_k, q_k = self._generate_rewards(
@@ -168,6 +179,7 @@ class RankingSyntheticBanditDataset(BaseModel):
             logging_policy=pi_0,
             expected_rewards=q_k,
             base_q_function=base_q_func,
+            available_action_mask=available_action_mask,
         )
 
     def _compute_base_q_function(
@@ -442,3 +454,143 @@ class RankingSyntheticBanditDataset(BaseModel):
             r_k[:, k] = random_.normal(q_func_factual, scale=reward_noise)
 
         return r_k, q_k
+
+    def _generate_available_action_mask(self, num_data: int, random_: np.random.RandomState) -> np.ndarray:
+        """動的action変化に基づいて利用可能actionマスクを生成する.
+
+        Parameters
+        ----------
+        num_data : int
+            データ数
+        random_ : np.random.RandomState
+            乱数生成器
+
+        Returns
+        -------
+        np.ndarray
+            利用可能actionマスク (num_data x num_actions)
+            1: 利用可能, 0: 利用不可
+        """
+        mask = np.ones((num_data, self.num_actions), dtype=int)
+
+        # action_churn_scheduleが指定されている場合
+        if self.action_churn_schedule is not None:
+            mask = np.zeros((num_data, self.num_actions), dtype=int)
+
+            # 各データポイントに対して、該当するスケジュールからactionを決定
+            for i in range(num_data):
+                # 現在のデータポイントに適用されるスケジュールを探す
+                applicable_actions = None
+                for start_idx in sorted(self.action_churn_schedule.keys(), reverse=True):
+                    if i >= start_idx:
+                        applicable_actions = self.action_churn_schedule[start_idx]
+                        break
+
+                if applicable_actions is not None:
+                    mask[i, applicable_actions] = 1
+                else:
+                    # スケジュールが見つからない場合はデフォルトで全action利用可能
+                    mask[i, :] = 1
+
+        # TODO: 将来的に確率的なaction除外が必要になったら有効化
+        # elif self.action_availability_rate < 1.0:
+        #     availability_mask = random_.binomial(1, self.action_availability_rate, size=(num_data, self.num_actions))
+        #     mask = availability_mask.astype(int)
+
+        # 最低1つのactionは利用可能にする（ゼロ除算回避）
+        for i in range(num_data):
+            if np.sum(mask[i]) == 0:
+                mask[i, random_.randint(0, self.num_actions)] = 1
+
+        return mask
+
+    def _select_policy_with_mask(
+        self, base_q_func: np.ndarray, available_action_mask: np.ndarray, beta: float, is_test: bool
+    ) -> np.ndarray:
+        """利用可能actionマスクを考慮した方策を選択する.
+
+        Parameters
+        ----------
+        base_q_func : np.ndarray
+            Q関数の値 (num_data x num_actions)
+        available_action_mask : np.ndarray
+            利用可能actionマスク (num_data x num_actions)
+        beta : float
+            温度パラメータ（softmax用）
+        is_test : bool
+            テストモードかどうか
+
+        Returns
+        -------
+        np.ndarray
+            選択された方策 (num_data x num_actions)
+        """
+        num_data, num_actions = base_q_func.shape
+        policy = np.zeros((num_data, num_actions))
+
+        for i in range(num_data):
+            # 利用可能actionのみを取得
+            available_actions = np.where(available_action_mask[i] == 1)[0]
+            available_q_values = base_q_func[i, available_actions]
+
+            if is_test:
+                # ε-greedy方策（利用可能actionのみで）
+                policy_available = eps_greedy_policy(available_q_values.reshape(1, -1))[0]
+            else:
+                # ソフトマックス方策（利用可能actionのみで）
+                policy_available = softmax(beta * available_q_values.reshape(1, -1))[0]
+
+            # 利用可能actionに方策を割り当て
+            policy[i, available_actions] = policy_available
+
+        return policy
+
+    def _sample_actions_with_mask(
+        self,
+        pi_0: np.ndarray,
+        available_action_mask: np.ndarray,
+        num_data: int,
+        K: int,
+        random_state: int,
+    ) -> np.ndarray:
+        """利用可能actionマスクを考慮した行動サンプリング.
+
+        Parameters
+        ----------
+        pi_0 : np.ndarray
+            方策（行動選択確率） (num_data x num_actions)
+        available_action_mask : np.ndarray
+            利用可能actionマスク (num_data x num_actions)
+        num_data : int
+            データ数
+        K : int
+            ランキングのポジション数
+        random_state : int
+            乱数シード
+
+        Returns
+        -------
+        np.ndarray
+            サンプリングされた行動 (num_data x K)
+        """
+        a_k = np.zeros((num_data, K), dtype=int)
+        random_ = check_random_state(random_state)
+
+        for i in range(num_data):
+            # 利用可能actionのみから方策を作成
+            available_actions = np.where(available_action_mask[i] == 1)[0]
+            available_probs = pi_0[i, available_actions]
+
+            # 確率の正規化（念のため）
+            if np.sum(available_probs) > 0:
+                available_probs = available_probs / np.sum(available_probs)
+            else:
+                # 全ての確率が0の場合は均等分布
+                available_probs = np.ones(len(available_actions)) / len(available_actions)
+
+            # K回のサンプリング（重複あり）
+            for k in range(K):
+                selected_idx = random_.choice(len(available_actions), p=available_probs)
+                a_k[i, k] = available_actions[selected_idx]
+
+        return a_k

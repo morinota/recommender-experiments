@@ -100,3 +100,135 @@ def test_再現性_同じrandom_stateを使用した場合に同じ結果が得�
     assert np.array_equal(result1.logging_policy, result2.logging_policy)
     assert np.array_equal(result1.expected_rewards, result2.expected_rewards)
     assert np.array_equal(result1.base_q_function, result2.base_q_function)
+
+
+def test_動的action変化_利用可能性率に基づいてactionが選択されること():
+    # Arrange
+    num_data = 100  # 十分なデータ数でテスト
+    dim_context = 3
+    num_actions = 10
+    K = 2
+    theta = np.random.normal(size=(dim_context, num_actions))
+    quadratic_weights = np.random.normal(size=(dim_context, num_actions))
+    action_bias = np.random.normal(size=(num_actions, 1))
+    position_interaction_weights = np.random.normal(size=(K, K))
+    action_context = np.random.normal(size=(num_actions, 6))
+    
+    # action_availability_rate を設定（50%の確率でactionが利用可能）
+    action_availability_rate = 0.5
+    
+    sut = RankingSyntheticBanditDataset(
+        dim_context=dim_context,
+        num_actions=num_actions,
+        k=K,
+        theta=theta,
+        quadratic_weights=quadratic_weights,
+        action_bias=action_bias,
+        position_interaction_weights=position_interaction_weights,
+        action_context=action_context,
+        action_availability_rate=action_availability_rate,
+        random_state=42,
+    )
+
+    # Act
+    result = sut.obtain_batch_bandit_feedback(num_data)
+
+    # Assert
+    assert hasattr(result, 'available_action_mask'), "available_action_maskが存在すること"
+    assert result.available_action_mask.shape == (num_data, num_actions), "マスクの形状が正しいこと"
+    assert np.all((result.available_action_mask == 0) | (result.available_action_mask == 1)), "マスクは0または1の値であること"
+    
+    # 利用可能性率がおおよそ設定値に近いことを確認
+    availability_ratio = np.mean(result.available_action_mask)
+    assert abs(availability_ratio - action_availability_rate) < 0.1, f"利用可能性率が設定値に近いこと: {availability_ratio}"
+    
+    # 選択されたactionが利用可能なactionの範囲内であることを確認
+    for i in range(num_data):
+        available_actions = np.where(result.available_action_mask[i] == 1)[0]
+        for k in range(K):
+            selected_action = result.selected_action_vectors[i, k]
+            assert selected_action in available_actions, f"選択されたaction {selected_action} が利用可能なactionの範囲内であること"
+
+
+def test_動的action変化_時間軸でのaction入れ替わりが機能すること():
+    # Arrange
+    num_data = 20
+    dim_context = 3
+    num_actions = 8
+    K = 2
+    theta = np.random.normal(size=(dim_context, num_actions))
+    quadratic_weights = np.random.normal(size=(dim_context, num_actions))
+    action_bias = np.random.normal(size=(num_actions, 1))
+    position_interaction_weights = np.random.normal(size=(K, K))
+    action_context = np.random.normal(size=(num_actions, 6))
+    
+    # action_churn_schedule を設定（10データごとにactionが入れ替わる）
+    action_churn_schedule = {
+        0: [0, 1, 2, 3],      # 0-9データ目: action 0-3が利用可能
+        10: [2, 3, 4, 5],     # 10-19データ目: action 2-5が利用可能  
+    }
+    
+    sut = RankingSyntheticBanditDataset(
+        dim_context=dim_context,
+        num_actions=num_actions,
+        k=K,
+        theta=theta,
+        quadratic_weights=quadratic_weights,
+        action_bias=action_bias,
+        position_interaction_weights=position_interaction_weights,
+        action_context=action_context,
+        action_churn_schedule=action_churn_schedule,
+        random_state=42,
+    )
+
+    # Act
+    result = sut.obtain_batch_bandit_feedback(num_data)
+
+    # Assert
+    # 0-9データ目: action 0-3のみが利用可能
+    for i in range(10):
+        available_actions = np.where(result.available_action_mask[i] == 1)[0]
+        assert set(available_actions) == {0, 1, 2, 3}, f"データ{i}: 期待されるactionセットが利用可能であること"
+    
+    # 10-19データ目: action 2-5のみが利用可能
+    for i in range(10, 20):
+        available_actions = np.where(result.available_action_mask[i] == 1)[0]
+        assert set(available_actions) == {2, 3, 4, 5}, f"データ{i}: 期待されるactionセットが利用可能であること"
+
+
+def test_動的action変化_デフォルトでは全actionが利用可能であること():
+    # Arrange
+    num_data = 10
+    dim_context = 3
+    num_actions = 5
+    K = 2
+    theta = np.random.normal(size=(dim_context, num_actions))
+    quadratic_weights = np.random.normal(size=(dim_context, num_actions))
+    action_bias = np.random.normal(size=(num_actions, 1))
+    position_interaction_weights = np.random.normal(size=(K, K))
+    action_context = np.random.normal(size=(num_actions, 6))
+    
+    # 動的変化パラメータを指定しない（デフォルト）
+    sut = RankingSyntheticBanditDataset(
+        dim_context=dim_context,
+        num_actions=num_actions,
+        k=K,
+        theta=theta,
+        quadratic_weights=quadratic_weights,
+        action_bias=action_bias,
+        position_interaction_weights=position_interaction_weights,
+        action_context=action_context,
+        random_state=42,
+    )
+
+    # Act
+    result = sut.obtain_batch_bandit_feedback(num_data)
+
+    # Assert
+    # デフォルトでは全actionが利用可能（available_action_maskが全て1）
+    if hasattr(result, 'available_action_mask'):
+        assert np.all(result.available_action_mask == 1), "デフォルトでは全actionが利用可能であること"
+    
+    # 選択されたactionが全actionの範囲内であることを確認
+    assert np.all(result.selected_action_vectors >= 0), "選択されたactionが非負であること"
+    assert np.all(result.selected_action_vectors < num_actions), "選択されたactionが範囲内であること"

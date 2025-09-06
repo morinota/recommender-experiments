@@ -8,9 +8,7 @@ class BanditFeedbackDict(TypedDict):
     n_rounds: int  # ラウンド数
     n_actions: int  # アクション数s
     context: np.ndarray  # 文脈 (shape: (n_rounds, dim_context))
-    action_context: (
-        np.ndarray
-    )  # アクション特徴量 (shape: (n_actions, dim_action_features))
+    action_context: np.ndarray  # アクション特徴量 (shape: (n_actions, dim_action_features))
     action: np.ndarray  # 実際に選択されたアクション (shape: (n_rounds,))
     position: Optional[np.ndarray]  # ポジション (shape: (n_rounds,) or None)
     reward: np.ndarray  # 報酬 (shape: (n_rounds,))
@@ -22,18 +20,10 @@ class BanditFeedbackDict(TypedDict):
 class BanditFeedbackModel(BaseModel):
     n_rounds: int = Field(..., description="ラウンド数")
     n_actions: int = Field(..., description="アクション数")
-    context: np.ndarray = Field(
-        ..., description="文脈 (shape: (n_rounds, dim_context))"
-    )
-    action_context: np.ndarray = Field(
-        ..., description="アクション特徴量 (shape: (n_actions, dim_action_features))"
-    )
-    action: np.ndarray = Field(
-        ..., description="実際に選択されたアクション (shape: (n_rounds,))"
-    )
-    position: Optional[np.ndarray] = Field(
-        None, description="ポジション (shape: (n_rounds,) or None)"
-    )
+    context: np.ndarray = Field(..., description="文脈 (shape: (n_rounds, dim_context))")
+    action_context: np.ndarray = Field(..., description="アクション特徴量 (shape: (n_actions, dim_action_features))")
+    action: np.ndarray = Field(..., description="実際に選択されたアクション (shape: (n_rounds,))")
+    position: Optional[np.ndarray] = Field(None, description="ポジション (shape: (n_rounds,) or None)")
     reward: np.ndarray = Field(..., description="報酬 (shape: (n_rounds,))")
     expected_reward: np.ndarray | None = Field(
         ..., description="期待報酬 (shape: (n_rounds, n_actions)). 現実の場合はNone"
@@ -42,9 +32,7 @@ class BanditFeedbackModel(BaseModel):
         ...,
         description="データ収集方策 P(a|x) (shape: (n_rounds, n_actions, 1)). 現実の場合はNoneになり得る",
     )
-    pscore: np.ndarray | None = Field(
-        ..., description="傾向スコア (shape: (n_rounds,)). 現実の場合はNoneになり得る"
-    )
+    pscore: np.ndarray | None = Field(..., description="傾向スコア (shape: (n_rounds,)). 現実の場合はNoneになり得る")
 
     class Config:
         arbitrary_types_allowed = True  # np.ndarrayを許可
@@ -55,9 +43,7 @@ class BanditFeedbackModel(BaseModel):
         if field.field_name == "pscore" and value is None:
             return value
         if value.ndim != 1:
-            raise ValueError(
-                f"{field.field_name} は1次元の配列を想定してます。しかし実際には{value.shape=}"
-            )
+            raise ValueError(f"{field.field_name} は1次元の配列を想定してます。しかし実際には{value.shape=}")
         return value
 
     @field_validator("context", "action_context", "expected_reward")
@@ -65,9 +51,7 @@ class BanditFeedbackModel(BaseModel):
         if field.field_name == "expected_reward" and value is None:
             return value
         if value.ndim != 2:
-            raise ValueError(
-                f"{field.field_name} は2次元の配列を想定しています。しかし実際には{value.shape=}"
-            )
+            raise ValueError(f"{field.field_name} は2次元の配列を想定しています。しかし実際には{value.shape=}")
         return value
 
 

@@ -198,9 +198,9 @@ class TestPolicyByContextGnn:
             num_layers=4,
             batch_size=16,
             early_stopping_patience=5,
-            use_continuous_rewards=True
+            use_continuous_rewards=True,
         )
-        
+
         # Assert
         assert policy.hidden_dim == 128
         assert policy.dropout_rate == 0.2
@@ -215,23 +215,19 @@ class TestPolicyByContextGnn:
         dim_context = 10
         dim_action = 8
         policy = PolicyByContextGnn(
-            hidden_dim=32, 
-            epochs=3,
-            batch_size=16,
-            use_continuous_rewards=True,
-            early_stopping_patience=2
+            hidden_dim=32, epochs=3, batch_size=16, use_continuous_rewards=True, early_stopping_patience=2
         )
-        
+
         bandit_feedback_train = {
             "context": np.random.random((100, dim_context)),
             "action_context": np.random.random((n_actions, dim_action)),
             "action": np.random.randint(0, n_actions, 100),
             "reward": np.random.uniform(0.0, 1.0, 100),  # 連続値報酬
         }
-        
+
         # Act
         policy.fit(bandit_feedback_train)
-        
+
         # Assert
         assert policy.is_fitted is True
         assert policy.use_continuous_rewards is True
@@ -242,18 +238,18 @@ class TestPolicyByContextGnn:
         dim_context = 10
         dim_action = 8
         policy = PolicyByContextGnn(hidden_dim=32, epochs=3, batch_size=16)
-        
+
         bandit_feedback_train = {
             "context": np.random.random((100, dim_context)),
             "action_context": np.random.random((n_actions, dim_action)),
             "action": np.random.randint(0, n_actions, 100),
             "reward": np.random.binomial(1, 0.5, 100),
         }
-        
+
         # Act
         policy.fit(bandit_feedback_train)
         history = policy.get_training_history()
-        
+
         # Assert
         assert isinstance(history, dict)
         assert "loss" in history

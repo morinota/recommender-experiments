@@ -20,9 +20,7 @@ class DummyPolicyStrategy(PolicyStrategyInterface):
     def fit(self, *args, **kwargs) -> None:
         pass
 
-    def predict_proba(
-        self, context: np.ndarray, action_context: np.ndarray, random_state: int = 0
-    ) -> np.ndarray:
+    def predict_proba(self, context: np.ndarray, action_context: np.ndarray, random_state: int = 0) -> np.ndarray:
         n_rounds = context.shape[0]
         n_actions = action_context.shape[0]
         # dummryなので、contextに依らず全てのroundで一様な行動選択確率を返す!
@@ -57,9 +55,9 @@ def test_単一設定のシミュレーションが指定された回数だけ�
     )
 
     # Assert
-    assert all(
-        isinstance(result, OnPolicyLearningSimulationResult) for result in actual
-    ), "OPLSimulationResultのリストを返す"
+    assert all(isinstance(result, OnPolicyLearningSimulationResult) for result in actual), (
+        "OPLSimulationResultのリストを返す"
+    )
     assert len(actual) == n_simulations, "指定回数のシミュレーション結果を返す"
 
 
@@ -89,9 +87,9 @@ def test_TwoTowerPolicyStrategyを方策とする場合でも正常に動作す�
     )
 
     # Assert
-    assert all(
-        isinstance(result, OnPolicyLearningSimulationResult) for result in actual
-    ), "OPLSimulationResultのリストを返す"
+    assert all(isinstance(result, OnPolicyLearningSimulationResult) for result in actual), (
+        "OPLSimulationResultのリストを返す"
+    )
     assert len(actual) == n_simulations, "指定回数のシミュレーション結果を返す"
 
 
@@ -119,7 +117,7 @@ def test_ContexualBanditPolicyStrategyを方策とする場合でも正常に動
     )
 
     # Assert
-    assert all(
-        isinstance(result, OnPolicyLearningSimulationResult) for result in actual
-    ), "OPLSimulationResultのリストを返す"
+    assert all(isinstance(result, OnPolicyLearningSimulationResult) for result in actual), (
+        "OPLSimulationResultのリストを返す"
+    )
     assert len(actual) == n_simulations, "指定回数のシミュレーション結果を返す"

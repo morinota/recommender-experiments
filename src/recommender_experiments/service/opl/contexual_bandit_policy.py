@@ -17,7 +17,6 @@ class ContextualBanditPolicy(PolicyStrategyInterface):
         dim_context: int,
         temperature: float = 1.0,
     ) -> None:
-
         self.__model = LogisticTS(
             dim=dim_context,
             n_actions=n_actions,
@@ -36,7 +35,6 @@ class ContextualBanditPolicy(PolicyStrategyInterface):
         bandit_feedback_train: BanditFeedbackDict,
         bandit_feedback_test: Optional[BanditFeedbackDict] = None,
     ) -> None:
-
         contexts = list(bandit_feedback_train["context"])
         actions = list(bandit_feedback_train["action"])
         rewards = list(bandit_feedback_train["reward"])
@@ -49,9 +47,7 @@ class ContextualBanditPolicy(PolicyStrategyInterface):
                 reward=r,
             )
 
-    def predict_proba(
-        self, context: np.ndarray, action_context: np.ndarray, random_state: int = 0
-    ) -> np.ndarray:
+    def predict_proba(self, context: np.ndarray, action_context: np.ndarray, random_state: int = 0) -> np.ndarray:
         n_rounds = context.shape[0]
         n_actions = action_context.shape[0]
         action_dist = np.zeros((n_rounds, n_actions))
@@ -61,13 +57,9 @@ class ContextualBanditPolicy(PolicyStrategyInterface):
         for i in range(n_rounds):
             x = context[i].reshape(1, -1)
             # パラメータの期待値を使って算出された報酬期待値の一覧を取得
-            theta = np.array(
-                [model.predict_proba(x) for model in self.__model.model_list]
-            ).flatten()
+            theta = np.array([model.predict_proba(x) for model in self.__model.model_list]).flatten()
             print(f"theta: {theta}")
 
             # ソフトマックス関数に通して行動選択確率分布を算出
-            action_dist[i] = np.exp(theta / self.__temperature) / np.sum(
-                np.exp(theta / self.__temperature)
-            )
+            action_dist[i] = np.exp(theta / self.__temperature) / np.sum(np.exp(theta / self.__temperature))
         return action_dist

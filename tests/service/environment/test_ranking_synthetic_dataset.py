@@ -50,8 +50,12 @@ def test_設定をもとにランキングタスクの合成ログデータが�
     assert result.base_q_function.shape == (num_data, num_actions)
 
     # Assert - データの値域制約
-    assert np.all(result.user_behavior_matrix >= 0) and np.all(result.user_behavior_matrix <= 1)  # ユーザ行動行列は[0,1]
-    assert np.all(result.selected_action_vectors >= 0) and np.all(result.selected_action_vectors < num_actions)  # 行動は有効範囲内
+    assert np.all(result.user_behavior_matrix >= 0) and np.all(
+        result.user_behavior_matrix <= 1
+    )  # ユーザ行動行列は[0,1]
+    assert np.all(result.selected_action_vectors >= 0) and np.all(
+        result.selected_action_vectors < num_actions
+    )  # 行動は有効範囲内
     assert np.allclose(result.logging_policy.sum(axis=1), 1.0, atol=1e-6)  # 方策は確率分布
     assert np.all(result.base_q_function >= 0) and np.all(result.base_q_function <= 1)  # sigmoid出力
 

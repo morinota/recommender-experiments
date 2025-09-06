@@ -52,13 +52,11 @@ class SyntheticRankingData(BaseModel):
 
 
 class RankingSyntheticBanditDataset(BaseModel):
-    """ランキング問題の擬似的なバンディットデータセットを生成するクラス
-    
-    このクラスは、ランキング問題におけるバンディット環境をシミュレートし、
+    """このクラスは、ランキング問題におけるバンディット環境をシミュレートし、
     オフ方策評価用の合成データを生成します。
-    
+
     実装参考: https://github.com/ghmagazine/cfml_book/blob/main/ch2/dataset.py
-    
+
     Args:
         dim_context: コンテキスト特徴量の次元数
         num_actions: 選択可能な行動（アイテム）の総数

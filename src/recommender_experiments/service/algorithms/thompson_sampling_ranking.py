@@ -77,7 +77,7 @@ class ThompsonSamplingRanking(BanditAlgorithmInterface):
 
         Returns
         -------
-        List[int]
+        list[int]
             選択された行動のリスト（長さk）
         """
         if len(available_actions) == 0:
@@ -111,9 +111,9 @@ class ThompsonSamplingRanking(BanditAlgorithmInterface):
         ----------
         context : np.ndarray
             コンテキスト特徴量 (dim_context,)
-        selected_actions : List[int]
+        selected_actions : list[int]
             選択された行動のリスト
-        rewards : List[float]
+        rewards : list[float]
             各行動に対応する報酬のリスト
         """
         for action_id, reward in zip(selected_actions, rewards):

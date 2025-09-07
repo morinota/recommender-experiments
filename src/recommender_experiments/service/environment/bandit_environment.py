@@ -1,7 +1,6 @@
 """バンディット環境の基底クラスと実装."""
 
 from abc import ABC, abstractmethod
-from typing import Tuple
 
 import numpy as np
 from sklearn.utils import check_random_state
@@ -18,7 +17,7 @@ class BanditEnvironmentInterface(ABC):
         pass
 
     @abstractmethod
-    def get_context_and_available_actions(self, trial: int) -> Tuple[np.ndarray, np.ndarray]:
+    def get_context_and_available_actions(self, trial: int) -> tuple[np.ndarray, np.ndarray]:
         """指定トライアルでのコンテキストと利用可能actionを取得する.
 
         Parameters
@@ -28,7 +27,7 @@ class BanditEnvironmentInterface(ABC):
 
         Returns
         -------
-        Tuple[np.ndarray, np.ndarray]
+        tuple[np.ndarray, np.ndarray]
             (context, available_actions) のタプル
         """
         pass
@@ -104,7 +103,7 @@ class RankingSyntheticEnvironment(BanditEnvironmentInterface):
         self._batch_data = None
         self._batch_size = 0
 
-    def get_context_and_available_actions(self, trial: int) -> Tuple[np.ndarray, np.ndarray]:
+    def get_context_and_available_actions(self, trial: int) -> tuple[np.ndarray, np.ndarray]:
         """指定トライアルでのコンテキストと利用可能actionを取得する.
 
         Parameters
@@ -114,7 +113,7 @@ class RankingSyntheticEnvironment(BanditEnvironmentInterface):
 
         Returns
         -------
-        Tuple[np.ndarray, np.ndarray]
+        tuple[np.ndarray, np.ndarray]
             (context, available_actions) のタプル
         """
         # 決定論的にコンテキストを生成（trial番号をシードとして使用）

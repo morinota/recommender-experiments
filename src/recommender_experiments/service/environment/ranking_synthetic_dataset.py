@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional
 
 import numpy as np
 from pydantic import BaseModel, ConfigDict
@@ -553,7 +553,7 @@ class RankingSyntheticBanditDataset(BaseModel):
         x: np.ndarray,
         available_action_mask: np.ndarray,
         policy_algorithm: BanditAlgorithmInterface,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """バンディットアルゴリズムを使用してactionを選択する.
 
         Parameters

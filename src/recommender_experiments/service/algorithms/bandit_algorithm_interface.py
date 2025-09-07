@@ -124,3 +124,7 @@ class OnlineEvaluationResults:
     def get_average_regret(self) -> float:
         """平均regretを取得する."""
         return self.get_final_cumulative_regret() / self.num_trials if self.num_trials > 0 else 0.0
+
+    def get_average_reward(self) -> float:
+        """平均報酬を取得する."""
+        return self.get_final_cumulative_reward() / self.num_trials if self.num_trials > 0 else 0.0

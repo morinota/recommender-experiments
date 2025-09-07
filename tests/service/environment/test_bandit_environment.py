@@ -142,5 +142,7 @@ def test_RankingSyntheticEnvironment_再現性が保証されること():
 
     # Assert - 同じrandom_stateで同じ結果が得られること
     assert np.array_equal(context1, context2), "同じrandom_stateで同じコンテキストが生成されること"
-    assert np.array_equal(available_actions1, available_actions2), "同じrandom_stateで同じ利用可能actionが生成されること"
+    assert np.array_equal(available_actions1, available_actions2), (
+        "同じrandom_stateで同じ利用可能actionが生成されること"
+    )
     assert np.allclose(rewards1, rewards2), "同じrandom_stateで同じ報酬が生成されること"

@@ -68,26 +68,21 @@ def test_obtain_batch_bandit_feedback_バンディット方策指定で動作す
     )
 
     # バンディットアルゴリズムを準備
-    algorithm = ThompsonSamplingRanking(
-        num_actions=num_actions, k=K, dim_context=dim_context, random_state=42
-    )
+    algorithm = ThompsonSamplingRanking(num_actions=num_actions, k=K, dim_context=dim_context, random_state=42)
 
     # Act
-    result = dataset.obtain_batch_bandit_feedback(
-        num_data=5, 
-        policy_algorithm=algorithm
-    )
+    result = dataset.obtain_batch_bandit_feedback(num_data=5, policy_algorithm=algorithm)
 
     # Assert
     assert isinstance(result, SyntheticRankingData), "SyntheticRankingDataが返されること"
     assert result.num_data == 5, "指定したデータ数が正しいこと"
     assert result.ranking_positions == K, "ランキング長が正しいこと"
     assert result.num_actions == num_actions, "action数が正しいこと"
-    
+
     # バンディット方策で選択されたactionが有効範囲内であることを確認
     assert np.all(result.selected_action_vectors >= 0), "選択されたactionが非負であること"
     assert np.all(result.selected_action_vectors < num_actions), "選択されたactionが有効範囲内であること"
-    
+
     # ログ方策が正規化されていることを確認（各行の合計が1に近い）
     policy_sums = np.sum(result.logging_policy, axis=1)
     assert np.allclose(policy_sums, 1.0, atol=1e-6), "ログ方策が正規化されていること"
@@ -106,8 +101,8 @@ def test_obtain_batch_bandit_feedback_動的action変化とバンディット方
 
     # 動的action変化を設定
     action_churn_schedule = {
-        0: [0, 1, 2, 3],    # 0-4データ目: action 0-3が利用可能
-        5: [2, 3, 4, 5],    # 5-9データ目: action 2-5が利用可能
+        0: [0, 1, 2, 3],  # 0-4データ目: action 0-3が利用可能
+        5: [2, 3, 4, 5],  # 5-9データ目: action 2-5が利用可能
     }
 
     dataset = RankingSyntheticBanditDataset(
@@ -124,15 +119,10 @@ def test_obtain_batch_bandit_feedback_動的action変化とバンディット方
     )
 
     # バンディットアルゴリズムを準備
-    algorithm = ThompsonSamplingRanking(
-        num_actions=num_actions, k=K, dim_context=dim_context, random_state=42
-    )
+    algorithm = ThompsonSamplingRanking(num_actions=num_actions, k=K, dim_context=dim_context, random_state=42)
 
     # Act
-    result = dataset.obtain_batch_bandit_feedback(
-        num_data=10, 
-        policy_algorithm=algorithm
-    )
+    result = dataset.obtain_batch_bandit_feedback(num_data=10, policy_algorithm=algorithm)
 
     # Assert
     # 0-4データ目: action 0-3のみが選択されること
@@ -143,7 +133,7 @@ def test_obtain_batch_bandit_feedback_動的action変化とバンディット方
             f"データ{data_idx}: 選択されたaction {selected_actions} が期待範囲 {expected_actions_0_4} 内であること"
         )
 
-    # 5-9データ目: action 2-5のみが選択されること  
+    # 5-9データ目: action 2-5のみが選択されること
     expected_actions_5_9 = {2, 3, 4, 5}
     for data_idx in range(5, 10):
         selected_actions = set(result.selected_action_vectors[data_idx])
@@ -175,9 +165,7 @@ def test_マイクロバッチ学習で学習効果が確認できること():
         random_state=42,
     )
 
-    algorithm = ThompsonSamplingRanking(
-        num_actions=num_actions, k=K, dim_context=dim_context, random_state=42
-    )
+    algorithm = ThompsonSamplingRanking(num_actions=num_actions, k=K, dim_context=dim_context, random_state=42)
 
     # Act - マイクロバッチ学習シミュレーション
     num_batches = 10
@@ -186,10 +174,7 @@ def test_マイクロバッチ学習で学習効果が確認できること():
 
     for batch_idx in range(num_batches):
         # マイクロバッチデータ生成（固定状態のアルゴリズムで）
-        batch_data = dataset.obtain_batch_bandit_feedback(
-            num_data=batch_size, 
-            policy_algorithm=algorithm
-        )
+        batch_data = dataset.obtain_batch_bandit_feedback(num_data=batch_size, policy_algorithm=algorithm)
 
         # 各データポイントで学習・評価
         for i in range(batch_data.num_data):
@@ -207,19 +192,15 @@ def test_マイクロバッチ学習で学習効果が確認できること():
             all_regrets.append(regret)
 
             # アルゴリズムを更新
-            algorithm.update(
-                context=context,
-                selected_actions=selected_actions.tolist(),
-                rewards=rewards.tolist()
-            )
+            algorithm.update(context=context, selected_actions=selected_actions.tolist(), rewards=rewards.tolist())
 
     # Assert - 学習効果の確認
     assert len(all_regrets) == num_batches * batch_size, "全データポイントで評価が実行されること"
-    
+
     # 前半と後半でregretが改善していることを大まかに確認
-    first_half_regret = np.mean(all_regrets[:len(all_regrets)//2])
-    second_half_regret = np.mean(all_regrets[len(all_regrets)//2:])
-    
+    first_half_regret = np.mean(all_regrets[: len(all_regrets) // 2])
+    second_half_regret = np.mean(all_regrets[len(all_regrets) // 2 :])
+
     # 学習により後半の性能が改善される傾向があることを確認（厳密ではない）
     # ノイズの影響で常に改善するとは限らないため、極端な悪化がないことを確認
     assert second_half_regret < first_half_regret * 1.5, (

@@ -23,3 +23,5 @@ poetry run ruff format .
 ## 実装のスタイルについて
 
 - 基本的にはPEP8に従うように記述すること。
+- 引数名と変数名が一致する場合は、基本的には位置引数で渡すこと(キーワード引数にしても情報量が増えないため)。
+  - 例: `self.sut.select_actions(context, available_actions, k)`

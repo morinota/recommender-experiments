@@ -1,10 +1,9 @@
 """Thompson Samplingを使ったランキングバンディットアルゴリズム."""
 
-from typing import List
 import numpy as np
 from sklearn.utils import check_random_state
 
-from .bandit_algorithm_interface import BanditAlgorithmInterface
+from recommender_experiments.service.algorithms.bandit_algorithm_interface import BanditAlgorithmInterface
 
 
 class ThompsonSamplingRanking(BanditAlgorithmInterface):
@@ -31,7 +30,13 @@ class ThompsonSamplingRanking(BanditAlgorithmInterface):
     """
 
     def __init__(
-        self, num_actions: int, k: int, dim_context: int, alpha: float = 1.0, beta: float = 1.0, random_state: int = 42
+        self,
+        num_actions: int,
+        k: int,
+        dim_context: int,
+        alpha: float = 1.0,
+        beta: float = 1.0,
+        random_state: int = 42,
     ):
         self.num_actions = num_actions
         self.k = k
@@ -55,7 +60,7 @@ class ThompsonSamplingRanking(BanditAlgorithmInterface):
         # 効率化のために逆行列もキャッシュ
         self.S_inv = np.array([np.eye(self.dim_context) / self.alpha for _ in range(self.num_actions)])
 
-    def select_actions(self, context: np.ndarray, available_actions: np.ndarray, k: int) -> List[int]:
+    def select_actions(self, context: np.ndarray, available_actions: np.ndarray, k: int) -> list[int]:
         """利用可能なactionの中からk個の行動を選択する.
 
         Thompson Samplingにより、各actionの報酬期待値を事後分布から
@@ -99,7 +104,7 @@ class ThompsonSamplingRanking(BanditAlgorithmInterface):
 
         return selected_actions
 
-    def update(self, context: np.ndarray, selected_actions: List[int], rewards: List[float]) -> None:
+    def update(self, context: np.ndarray, selected_actions: list[int], rewards: list[float]) -> None:
         """観測された報酬をもとにベイズ線形回帰のパラメータを更新する.
 
         Parameters

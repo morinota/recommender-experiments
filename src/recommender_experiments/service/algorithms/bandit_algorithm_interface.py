@@ -1,7 +1,6 @@
 """バンディットアルゴリズムの共通インターフェース."""
 
 from abc import ABC, abstractmethod
-from typing import List, Tuple
 import numpy as np
 
 
@@ -13,7 +12,7 @@ class BanditAlgorithmInterface(ABC):
     """
 
     @abstractmethod
-    def select_actions(self, context: np.ndarray, available_actions: np.ndarray, k: int) -> List[int]:
+    def select_actions(self, context: np.ndarray, available_actions: np.ndarray, k: int) -> list[int]:
         """利用可能なactionの中からk個の行動を選択する.
 
         Parameters
@@ -27,22 +26,22 @@ class BanditAlgorithmInterface(ABC):
 
         Returns
         -------
-        List[int]
+        list[int]
             選択された行動のリスト（長さk）
         """
         pass
 
     @abstractmethod
-    def update(self, context: np.ndarray, selected_actions: List[int], rewards: List[float]) -> None:
+    def update(self, context: np.ndarray, selected_actions: list[int], rewards: list[float]) -> None:
         """観測された報酬をもとにアルゴリズムのパラメータを更新する.
 
         Parameters
         ----------
         context : np.ndarray
             コンテキスト特徴量 (dim_context,)
-        selected_actions : List[int]
+        selected_actions : list[int]
             選択された行動のリスト
-        rewards : List[float]
+        rewards : list[float]
             各行動に対応する報酬のリスト
         """
         pass
@@ -68,33 +67,33 @@ class OnlineEvaluationResults:
         評価したアルゴリズム名
     num_trials : int
         実行した試行数
-    cumulative_regret : List[float]
+    cumulative_regret : list[float]
         累積regret（各試行時点での累積値）
-    instant_regret : List[float]
+    instant_regret : list[float]
         瞬時regret（各試行での単発regret）
-    cumulative_reward : List[float]
+    cumulative_reward : list[float]
         累積報酬（各試行時点での累積値）
-    instant_reward : List[float]
+    instant_reward : list[float]
         瞬時報酬（各試行での単発報酬）
-    selected_actions_history : List[List[int]]
+    selected_actions_history : list[list[int]]
         選択行動の履歴（trial_idx -> [action1, action2, ...]）
     """
 
     def __init__(self, algorithm_name: str):
         self.algorithm_name = algorithm_name
         self.num_trials = 0
-        self.cumulative_regret: List[float] = []
-        self.instant_regret: List[float] = []
-        self.cumulative_reward: List[float] = []
-        self.instant_reward: List[float] = []
-        self.selected_actions_history: List[List[int]] = []
+        self.cumulative_regret: list[float] = []
+        self.instant_regret: list[float] = []
+        self.cumulative_reward: list[float] = []
+        self.instant_reward: list[float] = []
+        self.selected_actions_history: list[list[int]] = []
 
-    def add_trial_result(self, selected_actions: List[int], instant_regret: float, instant_reward: float):
+    def add_trial_result(self, selected_actions: list[int], instant_regret: float, instant_reward: float):
         """1試行分の結果を追加する.
 
         Parameters
         ----------
-        selected_actions : List[int]
+        selected_actions : list[int]
             選択された行動のリスト
         instant_regret : float
             その試行での瞬時regret

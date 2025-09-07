@@ -1,7 +1,7 @@
 """バンディット環境の基底クラスと実装."""
 
 from abc import ABC, abstractmethod
-from typing import List, Tuple
+from typing import Tuple
 
 import numpy as np
 from sklearn.utils import check_random_state
@@ -34,21 +34,21 @@ class BanditEnvironmentInterface(ABC):
         pass
 
     @abstractmethod
-    def get_rewards(self, context: np.ndarray, selected_actions: List[int], trial: int) -> List[float]:
+    def get_rewards(self, context: np.ndarray, selected_actions: list[int], trial: int) -> list[float]:
         """選択された行動に対する報酬を取得する.
 
         Parameters
         ----------
         context : np.ndarray
             コンテキスト特徴量
-        selected_actions : List[int]
+        selected_actions : list[int]
             選択された行動のリスト
         trial : int
             試行番号
 
         Returns
         -------
-        List[float]
+        list[float]
             各行動に対応する報酬のリスト
         """
         pass
@@ -126,21 +126,21 @@ class RankingSyntheticEnvironment(BanditEnvironmentInterface):
 
         return context, available_actions
 
-    def get_rewards(self, context: np.ndarray, selected_actions: List[int], trial: int) -> List[float]:
+    def get_rewards(self, context: np.ndarray, selected_actions: list[int], trial: int) -> list[float]:
         """選択された行動に対する報酬を取得する.
 
         Parameters
         ----------
         context : np.ndarray
             コンテキスト特徴量
-        selected_actions : List[int]
+        selected_actions : list[int]
             選択された行動のリスト
         trial : int
             試行番号
 
         Returns
         -------
-        List[float]
+        list[float]
             各行動に対応する報酬のリスト
         """
         rewards = []

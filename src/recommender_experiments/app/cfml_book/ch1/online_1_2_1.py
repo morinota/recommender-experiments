@@ -9,8 +9,9 @@ def __():
     import warnings
 
     import marimo as mo
-    warnings.filterwarnings('ignore')
-    
+
+    warnings.filterwarnings("ignore")
+
     import japanize_matplotlib
     import matplotlib.pyplot as plt
     import numpy as np
@@ -19,8 +20,9 @@ def __():
     from pandas import DataFrame
     from sklearn.utils import check_random_state
     from tqdm import tqdm
-    plt.style.use('ggplot')
-    
+
+    plt.style.use("ggplot")
+
     # import open bandit pipeline (obp)
     import obp
     from obp.dataset import SyntheticBanditDatasetWithActionEmbeds as SyntheticBanditDataset
@@ -32,11 +34,24 @@ def __():
         OffPolicyEvaluation,
     )
     from obp.utils import softmax
-    
+
     return (
-        mo, warnings, np, pd, DataFrame, tqdm, check_random_state, 
-        sns, plt, japanize_matplotlib, obp, SyntheticBanditDataset, 
-        linear_reward_function, OffPolicyEvaluation, IPS, softmax
+        mo,
+        warnings,
+        np,
+        pd,
+        DataFrame,
+        tqdm,
+        check_random_state,
+        sns,
+        plt,
+        japanize_matplotlib,
+        obp,
+        SyntheticBanditDataset,
+        linear_reward_function,
+        OffPolicyEvaluation,
+        IPS,
+        softmax,
     )
 
 
@@ -61,15 +76,15 @@ def __():
 @app.cell
 def __(check_random_state):
     ## シミュレーション設定
-    num_runs = 500 # シミュレーションの繰り返し回数
-    dim_context = 10 # 特徴量xの次元
-    n_actions = 20 # 行動数, |A|
-    beta = 3 # 方策パラメータ
-    reward_std = 2 # 報酬のノイズの大きさ
-    test_data_size = 100000 # 評価方策の真の性能を近似するためのテストデータのサイズ
+    num_runs = 500  # シミュレーションの繰り返し回数
+    dim_context = 10  # 特徴量xの次元
+    n_actions = 20  # 行動数, |A|
+    beta = 3  # 方策パラメータ
+    reward_std = 2  # 報酬のノイズの大きさ
+    test_data_size = 100000  # 評価方策の真の性能を近似するためのテストデータのサイズ
     random_state = 12345
     random_ = check_random_state(random_state)
-    num_data_list = [250, 500, 1000, 2000, 4000, 8000] # オンライン実験で収集するデータのサイズ
+    num_data_list = [250, 500, 1000, 2000, 4000, 8000]  # オンライン実験で収集するデータのサイズ
     return (
         num_runs,
         dim_context,
@@ -123,7 +138,7 @@ def __(
         ## 評価方策の真の性能(policy value)を近似
         value_of_pi = dataset.calc_ground_truth_policy_value(
             expected_reward=test_data["expected_reward"],
-            action_dist=softmax(beta * test_data["expected_reward"])[:, :, np.newaxis]
+            action_dist=softmax(beta * test_data["expected_reward"])[:, :, np.newaxis],
         )
 
         se_list = []
@@ -137,18 +152,19 @@ def __(
             ## オンライン実験で収集したログデータを用いて推定を実行する
             ope = OffPolicyEvaluation(
                 bandit_feedback=online_experiment_data,
-                ope_estimators=[IPS(estimator_name="AVG")] # IPS推定量は、オンライン実験の設定においてはAVG推定量に一致する
+                ope_estimators=[
+                    IPS(estimator_name="AVG")
+                ],  # IPS推定量は、オンライン実験の設定においてはAVG推定量に一致する
             )
             squared_errors = ope.evaluate_performance_of_estimators(
-                ground_truth_policy_value=value_of_pi, # V(\pi)
-                action_dist=pi[:, :, np.newaxis], # \pi(a|x)
-                metric="se", # squared error
+                ground_truth_policy_value=value_of_pi,  # V(\pi)
+                action_dist=pi[:, :, np.newaxis],  # \pi(a|x)
+                metric="se",  # squared error
             )
             se_list.append(squared_errors)
 
         ## シミュレーション結果を集計する
-        se_df = DataFrame(DataFrame(se_list).stack())\
-            .reset_index(1).rename(columns={"level_1": "est", 0: "se"})
+        se_df = DataFrame(DataFrame(se_list).stack()).reset_index(1).rename(columns={"level_1": "est", 0: "se"})
         se_df["num_data"] = num_data
         se_df_list.append(se_df)
     result_df_datasize = pd.concat(se_df_list).reset_index(level=0)
@@ -164,8 +180,8 @@ def __():
 @app.cell
 def __():
     ## 実験設定
-    num_data = 1000 # オンライン実験で収集するデータのサイズ
-    noise_list = [0, 2, 4, 6, 8, 10] # 報酬のノイズの大きさ
+    num_data = 1000  # オンライン実験で収集するデータのサイズ
+    noise_list = [0, 2, 4, 6, 8, 10]  # 報酬のノイズの大きさ
     return num_data, noise_list
 
 
@@ -209,7 +225,7 @@ def __(
         ## 評価方策の真の性能(policy value)を近似
         value_of_pi = dataset.calc_ground_truth_policy_value(
             expected_reward=test_bandit_data["expected_reward"],
-            action_dist=softmax(beta * test_bandit_data["expected_reward"])[:, :, np.newaxis]
+            action_dist=softmax(beta * test_bandit_data["expected_reward"])[:, :, np.newaxis],
         )
 
         se_list = []
@@ -225,18 +241,19 @@ def __(
             ## オンライン実験で収集したログデータを用いて推定を実行する
             ope = OffPolicyEvaluation(
                 bandit_feedback=online_experiment_data,
-                ope_estimators=[IPS(estimator_name="AVG")] # IPS推定量は、オンライン実験の設定においてはAVG推定量に一致する
+                ope_estimators=[
+                    IPS(estimator_name="AVG")
+                ],  # IPS推定量は、オンライン実験の設定においてはAVG推定量に一致する
             )
             squared_errors = ope.evaluate_performance_of_estimators(
-                ground_truth_policy_value=value_of_pi, # V(\pi)
-                action_dist=pi[:, :, np.newaxis], # \pi(a|x)
-                metric="se", # squared error
+                ground_truth_policy_value=value_of_pi,  # V(\pi)
+                action_dist=pi[:, :, np.newaxis],  # \pi(a|x)
+                metric="se",  # squared error
             )
             se_list.append(squared_errors)
 
         ## シミュレーション結果を集計する
-        se_df = DataFrame(DataFrame(se_list).stack())\
-            .reset_index(1).rename(columns={"level_1": "est", 0: "se"})
+        se_df = DataFrame(DataFrame(se_list).stack()).reset_index(1).rename(columns={"level_1": "est", 0: "se"})
         se_df["noise"] = noise
         se_df_list.append(se_df)
     result_df_noise = pd.concat(se_df_list).reset_index(level=0)
@@ -283,7 +300,7 @@ def __(result_df_datasize, result_df_noise, plt, sns):
             ax.set_xticks([0, 2, 4, 6, 8, 10])
             ax.set_xticklabels([0, 2, 4, 6, 8, 10], fontsize=30)
         ax.xaxis.set_label_coords(0.5, -0.12)
-    
+
     fig
     return ax_list, fig, title_dict, x_dict
 

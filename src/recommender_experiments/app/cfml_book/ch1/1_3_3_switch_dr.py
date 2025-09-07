@@ -15,7 +15,8 @@ def __(mo):
 @app.cell
 def __():
     import warnings
-    warnings.filterwarnings('ignore')
+
+    warnings.filterwarnings("ignore")
 
     import japanize_matplotlib
     import matplotlib.pyplot as plt
@@ -26,7 +27,8 @@ def __():
     from sklearn.linear_model import Ridge
     from sklearn.utils import check_random_state
     from tqdm import tqdm
-    plt.style.use('ggplot')
+
+    plt.style.use("ggplot")
     linestyle_dict = {"se": "-", "bias": "--", "variance": "dotted"}
     y_label_dict = {"se": "左図：平均二乗誤差", "bias": "中図：二乗バイアス", "variance": "右図：バリアンス"}
 
@@ -42,6 +44,7 @@ def __():
     from obp.ope import OffPolicyEvaluation, RegressionModel
     from obp.ope import SwitchDoublyRobust as SwitchDR
     from utils import aggregate_simulation_results, aggregate_simulation_results_lam, eps_greedy_policy
+
     return (
         DataFrame,
         OffPolicyEvaluation,
@@ -76,7 +79,9 @@ def __(obp):
 
 @app.cell
 def __(mo):
-    mo.md(r"""### ハイパーパラメータの値$\lambda$を変化させたときのSwitch-DR推定量の平均二乗誤差・二乗バイアス・バリアンスの挙動""")
+    mo.md(
+        r"""### ハイパーパラメータの値$\lambda$を変化させたときのSwitch-DR推定量の平均二乗誤差・二乗バイアス・バリアンスの挙動"""
+    )
     return
 
 
@@ -148,9 +153,7 @@ def __(
         estimated_policy_value_list_24 = []
         for _ in tqdm(range(num_runs), desc=f"num_data={num_data}..."):
             ## データ収集方策が形成する分布に従いログデータを生成
-            offline_logged_data_24 = dataset_24.obtain_batch_bandit_feedback(
-                n_rounds=num_data
-            )
+            offline_logged_data_24 = dataset_24.obtain_batch_bandit_feedback(n_rounds=num_data)
 
             ## ログデータ上における評価方策の行動選択確率を計算
             pi_24 = eps_greedy_policy(offline_logged_data_24["expected_reward"])
@@ -161,16 +164,16 @@ def __(
                 base_model=Ridge(alpha=1.0, random_state=random_state),
             )
             estimated_rewards_mlp_24 = reg_model_24.fit_predict(
-                context=offline_logged_data_24["context"], # context; x
-                action=offline_logged_data_24["action"], # action; a
-                reward=offline_logged_data_24["reward"], # reward; r
+                context=offline_logged_data_24["context"],  # context; x
+                action=offline_logged_data_24["action"],  # action; a
+                reward=offline_logged_data_24["reward"],  # reward; r
                 random_state=random_state,
             )
 
             ## ログデータを用いてオフ方策評価を実行する
             ope_24 = OffPolicyEvaluation(
                 bandit_feedback=offline_logged_data_24,
-                ope_estimators=[SwitchDR(lambda_=lam, estimator_name=lam) for lam in range(0, 1000, 2)]
+                ope_estimators=[SwitchDR(lambda_=lam, estimator_name=lam) for lam in range(0, 1000, 2)],
             )
             estimated_policy_values_24 = ope_24.estimate_policy_values(
                 action_dist=pi_24,
@@ -181,7 +184,10 @@ def __(
         ## シミュレーション結果を集計する
         result_df_list_24.append(
             aggregate_simulation_results_lam(
-                estimated_policy_value_list_24, policy_value_24, "num_data", num_data,
+                estimated_policy_value_list_24,
+                policy_value_24,
+                "num_data",
+                num_data,
             )
         )
     result_df_24 = pd.concat(result_df_list_24).reset_index(level=0)
@@ -241,11 +247,14 @@ def __(linestyle_dict, plt, result_df_24, sns, y_label_dict):
             ax24.set_xticks([0, 200, 400, 600, 800, 1000])
             ax24.set_xticklabels([0, 200, 400, 600, 800, 1000], fontsize=30)
             ax24.xaxis.set_label_coords(0.5, -0.12)
-            ax24.vlines(optimal_hyperparam_24, 0, 0.7, color='black', linewidth=5, linestyles='dotted')
-            ax24.text(optimal_hyperparam_24+20, 0.1, f"最適な$\lambda=${optimal_hyperparam_24}", fontsize=50)
+            ax24.vlines(optimal_hyperparam_24, 0, 0.7, color="black", linewidth=5, linestyles="dotted")
+            ax24.text(optimal_hyperparam_24 + 20, 0.1, f"最適な$\lambda=${optimal_hyperparam_24}", fontsize=50)
     fig1_24.legend(
         ["平均二乗誤差 (MSE)", "二乗バイアス", "バリアンス"],
-        fontsize=50, bbox_to_anchor=(0.5, 1.12), ncol=4, loc="center",
+        fontsize=50,
+        bbox_to_anchor=(0.5, 1.12),
+        ncol=4,
+        loc="center",
     )
     fig1_24
     return (
@@ -262,7 +271,9 @@ def __(linestyle_dict, plt, result_df_24, sns, y_label_dict):
 
 @app.cell
 def __(mo):
-    mo.md(r"""### (データ収集方策が収集した)ログデータのサイズ$n$を変化させたときのSwitch-DR推定量の平均二乗誤差・二乗バイアス・バリアンスの挙動""")
+    mo.md(
+        r"""### (データ収集方策が収集した)ログデータのサイズ$n$を変化させたときのSwitch-DR推定量の平均二乗誤差・二乗バイアス・バリアンスの挙動"""
+    )
     return
 
 
@@ -312,9 +323,7 @@ def __(
         estimated_policy_value_list_25 = []
         for _ in tqdm(range(num_runs), desc=f"num_data={num_data}..."):
             ## データ収集方策が形成する分布に従いログデータを生成
-            offline_logged_data_25 = dataset_25.obtain_batch_bandit_feedback(
-                n_rounds=num_data
-            )
+            offline_logged_data_25 = dataset_25.obtain_batch_bandit_feedback(n_rounds=num_data)
 
             ## ログデータ上における評価方策の行動選択確率を計算
             pi_25 = eps_greedy_policy(offline_logged_data_25["expected_reward"])
@@ -325,9 +334,9 @@ def __(
                 base_model=Ridge(alpha=1.0, random_state=random_state),
             )
             estimated_rewards_mlp_25 = reg_model_25.fit_predict(
-                context=offline_logged_data_25["context"], # context; x
-                action=offline_logged_data_25["action"], # action; a
-                reward=offline_logged_data_25["reward"], # reward; r
+                context=offline_logged_data_25["context"],  # context; x
+                action=offline_logged_data_25["action"],  # action; a
+                reward=offline_logged_data_25["reward"],  # reward; r
                 random_state=random_state,
             )
 
@@ -336,9 +345,9 @@ def __(
                 bandit_feedback=offline_logged_data_25,
                 ope_estimators=[
                     SwitchDR(lambda_=0, estimator_name="0"),
-                    SwitchDR(lambda_=num_data/4, estimator_name="adaptive"),
+                    SwitchDR(lambda_=num_data / 4, estimator_name="adaptive"),
                     SwitchDR(estimator_name="infty"),
-                ]
+                ],
             )
             estimated_policy_values_25 = ope_25.estimate_policy_values(
                 action_dist=pi_25,
@@ -349,7 +358,10 @@ def __(
         ## シミュレーション結果を集計する
         result_df_list_25.append(
             aggregate_simulation_results(
-                estimated_policy_value_list_25, policy_value_25, "num_data", num_data,
+                estimated_policy_value_list_25,
+                policy_value_25,
+                "num_data",
+                num_data,
             )
         )
     result_df_25 = pd.concat(result_df_list_25).reset_index(level=0)
@@ -411,7 +423,10 @@ def __(num_data_list, plt, result_df_25, sns, y_label_dict):
         ax25.xaxis.set_label_coords(0.5, -0.12)
     fig1_25.legend(
         [r"$\lambda=0$ (=DM)", r"$\lambda=n/4$（適応的な設定）", r"$\lambda=\infty$ (= DR)"],
-        fontsize=50, bbox_to_anchor=(0.5, 1.15), ncol=4, loc="center",
+        fontsize=50,
+        bbox_to_anchor=(0.5, 1.15),
+        ncol=4,
+        loc="center",
     )
     fig1_25
     return ax25, ax_list_25, fig1_25, i25, y25
@@ -420,7 +435,8 @@ def __(num_data_list, plt, result_df_25, sns, y_label_dict):
 @app.cell
 def __():
     import marimo as mo
-    return mo,
+
+    return (mo,)
 
 
 if __name__ == "__main__":

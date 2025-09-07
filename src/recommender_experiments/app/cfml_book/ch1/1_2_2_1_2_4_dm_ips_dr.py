@@ -19,7 +19,8 @@ def _(mo):
 @app.cell
 def _():
     import warnings
-    warnings.filterwarnings('ignore')
+
+    warnings.filterwarnings("ignore")
 
     import japanize_matplotlib
     import matplotlib.pyplot as plt
@@ -31,7 +32,8 @@ def _():
     from sklearn.neural_network import MLPClassifier, MLPRegressor
     from sklearn.utils import check_random_state
     from tqdm import tqdm
-    plt.style.use('ggplot')
+
+    plt.style.use("ggplot")
     y_label_dict = {"se": "左図：平均二乗誤差", "bias": "中図：二乗バイアス", "variance": "右図：バリアンス"}
 
     # import open bandit pipeline (obp)
@@ -56,6 +58,7 @@ def _():
         RegressionModel,
     )
     from utils import aggregate_simulation_results, eps_greedy_policy
+
     return (
         DM,
         DR,
@@ -86,7 +89,9 @@ def _(obp):
 
 @app.cell
 def _(mo):
-    mo.md(r"""### (データ収集方策が収集した)ログデータのサイズ$n$を変化させたときのDM・IPS・DR推定量の平均二乗誤差・二乗バイアス・バリアンスの挙動""")
+    mo.md(
+        r"""### (データ収集方策が収集した)ログデータのサイズ$n$を変化させたときのDM・IPS・DR推定量の平均二乗誤差・二乗バイアス・バリアンスの挙動"""
+    )
     return
 
 
@@ -162,9 +167,7 @@ def _(
         estimated_policy_value_list = []
         for _ in tqdm(range(num_runs), desc=f"num_data={num_data}..."):
             ## データ収集方策が形成する分布に従いログデータを生成
-            offline_logged_data = dataset.obtain_batch_bandit_feedback(
-                n_rounds=num_data
-            )
+            offline_logged_data = dataset.obtain_batch_bandit_feedback(n_rounds=num_data)
 
             ## ログデータ上における評価方策の行動選択確率を計算
             pi = eps_greedy_policy(offline_logged_data["expected_reward"])
@@ -182,9 +185,7 @@ def _(
             )
             reg_model = RegressionModel(
                 n_actions=dataset.n_actions,
-                base_model=MLPRegressor(
-                    hidden_layer_sizes=(10, 10), random_state=random_state, max_iter=1000
-                ),
+                base_model=MLPRegressor(hidden_layer_sizes=(10, 10), random_state=random_state, max_iter=1000),
             )
             estimated_rewards_mlp = reg_model.fit_predict(
                 context=offline_logged_data["context"],  # context; x
@@ -201,7 +202,7 @@ def _(
                     DR(estimator_name="DR"),
                     DM(estimator_name="lr"),
                     DM(estimator_name="mlp"),
-                ]
+                ],
             )
             estimated_policy_values = ope.estimate_policy_values(
                 action_dist=pi,  # \pi(a|x)
@@ -216,7 +217,10 @@ def _(
         ## シミュレーション結果を集計する
         result_df_list.append(
             aggregate_simulation_results(
-                estimated_policy_value_list, policy_value, "num_data", num_data,
+                estimated_policy_value_list,
+                policy_value,
+                "num_data",
+                num_data,
             )
         )
     result_df = pd.concat(result_df_list).reset_index(level=0)
@@ -266,7 +270,10 @@ def _(num_data_list, plt, result_df, sns, y_label_dict):
         ax.xaxis.set_label_coords(0.5, -0.12)
     fig1_9.legend(
         ["DM (リッジ回帰)", "DM (ニューラルネットワーク)"],
-        fontsize=50, bbox_to_anchor=(0.5, 1.15), ncol=4, loc="center",
+        fontsize=50,
+        bbox_to_anchor=(0.5, 1.15),
+        ncol=4,
+        loc="center",
     )
     fig1_9
     return
@@ -315,7 +322,10 @@ def _(num_data_list, plt, result_df, sns, y_label_dict):
         ax13.xaxis.set_label_coords(0.5, -0.12)
     fig1_13.legend(
         ["IPS", "DM (ニューラルネットワーク)"],
-        fontsize=50, bbox_to_anchor=(0.5, 1.15), ncol=4, loc="center",
+        fontsize=50,
+        bbox_to_anchor=(0.5, 1.15),
+        ncol=4,
+        loc="center",
     )
     fig1_13
     return
@@ -364,7 +374,10 @@ def _(num_data_list, plt, result_df, sns, y_label_dict):
         ax16.xaxis.set_label_coords(0.5, -0.12)
     fig1_16.legend(
         ["IPS", "DR", "DM (ニューラルネットワーク)"],
-        fontsize=50, bbox_to_anchor=(0.5, 1.15), ncol=4, loc="center",
+        fontsize=50,
+        bbox_to_anchor=(0.5, 1.15),
+        ncol=4,
+        loc="center",
     )
     fig1_16
     return
@@ -373,6 +386,7 @@ def _(num_data_list, plt, result_df, sns, y_label_dict):
 @app.cell
 def _():
     import marimo as mo
+
     return (mo,)
 
 

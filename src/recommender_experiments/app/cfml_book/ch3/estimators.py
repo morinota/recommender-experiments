@@ -25,9 +25,7 @@ def calc_ips(dataset: dict, pi: np.ndarray, max_value: float = 100) -> float:
     return np.minimum((w * r).mean(), max_value)
 
 
-def calc_dr(
-    dataset: dict, pi: np.ndarray, q_hat: np.ndarray, max_value: float = 100
-) -> float:
+def calc_dr(dataset: dict, pi: np.ndarray, q_hat: np.ndarray, max_value: float = 100) -> float:
     """DR推定量を実行する."""
     num_data = dataset["num_data"]
     a, r, pi_0 = dataset["a"], dataset["r"], dataset["pi_0"]
@@ -110,6 +108,4 @@ def calc_offcem(
     # 周辺重要度重み
     w_x_c = pi_c[np.arange(num_data), c] / pi_0_c[np.arange(num_data), c]
 
-    return np.minimum(
-        ((q_hat * pi).sum(1) + w_x_c * (r - q_hat[idx, a])).mean(), max_value
-    )
+    return np.minimum(((q_hat * pi).sum(1) + w_x_c * (r - q_hat[idx, a])).mean(), max_value)

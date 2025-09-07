@@ -13,7 +13,8 @@ def __(mo):
 @app.cell
 def __():
     import warnings
-    warnings.filterwarnings('ignore')
+
+    warnings.filterwarnings("ignore")
 
     import japanize_matplotlib
     import matplotlib.pyplot as plt
@@ -25,7 +26,8 @@ def __():
     from sklearn.neural_network import MLPClassifier, MLPRegressor
     from sklearn.utils import check_random_state
     from tqdm import tqdm
-    plt.style.use('ggplot')
+
+    plt.style.use("ggplot")
     y_label_dict = {"se": "左図：平均二乗誤差", "bias": "中図：二乗バイアス", "variance": "右図：バリアンス"}
 
     # import open bandit pipeline (obp)
@@ -50,6 +52,7 @@ def __():
         RegressionModel,
     )
     from utils import aggregate_simulation_results, eps_greedy_policy
+
     return (
         DM,
         DR,
@@ -85,7 +88,9 @@ def __(obp):
 
 @app.cell
 def __(mo):
-    mo.md(r"""### ログデータのサイズ$n$を変化させたときの真のデータ収集方策を用いる場合とデータ収集方策を推定する場合のIPS・DR推定量の平均二乗誤差・二乗バイアス・バリアンスの挙動""")
+    mo.md(
+        r"""### ログデータのサイズ$n$を変化させたときの真のデータ収集方策を用いる場合とデータ収集方策を推定する場合のIPS・DR推定量の平均二乗誤差・二乗バイアス・バリアンスの挙動"""
+    )
     return
 
 
@@ -161,9 +166,7 @@ def __(
         estimated_policy_value_list = []
         for _ in tqdm(range(num_runs), desc=f"num_data={num_data}..."):
             ## データ収集方策が形成する分布に従いログデータを生成
-            offline_logged_data = dataset.obtain_batch_bandit_feedback(
-                n_rounds=num_data
-            )
+            offline_logged_data = dataset.obtain_batch_bandit_feedback(n_rounds=num_data)
 
             ## ログデータ上における評価方策の行動選択確率を計算
             pi = eps_greedy_policy(offline_logged_data["expected_reward"])
@@ -171,16 +174,14 @@ def __(
             ## ログデータを用いてデータ収集方策を推定
             lr = LogisticRegression(C=100, random_state=random_state)
             lr.fit(offline_logged_data["context"], offline_logged_data["action"])
-            estimated_pi0 = lr.predict_proba(
-                offline_logged_data["context"]
-            )[np.arange(num_data), offline_logged_data["action"]]
+            estimated_pi0 = lr.predict_proba(offline_logged_data["context"])[
+                np.arange(num_data), offline_logged_data["action"]
+            ]
 
             ## 期待報酬関数に対する推定モデル\hat{q}(x,a)を得る
             reg_model = RegressionModel(
                 n_actions=dataset.n_actions,
-                base_model=MLPRegressor(
-                    hidden_layer_sizes=(10, 10), random_state=random_state, max_iter=1000
-                ),
+                base_model=MLPRegressor(hidden_layer_sizes=(10, 10), random_state=random_state, max_iter=1000),
             )
             estimated_rewards_mlp = reg_model.fit_predict(
                 context=offline_logged_data["context"],  # context; x
@@ -197,7 +198,7 @@ def __(
                     IPS(estimator_name="IPS (estimated)", use_estimated_pscore=True),
                     DR(estimator_name="DR"),
                     DR(estimator_name="DR (estimated)", use_estimated_pscore=True),
-                ]
+                ],
             )
             estimated_policy_values = ope.estimate_policy_values(
                 action_dist=pi,  # \pi(a|x)
@@ -209,7 +210,10 @@ def __(
         ## シミュレーション結果を集計する
         result_df_list.append(
             aggregate_simulation_results(
-                estimated_policy_value_list, policy_value, "num_data", num_data,
+                estimated_policy_value_list,
+                policy_value,
+                "num_data",
+                num_data,
             )
         )
     result_df = pd.concat(result_df_list).reset_index(level=0)
@@ -274,7 +278,10 @@ def __(num_data_list, plt, result_df, sns, y_label_dict):
         ax15.xaxis.set_label_coords(0.5, -0.12)
     fig1_15.legend(
         ["IPS (真のデータ収集方策を用いた場合)", "IPS (データ収集方策を推定した場合)"],
-        fontsize=50, bbox_to_anchor=(0.5, 1.15), ncol=4, loc="center",
+        fontsize=50,
+        bbox_to_anchor=(0.5, 1.15),
+        ncol=4,
+        loc="center",
     )
     fig1_15
     return ax_list_15, fig1_15, i15, y15
@@ -323,7 +330,10 @@ def __(num_data_list, plt, result_df, sns, y_label_dict):
         ax19.xaxis.set_label_coords(0.5, -0.12)
     fig1_19.legend(
         ["DR (真のデータ収集方策を用いた場合)", "DR (データ収集方策を推定した場合)"],
-        fontsize=50, bbox_to_anchor=(0.5, 1.15), ncol=4, loc="center",
+        fontsize=50,
+        bbox_to_anchor=(0.5, 1.15),
+        ncol=4,
+        loc="center",
     )
     fig1_19
     return ax_list_19, fig1_19, i19, y19
@@ -372,7 +382,10 @@ def __(num_data_list, plt, result_df, sns, y_label_dict):
         ax20.xaxis.set_label_coords(0.5, -0.12)
     fig1_20.legend(
         ["IPS (データ収集方策を推定した場合)", "DR (データ収集方策を推定した場合)"],
-        fontsize=50, bbox_to_anchor=(0.5, 1.15), ncol=4, loc="center",
+        fontsize=50,
+        bbox_to_anchor=(0.5, 1.15),
+        ncol=4,
+        loc="center",
     )
     fig1_20
     return ax_list_20, fig1_20, i20, y20
@@ -381,7 +394,8 @@ def __(num_data_list, plt, result_df, sns, y_label_dict):
 @app.cell
 def __():
     import marimo as mo
-    return mo,
+
+    return (mo,)
 
 
 if __name__ == "__main__":

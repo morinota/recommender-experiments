@@ -26,9 +26,7 @@ def generate_synthetic_data(
     x, e_a = random_.normal(size=(num_data, dim_context)), np.eye(num_actions)
 
     # 期待報酬関数を定義する
-    base_q_func = (
-        sigmoid((x ** 3 + x ** 2 - x) @ theta + (x - x ** 2) @ M @ e_a + b) / T
-    )
+    base_q_func = sigmoid((x**3 + x**2 - x) @ theta + (x - x**2) @ M @ e_a + b) / T
 
     user_behavior_matrix = np.r_[
         np.eye(T),  # independent
@@ -38,9 +36,7 @@ def generate_synthetic_data(
     user_behavior_idx = random_.choice(3, p=p, size=num_data)
     C_ = user_behavior_matrix[user_behavior_idx]
 
-    user_behavior_matrix_rand = random_.choice(
-        [-1, 0, 1], p=[0.2, 0.4, 0.4], size=7 * T * T
-    ).reshape((7, T, T))
+    user_behavior_matrix_rand = random_.choice([-1, 0, 1], p=[0.2, 0.4, 0.4], size=7 * T * T).reshape((7, T, T))
     user_behavior_rand_idx = random_.choice(7, size=num_data)
     C_rand = user_behavior_matrix_rand[user_behavior_rand_idx]
 
@@ -68,12 +64,7 @@ def generate_synthetic_data(
         q_func_factual = base_q_func[idx, a_t[:, t]]
         for t_ in range(T):
             if t_ != t:
-                q_func_factual += (
-                    C[:, t, t_]
-                    * W[t, t_]
-                    * base_q_func[idx, a_t[:, t]]
-                    / np.abs(t - t_)
-                )
+                q_func_factual += C[:, t, t_] * W[t, t_] * base_q_func[idx, a_t[:, t]] / np.abs(t - t_)
         q_t[:, t] = q_func_factual
         r_t[:, t] = random_.normal(q_func_factual, scale=reward_noise)
 
@@ -144,12 +135,8 @@ def generate_synthetic_data2(
     one_hot_a = np.eye(num_actions)
 
     # 期待報酬関数を定義する
-    q_x_a_0 = (
-        (x ** 3 + x ** 2 - x) @ theta_0 + (x - x ** 2) @ M_0 @ one_hot_a + b_0
-    ) / num_actions
-    q_x_a_1 = (
-        (x - x ** 2) @ theta_1 + (x ** 3 + x ** 2 - x) @ M_1 @ one_hot_a + b_1
-    ) / num_actions
+    q_x_a_0 = ((x**3 + x**2 - x) @ theta_0 + (x - x**2) @ M_0 @ one_hot_a + b_0) / num_actions
+    q_x_a_1 = ((x - x**2) @ theta_1 + (x**3 + x**2 - x) @ M_1 @ one_hot_a + b_1) / num_actions
     cate_x_a = q_x_a_1 - q_x_a_0
     q_x_a_1 += rankdata(cate_x_a, axis=1, method="dense") <= num_actions * 0.5
     q_x_a_0 += rankdata(cate_x_a, axis=1, method="dense") <= num_actions * 0.5

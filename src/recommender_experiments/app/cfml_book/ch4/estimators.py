@@ -61,17 +61,17 @@ def calc_dr(dataset: dict, Q_hat: np.ndarray) -> float:
     dr_estimate = 0
     for h in range(H):
         if h == H - 1:
-            dr_estimate += w_h.prod(1) * (
-                r_h[:, h] - Q_hat[s_h[:, h], a_h[:, h]]
-            ) + w_h[:, :h].prod(1) * (pi[:, :, 0] * Q_hat[s_h[:, 0], :]).sum(1)
+            dr_estimate += w_h.prod(1) * (r_h[:, h] - Q_hat[s_h[:, h], a_h[:, h]]) + w_h[:, :h].prod(1) * (
+                pi[:, :, 0] * Q_hat[s_h[:, 0], :]
+            ).sum(1)
         elif h == 0:
             dr_estimate += w_h[:, 0] * (r_h[:, h] - Q_hat[s_h[:, h], a_h[:, h]]) + (
                 pi[:, :, 0] * Q_hat[s_h[:, 0], :]
             ).sum(1)
         else:
-            dr_estimate += w_h[:, : h + 1].prod(1) * (
-                r_h[:, h] - Q_hat[s_h[:, h], a_h[:, h]]
-            ) + w_h[:, :h].prod(1) * (pi[:, :, h + 1] * Q_hat[s_h[:, h + 1], :]).sum(1)
+            dr_estimate += w_h[:, : h + 1].prod(1) * (r_h[:, h] - Q_hat[s_h[:, h], a_h[:, h]]) + w_h[:, :h].prod(1) * (
+                pi[:, :, h + 1] * Q_hat[s_h[:, h + 1], :]
+            ).sum(1)
 
     return dr_estimate.mean()
 

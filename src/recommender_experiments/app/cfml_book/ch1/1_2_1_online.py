@@ -13,7 +13,8 @@ def __(mo):
 @app.cell
 def __():
     import warnings
-    warnings.filterwarnings('ignore')
+
+    warnings.filterwarnings("ignore")
 
     import japanize_matplotlib
     import matplotlib.pyplot as plt
@@ -23,7 +24,8 @@ def __():
     from pandas import DataFrame
     from sklearn.utils import check_random_state
     from tqdm import tqdm
-    plt.style.use('ggplot')
+
+    plt.style.use("ggplot")
 
     # import open bandit pipeline (obp)
     import obp
@@ -36,6 +38,7 @@ def __():
         OffPolicyEvaluation,
     )
     from obp.utils import softmax
+
     return (
         DataFrame,
         IPS,
@@ -132,7 +135,7 @@ def __(
         ## 評価方策の真の性能(policy value)を近似
         value_of_pi = dataset.calc_ground_truth_policy_value(
             expected_reward=test_data["expected_reward"],
-            action_dist=softmax(beta * test_data["expected_reward"])[:, :, np.newaxis]
+            action_dist=softmax(beta * test_data["expected_reward"])[:, :, np.newaxis],
         )
 
         se_list = []
@@ -146,7 +149,9 @@ def __(
             ## オンライン実験で収集したログデータを用いて推定を実行する
             ope = OffPolicyEvaluation(
                 bandit_feedback=online_experiment_data,
-                ope_estimators=[IPS(estimator_name="AVG")]  # IPS推定量は、オンライン実験の設定においてはAVG推定量に一致する
+                ope_estimators=[
+                    IPS(estimator_name="AVG")
+                ],  # IPS推定量は、オンライン実験の設定においてはAVG推定量に一致する
             )
             squared_errors = ope.evaluate_performance_of_estimators(
                 ground_truth_policy_value=value_of_pi,  # V(\pi)
@@ -156,8 +161,7 @@ def __(
             se_list.append(squared_errors)
 
         ## シミュレーション結果を集計する
-        se_df = DataFrame(DataFrame(se_list).stack())\
-            .reset_index(1).rename(columns={"level_1": "est", 0: "se"})
+        se_df = DataFrame(DataFrame(se_list).stack()).reset_index(1).rename(columns={"level_1": "est", 0: "se"})
         se_df["num_data"] = num_data
         se_df_list.append(se_df)
     result_df_datasize = pd.concat(se_df_list).reset_index(level=0)
@@ -218,7 +222,7 @@ def __(
         ## 評価方策の真の性能(policy value)を近似
         value_of_pi_noise = dataset_noise.calc_ground_truth_policy_value(
             expected_reward=test_bandit_data["expected_reward"],
-            action_dist=softmax(beta * test_bandit_data["expected_reward"])[:, :, np.newaxis]
+            action_dist=softmax(beta * test_bandit_data["expected_reward"])[:, :, np.newaxis],
         )
 
         se_list_noise = []
@@ -234,7 +238,9 @@ def __(
             ## オンライン実験で収集したログデータを用いて推定を実行する
             ope_noise = OffPolicyEvaluation(
                 bandit_feedback=online_experiment_data_noise,
-                ope_estimators=[IPS(estimator_name="AVG")]  # IPS推定量は、オンライン実験の設定においてはAVG推定量に一致する
+                ope_estimators=[
+                    IPS(estimator_name="AVG")
+                ],  # IPS推定量は、オンライン実験の設定においてはAVG推定量に一致する
             )
             squared_errors_noise = ope_noise.evaluate_performance_of_estimators(
                 ground_truth_policy_value=value_of_pi_noise,  # V(\pi)
@@ -244,8 +250,9 @@ def __(
             se_list_noise.append(squared_errors_noise)
 
         ## シミュレーション結果を集計する
-        se_df_noise = DataFrame(DataFrame(se_list_noise).stack())\
-            .reset_index(1).rename(columns={"level_1": "est", 0: "se"})
+        se_df_noise = (
+            DataFrame(DataFrame(se_list_noise).stack()).reset_index(1).rename(columns={"level_1": "est", 0: "se"})
+        )
         se_df_noise["noise"] = noise
         se_df_list_noise.append(se_df_noise)
     result_df_noise = pd.concat(se_df_list_noise).reset_index(level=0)
@@ -305,7 +312,8 @@ def __(plt, result_df_datasize, result_df_noise, sns):
 @app.cell
 def __():
     import marimo as mo
-    return mo,
+
+    return (mo,)
 
 
 if __name__ == "__main__":

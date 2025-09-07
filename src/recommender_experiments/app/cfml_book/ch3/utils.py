@@ -79,12 +79,8 @@ def aggregate_simulation_results(
         estimates = result_df.loc[result_df["est"] == est_, "value"].values
         mean_estimates = sample_mean.loc[sample_mean["est"] == est_, "value"].values
         mean_estimates = np.ones_like(estimates) * mean_estimates
-        result_df.loc[result_df["est"] == est_, "bias"] = (
-            policy_value - mean_estimates
-        ) ** 2
-        result_df.loc[result_df["est"] == est_, "variance"] = (
-            estimates - mean_estimates
-        ) ** 2
+        result_df.loc[result_df["est"] == est_, "bias"] = (policy_value - mean_estimates) ** 2
+        result_df.loc[result_df["est"] == est_, "variance"] = (estimates - mean_estimates) ** 2
 
     return result_df
 
@@ -98,12 +94,8 @@ def remove_outliers(result_df: DataFrame, estimators: list = None) -> DataFrame:
             result_df_.loc[result_df_[metric] > threshold, metric] = threshold
         else:
             for est in estimators:
-                threshold = np.percentile(
-                    result_df_.loc[result_df_.est == est, metric], 99
-                )
-                result_df_.loc[
-                    (result_df_[metric] > threshold) & (result_df_.est == est), metric
-                ] = threshold
+                threshold = np.percentile(result_df_.loc[result_df_.est == est, metric], 99)
+                result_df_.loc[(result_df_[metric] > threshold) & (result_df_.est == est), metric] = threshold
     result_df_.loc[:, "se"] = result_df_.loc[:, "bias"] + result_df_.loc[:, "variance"]
 
     return result_df_

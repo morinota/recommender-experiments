@@ -23,7 +23,7 @@ def generate_synthetic_data(
     random_ = check_random_state(random_state)
     S = random_.normal(size=(num_states, dim_state))
     e_a = np.eye(num_actions)
-    q_s_a = sigmoid((S ** 3 + S ** 2 - S) @ theta + (S - S ** 2) @ M @ e_a + b) / H
+    q_s_a = sigmoid((S**3 + S**2 - S) @ theta + (S - S**2) @ M @ e_a + b) / H
 
     s_h = np.zeros((num_data, H), dtype=int)
     a_h = np.zeros((num_data, H), dtype=int)
@@ -32,9 +32,7 @@ def generate_synthetic_data(
     pi = np.zeros((num_data, num_actions, H))
     pi_0 = np.zeros((num_data, num_actions, H))
 
-    s_h[:, 0] = sample_action_fast(
-        np.tile(init_dist, (num_data, 1)), random_state=random_state
-    )
+    s_h[:, 0] = sample_action_fast(np.tile(init_dist, (num_data, 1)), random_state=random_state)
     for h in range(H):
         if is_test:
             pi_0[:, :, h] = eps_greedy_policy(q_s_a[s_h[:, h]])
@@ -45,9 +43,7 @@ def generate_synthetic_data(
         q_h[:, h] = q_s_a[s_h[:, h], a_h[:, h]]
         r_h[:, h] = random_.normal(q_h[:, h], scale=reward_noise)
         if h < H - 1:
-            s_h[:, h + 1] = sample_action_fast(
-                trans_probs[s_h[:, h], :, a_h[:, h]], random_state=random_state + h
-            )
+            s_h[:, h + 1] = sample_action_fast(trans_probs[s_h[:, h], :, a_h[:, h]], random_state=random_state + h)
 
     return dict(
         num_data=num_data,

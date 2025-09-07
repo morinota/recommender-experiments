@@ -15,7 +15,8 @@ def __(mo):
 @app.cell
 def __():
     import warnings
-    warnings.filterwarnings('ignore')
+
+    warnings.filterwarnings("ignore")
 
     import japanize_matplotlib
     import matplotlib.pyplot as plt
@@ -25,7 +26,8 @@ def __():
     from pandas import DataFrame
     from sklearn.utils import check_random_state
     from tqdm import tqdm
-    plt.style.use('ggplot')
+
+    plt.style.use("ggplot")
     linestyle_dict = {"se": "-", "bias": "--", "variance": "dotted"}
     y_label_dict = {"se": "左図：平均二乗誤差", "bias": "中図：二乗バイアス", "variance": "右図：バリアンス"}
 
@@ -40,6 +42,7 @@ def __():
     from obp.ope import InverseProbabilityWeighting as IPS
     from obp.ope import OffPolicyEvaluation
     from utils import aggregate_simulation_results, aggregate_simulation_results_lam, eps_greedy_policy
+
     return (
         DataFrame,
         IPS,
@@ -71,7 +74,9 @@ def __(obp):
 
 @app.cell
 def __(mo):
-    mo.md(r"""### ハイパーパラメータの値$\lambda$を変化させたときのCIPS推定量の平均二乗誤差・二乗バイアス・バリアンスの挙動""")
+    mo.md(
+        r"""### ハイパーパラメータの値$\lambda$を変化させたときのCIPS推定量の平均二乗誤差・二乗バイアス・バリアンスの挙動"""
+    )
     return
 
 
@@ -141,9 +146,7 @@ def __(
         estimated_policy_value_list_lambda = []
         for _ in tqdm(range(num_runs), desc=f"num_data={num_data}..."):
             ## データ収集方策が形成する分布に従いログデータを生成
-            offline_logged_data_lambda = dataset_lambda.obtain_batch_bandit_feedback(
-                n_rounds=num_data
-            )
+            offline_logged_data_lambda = dataset_lambda.obtain_batch_bandit_feedback(n_rounds=num_data)
 
             ## ログデータ上における評価方策の行動選択確率を計算
             pi_lambda = eps_greedy_policy(offline_logged_data_lambda["expected_reward"])
@@ -151,7 +154,7 @@ def __(
             ## ログデータを用いてオフ方策評価を実行する
             ope_lambda = OffPolicyEvaluation(
                 bandit_feedback=offline_logged_data_lambda,
-                ope_estimators=[IPS(lambda_=lam, estimator_name=lam) for lam in range(0, 500)]
+                ope_estimators=[IPS(lambda_=lam, estimator_name=lam) for lam in range(0, 500)],
             )
             estimated_policy_values_lambda = ope_lambda.estimate_policy_values(action_dist=pi_lambda)
             estimated_policy_value_list_lambda.append(estimated_policy_values_lambda)
@@ -159,7 +162,10 @@ def __(
         ## シミュレーション結果を集計する
         result_df_list_lambda.append(
             aggregate_simulation_results_lam(
-                estimated_policy_value_list_lambda, policy_value_lambda, "num_data", num_data,
+                estimated_policy_value_list_lambda,
+                policy_value_lambda,
+                "num_data",
+                num_data,
             )
         )
     result_df_lambda = pd.concat(result_df_list_lambda).reset_index(level=0)
@@ -217,14 +223,17 @@ def __(linestyle_dict, plt, result_df_lambda, sns, y_label_dict):
             ax21.set_xticks([0, 100, 200, 300, 400, 500])
             ax21.set_xticklabels([0, 100, 200, 300, 400, 500], fontsize=30)
             ax21.xaxis.set_label_coords(0.5, -0.12)
-            ax21.vlines(optimal_hyperparam, 0, 0.65, color='black', linewidth=5, linestyles='dotted')
+            ax21.vlines(optimal_hyperparam, 0, 0.65, color="black", linewidth=5, linestyles="dotted")
             if num_data > 500:
-                ax21.text(optimal_hyperparam-260, 0.55, f"最適な$\lambda=${optimal_hyperparam}", fontsize=50)
+                ax21.text(optimal_hyperparam - 260, 0.55, f"最適な$\lambda=${optimal_hyperparam}", fontsize=50)
             else:
-                ax21.text(optimal_hyperparam+20, 0.55, f"最適な$\lambda=${optimal_hyperparam}", fontsize=50)
+                ax21.text(optimal_hyperparam + 20, 0.55, f"最適な$\lambda=${optimal_hyperparam}", fontsize=50)
     fig1_21.legend(
         ["平均二乗誤差 (MSE)", "二乗バイアス", "バリアンス"],
-        fontsize=50, bbox_to_anchor=(0.5, 1.12), ncol=4, loc="center",
+        fontsize=50,
+        bbox_to_anchor=(0.5, 1.12),
+        ncol=4,
+        loc="center",
     )
     fig1_21
     return (
@@ -241,7 +250,9 @@ def __(linestyle_dict, plt, result_df_lambda, sns, y_label_dict):
 
 @app.cell
 def __(mo):
-    mo.md(r"""### (データ収集方策が収集した)ログデータのサイズ$n$を変化させたときのCIPS推定量の平均二乗誤差・二乗バイアス・バリアンスの挙動""")
+    mo.md(
+        r"""### (データ収集方策が収集した)ログデータのサイズ$n$を変化させたときのCIPS推定量の平均二乗誤差・二乗バイアス・バリアンスの挙動"""
+    )
     return
 
 
@@ -289,9 +300,7 @@ def __(
         estimated_policy_value_list_size = []
         for _ in tqdm(range(num_runs), desc=f"num_data={num_data}..."):
             ## データ収集方策が形成する分布に従いログデータを生成
-            offline_logged_data_size = dataset_size.obtain_batch_bandit_feedback(
-                n_rounds=num_data
-            )
+            offline_logged_data_size = dataset_size.obtain_batch_bandit_feedback(n_rounds=num_data)
 
             ## ログデータ上における評価方策の行動選択確率を計算
             pi_size = eps_greedy_policy(offline_logged_data_size["expected_reward"])
@@ -302,8 +311,8 @@ def __(
                 ope_estimators=[
                     IPS(lambda_=50, estimator_name="50"),
                     IPS(lambda_=150, estimator_name="150"),
-                    IPS(estimator_name="infty")
-                ]
+                    IPS(estimator_name="infty"),
+                ],
             )
             estimated_policy_values_size = ope_size.estimate_policy_values(action_dist=pi_size)
             estimated_policy_value_list_size.append(estimated_policy_values_size)
@@ -311,7 +320,10 @@ def __(
         ## シミュレーション結果を集計する
         result_df_list_size.append(
             aggregate_simulation_results(
-                estimated_policy_value_list_size, policy_value_size, "num_data", num_data,
+                estimated_policy_value_list_size,
+                policy_value_size,
+                "num_data",
+                num_data,
             )
         )
     result_df_size = pd.concat(result_df_list_size).reset_index(level=0)
@@ -371,7 +383,10 @@ def __(num_data_list, plt, result_df_size, sns, y_label_dict):
         ax22.xaxis.set_label_coords(0.5, -0.12)
     fig1_22.legend(
         [r"$\lambda=50$", r"$\lambda=150$", r"$\lambda=\infty$ (= IPS)"],
-        fontsize=50, bbox_to_anchor=(0.5, 1.15), ncol=4, loc="center",
+        fontsize=50,
+        bbox_to_anchor=(0.5, 1.15),
+        ncol=4,
+        loc="center",
     )
     fig1_22
     return ax22, ax_list_22, fig1_22, i22, y22
@@ -380,7 +395,8 @@ def __(num_data_list, plt, result_df_size, sns, y_label_dict):
 @app.cell
 def __():
     import marimo as mo
-    return mo,
+
+    return (mo,)
 
 
 if __name__ == "__main__":

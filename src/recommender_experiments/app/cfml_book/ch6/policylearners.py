@@ -12,6 +12,7 @@ from utils import GradientBasedPolicyDataset
 @dataclass
 class IPSBasedGradientPolicyLearner:
     """勾配ベースのアプローチに基づく、メール配信経由の視聴時間を最大化するオフ方策学習."""
+
     dim_x: int
     num_actions: int
     hidden_layer_size: tuple = (30, 30, 30)
@@ -141,7 +142,6 @@ class IPSBasedGradientPolicyLearner:
         return estimated_policy_grad_arr
 
     def predict(self, dataset_test: np.ndarray) -> np.ndarray:
-
         self.nn_model.eval()
         x = torch.from_numpy(dataset_test["x"]).float()
         return self.nn_model(x).detach().numpy()
@@ -150,6 +150,7 @@ class IPSBasedGradientPolicyLearner:
 @dataclass
 class CateBasedGradientPolicyLearner:
     """勾配ベースのアプローチに基づく、プラットフォーム全体の視聴時間を最大化するオフ方策学習."""
+
     dim_x: int
     num_actions: int
     hidden_layer_size: tuple = (30, 30, 30)
@@ -282,17 +283,12 @@ class CateBasedGradientPolicyLearner:
         log_prob2 = torch.log((1.0 - pi) + self.log_eps)
         idx = torch.arange(a.shape[0], dtype=torch.long)
 
-        estimated_policy_grad_arr = (
-            current_pi[idx, a] * r / pscore_mat[idx, a]
-        ) * log_prob1[idx, a]
-        estimated_policy_grad_arr += (
-            (1 - a_mat) * (1.0 - current_pi) * (r_mat / pscore_mat) * log_prob2
-        ).sum(1)
+        estimated_policy_grad_arr = (current_pi[idx, a] * r / pscore_mat[idx, a]) * log_prob1[idx, a]
+        estimated_policy_grad_arr += ((1 - a_mat) * (1.0 - current_pi) * (r_mat / pscore_mat) * log_prob2).sum(1)
 
         return estimated_policy_grad_arr
 
     def predict(self, dataset_test: np.ndarray) -> np.ndarray:
-
         self.nn_model.eval()
         x = torch.from_numpy(dataset_test["x"]).float()
         return self.nn_model(x).detach().numpy()

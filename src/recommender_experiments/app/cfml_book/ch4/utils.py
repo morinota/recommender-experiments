@@ -61,11 +61,7 @@ def aggregate_simulation_results(
         estimates = result_df.loc[result_df["est"] == est_, "value"].values
         mean_estimates = sample_mean.loc[sample_mean["est"] == est_, "value"].values
         mean_estimates = np.ones_like(estimates) * mean_estimates
-        result_df.loc[result_df["est"] == est_, "bias"] = (
-            policy_value - mean_estimates
-        ) ** 2
-        result_df.loc[result_df["est"] == est_, "variance"] = (
-            estimates - mean_estimates
-        ) ** 2
+        result_df.loc[result_df["est"] == est_, "bias"] = (policy_value - mean_estimates) ** 2
+        result_df.loc[result_df["est"] == est_, "variance"] = (estimates - mean_estimates) ** 2
 
     return result_df

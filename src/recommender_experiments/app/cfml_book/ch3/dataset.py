@@ -26,12 +26,8 @@ def generate_synthetic_data(
     one_hot_a, one_hot_c = np.eye(num_actions), np.eye(num_clusters)
 
     # 期待報酬関数を定義する
-    g_x_c = (
-        (x - x ** 2) @ theta_g + (x ** 3 + x ** 2 - x) @ M_g @ one_hot_c + b_g
-    ) / 10
-    h_x_a = (
-        (x ** 3 + x ** 2 - x) @ theta_h + (x - x ** 2) @ M_h @ one_hot_a + b_h
-    ) / 10
+    g_x_c = ((x - x**2) @ theta_g + (x**3 + x**2 - x) @ M_g @ one_hot_c + b_g) / 10
+    h_x_a = ((x**3 + x**2 - x) @ theta_h + (x - x**2) @ M_h @ one_hot_a + b_h) / 10
     q_x_a = (1 - lambda_) * g_x_c[:, phi_a] + lambda_ * h_x_a
 
     # データ収集方策を定義する

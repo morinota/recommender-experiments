@@ -57,16 +57,10 @@ def aggregate_simulation_results(
 ) -> DataFrame:
     """各推定量の推定値から平均二乗誤差や二乗バイアス、バリアンスなどの実験結果を集計する."""
     estimation_result_df = (
-        DataFrame(estimated_policy_value_list)
-        .stack()
-        .reset_index(1)
-        .rename(columns={"level_1": "est", 0: "value"})
+        DataFrame(estimated_policy_value_list).stack().reset_index(1).rename(columns={"level_1": "est", 0: "value"})
     )
     selection_result_df = (
-        DataFrame(selection_result_list)
-        .stack()
-        .reset_index(1)
-        .rename(columns={"level_1": "est2", 0: "selection"})
+        DataFrame(selection_result_list).stack().reset_index(1).rename(columns={"level_1": "est2", 0: "selection"})
     )
     result_df = pd.concat([estimation_result_df, selection_result_df], axis=1)
     result_df[experiment_config_name] = experiment_config_value
@@ -79,12 +73,8 @@ def aggregate_simulation_results(
         estimates = result_df.loc[result_df["est"] == est_, "value"].values
         mean_estimates = sample_mean.loc[sample_mean["est"] == est_, "value"].values
         mean_estimates = np.ones_like(estimates) * mean_estimates
-        result_df.loc[result_df["est"] == est_, "bias"] = (
-            policy_value_of_pi - mean_estimates
-        ) ** 2
-        result_df.loc[result_df["est"] == est_, "variance"] = (
-            estimates - mean_estimates
-        ) ** 2
+        result_df.loc[result_df["est"] == est_, "bias"] = (policy_value_of_pi - mean_estimates) ** 2
+        result_df.loc[result_df["est"] == est_, "variance"] = (estimates - mean_estimates) ** 2
 
     return result_df
 

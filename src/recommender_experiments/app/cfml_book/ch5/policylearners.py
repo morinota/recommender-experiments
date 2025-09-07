@@ -14,6 +14,7 @@ from utils import GradientBasedPolicyDataset, RegBasedPolicyDataset, softmax
 @dataclass
 class RegBasedPolicyLearner:
     """回帰ベースのアプローチに基づくオフ方策学習"""
+
     dim_x: int
     num_actions: int
     hidden_layer_size: tuple = (30, 30, 30)
@@ -129,6 +130,7 @@ class RegBasedPolicyLearner:
 @dataclass
 class GradientBasedPolicyLearner:
     """勾配ベースのアプローチに基づくオフ方策学習"""
+
     dim_x: int
     num_actions: int
     hidden_layer_size: tuple = (30, 30, 30)
@@ -275,7 +277,6 @@ class GradientBasedPolicyLearner:
         return estimated_policy_grad_arr
 
     def predict(self, dataset_test: np.ndarray) -> np.ndarray:
-
         self.nn_model.eval()
         x = torch.from_numpy(dataset_test["x"]).float()
         return self.nn_model(x).detach().numpy()
@@ -284,6 +285,7 @@ class GradientBasedPolicyLearner:
 @dataclass
 class POTEC:
     """回帰ベースと勾配ベースのアプローチを融合した2段階方策学習"""
+
     dim_x: int
     num_actions: int
     num_clusters: int = 1
@@ -367,7 +369,7 @@ class POTEC:
         for _ in range(self.max_iter):
             loss_epoch = 0.0
             self.nn_model.train()
-            for (x, a, r, p_c, f_hat_, _) in training_data_loader:
+            for x, a, r, p_c, f_hat_, _ in training_data_loader:
                 optimizer.zero_grad()
                 pi = self.nn_model(x)
                 loss = -self._estimate_policy_gradient(
@@ -452,9 +454,7 @@ class POTEC:
         overall_policy = np.zeros(f_hat_test.shape)
         for c in range(self.num_clusters):
             if (phi_a == c).sum() > 0:
-                best_actions_given_clusters = action_set[phi_a == c][
-                    f_hat_test[:, phi_a == c].argmax(1)
-                ]
+                best_actions_given_clusters = action_set[phi_a == c][f_hat_test[:, phi_a == c].argmax(1)]
                 overall_policy[np.arange(n), best_actions_given_clusters] = pi_c[:, c]
 
         return overall_policy

@@ -6,10 +6,10 @@ poetry run pytest
 # 特定のテストファイルのみ実行
 poetry run pytest tests/test_ファイル名.py
 
-# ruff formatでコードフォーマット
+# ruff formatでコードフォーマット (src/ と tests/ をそれぞれ指定すること)
 poetry run ruff format src/
 poetry run ruff format tests/
-# importの自動整理
+# importの自動整理 (src/ と tests/ をそれぞれ指定すること)
 poetry run ruff check --select I --fix src/
 poetry run ruff check --select I --fix tests/
 ```

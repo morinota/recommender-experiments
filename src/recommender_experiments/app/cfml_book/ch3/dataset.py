@@ -1,7 +1,6 @@
 import numpy as np
 from sklearn.utils import check_random_state
-
-from utils import sample_action_fast, softmax, eps_greedy_policy
+from utils import eps_greedy_policy, sample_action_fast, softmax
 
 
 def generate_synthetic_data(

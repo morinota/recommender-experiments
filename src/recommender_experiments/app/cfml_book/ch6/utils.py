@@ -2,10 +2,10 @@ from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
-from pandas import DataFrame
-from sklearn.utils import check_random_state
-from scipy.stats import rankdata
 import torch
+from pandas import DataFrame
+from scipy.stats import rankdata
+from sklearn.utils import check_random_state
 
 
 def sample_action_fast(pi: np.ndarray, random_state: int = 12345) -> np.ndarray:

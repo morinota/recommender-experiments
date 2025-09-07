@@ -17,15 +17,15 @@ def __():
     import warnings
     warnings.filterwarnings('ignore')
 
+    import japanize_matplotlib
+    import matplotlib.pyplot as plt
     import numpy as np
     import pandas as pd
-    from pandas import DataFrame
-    from tqdm import tqdm
     import seaborn as sns
-    import matplotlib.pyplot as plt
-    import japanize_matplotlib
+    from pandas import DataFrame
     from sklearn.linear_model import Ridge
     from sklearn.utils import check_random_state
+    from tqdm import tqdm
     plt.style.use('ggplot')
     linestyle_dict = {"se": "-", "bias": "--", "variance": "dotted"}
     y_label_dict = {"se": "左図：平均二乗誤差", "bias": "中図：二乗バイアス", "variance": "右図：バリアンス"}
@@ -34,14 +34,14 @@ def __():
     import obp
     from obp.dataset import (
         SyntheticBanditDatasetWithActionEmbeds as SyntheticBanditDataset,
-        polynomial_reward_function, logistic_polynomial_reward_function,
     )
-    from obp.ope import (
-        OffPolicyEvaluation,
-        RegressionModel,
-        SwitchDoublyRobust as SwitchDR
+    from obp.dataset import (
+        logistic_polynomial_reward_function,
+        polynomial_reward_function,
     )
-    from utils import eps_greedy_policy, aggregate_simulation_results, aggregate_simulation_results_lam
+    from obp.ope import OffPolicyEvaluation, RegressionModel
+    from obp.ope import SwitchDoublyRobust as SwitchDR
+    from utils import aggregate_simulation_results, aggregate_simulation_results_lam, eps_greedy_policy
     return (
         DataFrame,
         OffPolicyEvaluation,

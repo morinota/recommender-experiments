@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
 import numpy as np
-from sklearn.utils import check_random_state
 import torch
+from sklearn.utils import check_random_state
 
 
 def sample_action_fast(pi: np.ndarray, random_state: int = 12345) -> np.ndarray:

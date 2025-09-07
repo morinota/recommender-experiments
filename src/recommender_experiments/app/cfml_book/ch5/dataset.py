@@ -1,7 +1,6 @@
 import numpy as np
 from sklearn.utils import check_random_state
-
-from utils import sample_action_fast, sigmoid, logging_policy
+from utils import logging_policy, sample_action_fast, sigmoid
 
 
 def generate_synthetic_data(

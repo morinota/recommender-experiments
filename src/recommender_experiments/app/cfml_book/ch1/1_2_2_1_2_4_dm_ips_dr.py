@@ -21,16 +21,16 @@ def _():
     import warnings
     warnings.filterwarnings('ignore')
 
+    import japanize_matplotlib
+    import matplotlib.pyplot as plt
     import numpy as np
     import pandas as pd
+    import seaborn as sns
     from pandas import DataFrame
-    from tqdm import tqdm
     from sklearn.linear_model import LogisticRegression, Ridge
     from sklearn.neural_network import MLPClassifier, MLPRegressor
     from sklearn.utils import check_random_state
-    import seaborn as sns
-    import matplotlib.pyplot as plt
-    import japanize_matplotlib
+    from tqdm import tqdm
     plt.style.use('ggplot')
     y_label_dict = {"se": "左図：平均二乗誤差", "bias": "中図：二乗バイアス", "variance": "右図：バリアンス"}
 
@@ -38,16 +38,24 @@ def _():
     import obp
     from obp.dataset import (
         SyntheticBanditDatasetWithActionEmbeds as SyntheticBanditDataset,
+    )
+    from obp.dataset import (
         logistic_polynomial_reward_function,
+    )
+    from obp.ope import (
+        DirectMethod as DM,
+    )
+    from obp.ope import (
+        DoublyRobust as DR,
+    )
+    from obp.ope import (
+        InverseProbabilityWeighting as IPS,
     )
     from obp.ope import (
         OffPolicyEvaluation,
         RegressionModel,
-        InverseProbabilityWeighting as IPS,
-        DirectMethod as DM,
-        DoublyRobust as DR,
     )
-    from utils import eps_greedy_policy, aggregate_simulation_results
+    from utils import aggregate_simulation_results, eps_greedy_policy
     return (
         DM,
         DR,

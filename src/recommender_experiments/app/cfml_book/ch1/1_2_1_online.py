@@ -15,25 +15,25 @@ def __():
     import warnings
     warnings.filterwarnings('ignore')
 
+    import japanize_matplotlib
+    import matplotlib.pyplot as plt
     import numpy as np
     import pandas as pd
-    from pandas import DataFrame
-    from tqdm import tqdm
-    from sklearn.utils import check_random_state
     import seaborn as sns
-    import matplotlib.pyplot as plt
-    import japanize_matplotlib
+    from pandas import DataFrame
+    from sklearn.utils import check_random_state
+    from tqdm import tqdm
     plt.style.use('ggplot')
 
     # import open bandit pipeline (obp)
     import obp
-    from obp.dataset import (
-        SyntheticBanditDatasetWithActionEmbeds as SyntheticBanditDataset,
-        linear_reward_function
+    from obp.dataset import SyntheticBanditDatasetWithActionEmbeds as SyntheticBanditDataset
+    from obp.dataset import linear_reward_function
+    from obp.ope import (
+        InverseProbabilityWeighting as IPS,
     )
     from obp.ope import (
         OffPolicyEvaluation,
-        InverseProbabilityWeighting as IPS,
     )
     from obp.utils import softmax
     return (

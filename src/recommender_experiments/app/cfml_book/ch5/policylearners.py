@@ -1,15 +1,14 @@
-from copy import copy
 from collections import OrderedDict
+from copy import copy
 from dataclasses import dataclass
 
 import numpy as np
-from sklearn.utils import check_random_state
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from sklearn.utils import check_random_state
 from torch.optim.lr_scheduler import ExponentialLR
-
-from utils import softmax, RegBasedPolicyDataset, GradientBasedPolicyDataset
+from utils import GradientBasedPolicyDataset, RegBasedPolicyDataset, softmax
 
 
 @dataclass

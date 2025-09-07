@@ -1,7 +1,6 @@
 import numpy as np
 from sklearn.utils import check_random_state
-
-from utils import sample_action_fast, sigmoid, softmax, eps_greedy_policy
+from utils import eps_greedy_policy, sample_action_fast, sigmoid, softmax
 
 
 def generate_synthetic_data(
@@ -23,7 +22,7 @@ def generate_synthetic_data(
     """ランキングにおけるオフ方策評価におけるログデータを生成する."""
     random_ = check_random_state(random_state)
     x, e_a = random_.normal(size=(num_data, dim_context)), np.eye(num_actions)
-    base_q_func = sigmoid((x ** 3 + x ** 2 - x) @ theta + (x - x ** 2) @ M @ e_a + b)
+    base_q_func = sigmoid((x**3 + x**2 - x) @ theta + (x - x**2) @ M @ e_a + b)
 
     # ユーザ行動モデルを抽出する
     user_behavior_matrix = np.r_[
@@ -34,9 +33,7 @@ def generate_synthetic_data(
     user_behavior_idx = random_.choice(3, p=p, size=num_data)
     C_ = user_behavior_matrix[user_behavior_idx]
 
-    user_behavior_matrix_rand = random_.choice(
-        [-1, 0, 1], p=[0.2, 0.4, 0.4], size=7 * K * K
-    ).reshape((7, K, K))
+    user_behavior_matrix_rand = random_.choice([-1, 0, 1], p=[0.2, 0.4, 0.4], size=7 * K * K).reshape((7, K, K))
     user_behavior_rand_idx = random_.choice(7, size=num_data)
     C_rand = user_behavior_matrix_rand[user_behavior_rand_idx]
 
@@ -60,9 +57,7 @@ def generate_synthetic_data(
         q_func_factual = base_q_func[idx, a_k[:, k]] / K
         for l in range(K):
             if l != k:
-                q_func_factual += (
-                    C[:, k, l] * W[k, l] * base_q_func[idx, a_k[:, l]] / np.abs(l - k)
-                )
+                q_func_factual += C[:, k, l] * W[k, l] * base_q_func[idx, a_k[:, l]] / np.abs(l - k)
         q_k[:, k] = q_func_factual
         r_k[:, k] = random_.normal(q_func_factual, scale=reward_noise)
 

@@ -7,7 +7,11 @@ poetry run pytest
 poetry run pytest tests/test_ファイル名.py
 
 # ruff formatでコードフォーマット
-poetry run ruff format .
+poetry run ruff format src/
+poetry run ruff format tests/
+# importの自動整理
+poetry run ruff check --select I --fix src/
+poetry run ruff check --select I --fix tests/
 ```
 
 ## 単体テストのスタイルについて

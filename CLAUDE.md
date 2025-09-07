@@ -29,3 +29,68 @@ poetry run ruff check --select I --fix tests/
 - 基本的にはPEP8に従うように記述すること。
 - 引数名と変数名が一致する場合は、基本的には位置引数で渡すこと(キーワード引数にしても情報量が増えないため)。
   - 例: `self.sut.select_actions(context, available_actions, k)`
+
+## marimoを使った開発方法
+
+### 基本方針
+- **探索・分析はmarimoノートブック**、**再利用可能なコードはsrc/モジュール**
+- Jupyterではなくmarimoを使用（Gitフレンドリー、リアクティブ実行）
+- ノートブックは純粋なPythonファイルとして管理
+
+### marimoコマンド
+```bash
+# ノートブックの編集
+poetry run marimo edit notebooks/explore.py
+
+# ファイル監視付き編集（外部エディタとの連携）
+poetry run marimo edit notebooks/explore.py --watch
+
+# アプリとして実行（コード非表示）
+poetry run marimo run notebooks/report.py
+
+# スクリプトとして実行（自動化用）
+poetry run python notebooks/analysis.py
+
+# 引数付き実行
+poetry run marimo run notebooks/report.py -- --date 2024-01-01
+poetry run python notebooks/report.py --date 2024-01-01
+
+# HTML形式でエクスポート
+poetry run marimo export html notebooks/report.py -o report.html
+```
+
+### marimoベストプラクティス
+- **小さく集中したセル**で構成
+- **リアクティブ実行**を活用（手動実行は不要）
+- **UIエレメントには必ずlabelを設定**
+- **`mo.stop()`で条件付き実行**を制御
+- **重い処理はキャッシュ**を活用
+
+### データ表示・可視化
+```python
+# インタラクティブデータフレーム
+mo.ui.dataframe(df, page_size=10)
+
+# Plotlyチャート（そのまま表示）
+import plotly.express as px
+chart = px.bar(df, ...)
+
+# インタラクティブ選択にはAltairを推奨
+mo.ui.altair_chart(...)
+```
+
+### スクリプト実行パターン
+```python
+import marimo as mo
+
+if mo.running_in_notebook():
+    # marimo edit/run時のデフォルト値
+    date = "2024-01-01"
+else:
+    # スクリプト実行時はコマンドライン引数から取得
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--date", required=True)
+    args = parser.parse_args()
+    date = args.date
+```

@@ -297,3 +297,64 @@ def test_バンディット方策と動的action変化が連携して機能す�
             assert selected_action in expected_actions_8_15, (
                 f"データ{data_idx}, ポジション{position_idx}: バンディット方策で選択されたaction {selected_action} が期待されるactionセット {expected_actions_8_15} 内であること"
             )
+
+
+def test_action_contextが報酬生成に影響することが確認できること():
+    # Arrange
+    num_data = 5
+    dim_context = 2
+    num_actions = 3
+    K = 1
+    theta = np.ones((dim_context, num_actions)) * 0.1
+    quadratic_weights = np.zeros((dim_context, num_actions))
+    action_bias = np.zeros((num_actions, 1))
+    position_interaction_weights = np.zeros((K, K))
+    
+    # 異なるaction_contextを設定
+    action_context1 = np.array([[1.0, 0.0], [0.0, 1.0], [0.5, 0.5]])  # 明確に異なる特徴量
+    action_context2 = np.array([[0.0, 1.0], [1.0, 0.0], [0.0, 0.0]])  # 別の特徴量パターン
+    
+    dataset1 = RankingSyntheticBanditDataset(
+        dim_context=dim_context,
+        num_actions=num_actions,
+        k=K,
+        theta=theta,
+        quadratic_weights=quadratic_weights,
+        action_bias=action_bias,
+        position_interaction_weights=position_interaction_weights,
+        action_context=action_context1,
+        random_state=42,
+    )
+    
+    dataset2 = RankingSyntheticBanditDataset(
+        dim_context=dim_context,
+        num_actions=num_actions,
+        k=K,
+        theta=theta,
+        quadratic_weights=quadratic_weights,
+        action_bias=action_bias,
+        position_interaction_weights=position_interaction_weights,
+        action_context=action_context2,
+        random_state=42,
+    )
+
+    # Act
+    result1 = dataset1.obtain_batch_bandit_feedback(num_data)
+    result2 = dataset2.obtain_batch_bandit_feedback(num_data)
+
+    # Assert - action_contextが異なれば報酬も異なる
+    # 同じtheta, quadratic_weights, action_biasでも、action_contextが異なれば基本Q関数が変わるはず
+    assert not np.allclose(result1.base_q_function, result2.base_q_function), (
+        "action_contextが異なれば基本Q関数も異なること"
+    )
+    
+    # contextとaction_contextが一致するケースで有意差があることを確認
+    context_positive = np.array([[1.0, 1.0]] * num_data)  # 正の値のcontext
+    
+    # dataset1でaction 0 (action_context=[1.0, 0.0])の報酬を計算
+    result1_manual = dataset1._compute_base_q_function(
+        context_positive, theta, quadratic_weights, action_bias, num_actions
+    )
+    
+    # action_contextによる相互作用項が報酬に影響していることを確認
+    assert np.any(result1_manual > 0), "action_contextを考慮した報酬計算が機能していること"

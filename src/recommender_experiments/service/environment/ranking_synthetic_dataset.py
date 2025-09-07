@@ -71,6 +71,7 @@ class RankingSyntheticBanditDataset(BaseModel):
         k (int): ランキングで表示する上位ポジション数（推薦リストの長さ）
         action_context (np.ndarray, shape: (num_actions, action_dim)):
                       各行動のコンテキスト特徴量
+                      期待報酬の計算においてcontextとの相互作用項として使用される
 
         [期待報酬関数の設定値群]
         theta (np.ndarray, shape: (dim_context, num_actions)):
@@ -222,7 +223,25 @@ class RankingSyntheticBanditDataset(BaseModel):
         # 非線形変換を適用してQ関数を計算
         linear_term = (x**3 + x**2 - x) @ theta
         quadratic_term = (x - x**2) @ quadratic_weights @ e_a
-        return sigmoid(linear_term + quadratic_term + action_bias.T)
+        
+        # action_contextを活用した項を追加
+        # action_context特徴量の非線形変換をcontextと相互作用させる
+        num_data = x.shape[0]
+        action_context_term = np.zeros((num_data, num_actions))
+        
+        for i in range(num_data):
+            for a in range(num_actions):
+                # contextとaction_contextの相互作用項
+                context_i = x[i]  # (dim_context,)
+                action_feat = self.action_context[a]  # (action_dim,)
+                
+                # 簡単な相互作用: contextの平均とaction特徴量の内積
+                # より複雑な相互作用も可能だが、まずは単純なものから
+                context_summary = np.mean(context_i)  # contextを1次元に要約
+                action_summary = np.mean(action_feat)  # action特徴量を1次元に要約
+                action_context_term[i, a] = context_summary * action_summary * 0.5  # スケール調整
+        
+        return sigmoid(linear_term + quadratic_term + action_context_term + action_bias.T)
 
     def _create_user_behavior_matrices(self, K: int) -> np.ndarray:
         """3種類のユーザ行動パターンの行列を作成する.

@@ -1,4 +1,5 @@
 import numpy as np
+
 from recommender_experiments.service.environment.synthetic_environment_strategy import SyntheticEnvironmentStrategy
 from recommender_experiments.service.opl.policy_strategy_interface import PolicyStrategyInterface
 from recommender_experiments.service.synthetic_bandit_feedback import BanditFeedbackModel

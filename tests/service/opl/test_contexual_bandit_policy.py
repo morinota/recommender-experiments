@@ -1,9 +1,9 @@
 import numpy as np
+from obp.policy import BernoulliTS
+
 from recommender_experiments.service.opl.contexual_bandit_policy import (
     ContextualBanditPolicy,
 )
-from obp.policy import BernoulliTS
-
 from recommender_experiments.service.synthetic_bandit_feedback import (
     BanditFeedbackModel,
 )

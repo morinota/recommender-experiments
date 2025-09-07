@@ -1,6 +1,7 @@
-from recommender_experiments.service.opl.shared_parameter_nn_model import SharedParameterNNPolicyLearner
 import numpy as np
 import torch
+
+from recommender_experiments.service.opl.shared_parameter_nn_model import SharedParameterNNPolicyLearner
 
 
 def test_TwoTowerモデルが正しく初期化されること():

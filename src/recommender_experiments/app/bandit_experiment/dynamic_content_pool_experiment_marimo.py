@@ -9,6 +9,7 @@ app = marimo.App(width="medium")
 @app.cell
 def _():
     import marimo as mo
+
     return (mo,)
 
 
@@ -24,7 +25,7 @@ def _(mo):
     ## 実験概要
     - **動的コンテンツプール**: 実験期間中にactionセットが3段階で変化
     - **アルゴリズム比較**: Context-free vs Contextual Thompson Sampling
-    - **評価指標**: 累積regret、瞬時regret、段階別性能分析
+    - **評価指標**: 累積報酬、瞬時報酬、段階別性能分析
     """
     )
     return
@@ -48,8 +49,8 @@ def _(mo):
     # 可視化の設定
     plt.style.use("seaborn-whitegrid")
     sns.set_palette("husl")
-    plt.rcParams['figure.figsize'] = (12, 8)
-    plt.rcParams['font.size'] = 10
+    plt.rcParams["figure.figsize"] = (12, 8)
+    plt.rcParams["font.size"] = 10
 
     mo.md("✅ ライブラリのインポート完了")
     return (
@@ -75,38 +76,19 @@ def _(mo):
 @app.cell
 def _(mo):
     # インタラクティブな実験設定
-    num_trials_slider = mo.ui.slider(
-        start=100, stop=2000, step=100, value=1000,
-        label="実験試行数"
-    )
+    num_trials_slider = mo.ui.slider(start=100, stop=2000, step=100, value=1000, label="実験試行数")
 
-    num_actions_initial_slider = mo.ui.slider(
-        start=10, stop=30, step=5, value=20,
-        label="初期action数"
-    )
+    num_actions_initial_slider = mo.ui.slider(start=10, stop=30, step=5, value=20, label="初期action数")
 
-    num_actions_total_slider = mo.ui.slider(
-        start=30, stop=100, step=10, value=50,
-        label="最大action数"
-    )
+    num_actions_total_slider = mo.ui.slider(start=30, stop=100, step=10, value=50, label="最大action数")
 
-    k_slider = mo.ui.slider(
-        start=2, stop=5, step=1, value=3,
-        label="ランキング長"
-    )
+    k_slider = mo.ui.slider(start=2, stop=5, step=1, value=3, label="ランキング長")
 
-    dim_context_slider = mo.ui.slider(
-        start=3, stop=10, step=1, value=5,
-        label="コンテキスト次元"
-    )
+    dim_context_slider = mo.ui.slider(start=3, stop=10, step=1, value=5, label="コンテキスト次元")
 
-    settings_form = mo.vstack([
-        num_trials_slider,
-        num_actions_initial_slider, 
-        num_actions_total_slider,
-        k_slider,
-        dim_context_slider
-    ])
+    settings_form = mo.vstack(
+        [num_trials_slider, num_actions_initial_slider, num_actions_total_slider, k_slider, dim_context_slider]
+    )
 
     return (
         dim_context_slider,
@@ -197,19 +179,21 @@ def _(action_churn_schedule, mo, pd):
     # スケジュールの表示
     schedule_info = []
     for trial_start, actions in action_churn_schedule.items():
-        schedule_stage_end = min([t for t in action_churn_schedule.keys() if t > trial_start] + [list(action_churn_schedule.keys())[-1] + 100])
-        schedule_info.append({
-            "開始Trial": trial_start,
-            "Action数": len(actions),
-            "Action例": str(actions[:5]) + ("..." if len(actions) > 5 else "")
-        })
+        schedule_stage_end = min(
+            [t for t in action_churn_schedule.keys() if t > trial_start]
+            + [list(action_churn_schedule.keys())[-1] + 100]
+        )
+        schedule_info.append(
+            {
+                "開始Trial": trial_start,
+                "Action数": len(actions),
+                "Action例": str(actions[:5]) + ("..." if len(actions) > 5 else ""),
+            }
+        )
 
     schedule_df = pd.DataFrame(schedule_info)
 
-    mo.vstack([
-        mo.md("## 📅 Action変更スケジュール"),
-        mo.ui.table(schedule_df)
-    ])
+    mo.vstack([mo.md("## 📅 Action変更スケジュール"), mo.ui.table(schedule_df)])
     return
 
 
@@ -298,10 +282,14 @@ def _(
             optimal_actions = available_actions[optimal_actions_idx]
 
             # 実際の報酬取得
-            selected_rewards = [synthetic_data.base_q_function[0, action_id] 
-                              for action_id in selected_actions if action_id < len(synthetic_data.base_q_function[0])]
-            optimal_rewards = [synthetic_data.base_q_function[0, action_id] 
-                             for i, action_id in enumerate(optimal_actions) if i < K]
+            selected_rewards = [
+                synthetic_data.base_q_function[0, action_id]
+                for action_id in selected_actions
+                if action_id < len(synthetic_data.base_q_function[0])
+            ]
+            optimal_rewards = [
+                synthetic_data.base_q_function[0, action_id] for i, action_id in enumerate(optimal_actions) if i < K
+            ]
 
             # regret計算
             instant_reward = sum(selected_rewards) if selected_rewards else 0.0
@@ -313,10 +301,10 @@ def _(
 
             # 結果記録
             results.add_trial_result(selected_actions, instant_regret, instant_reward)
-            
+
             # 進捗表示
             if (trial + 1) % 200 == 0:
-                print(f"  Trial {trial + 1}: 平均Regret = {results.get_average_regret():.4f}")
+                print(f"  Trial {trial + 1}: 平均報酬 = {results.get_average_reward():.4f}")
 
         return results
 
@@ -346,50 +334,33 @@ def _(
 ):
     # 実験実行開始
     mo.md("⏳ 実験実行中...")
-    
+
     print("🧪 実験開始")
 
     # Context-free Thompson Sampling
     print("🚀 Context-free Thompson Sampling実験開始...")
     ts_contextfree = ThompsonSamplingContextFree(
-        num_actions=NUM_ACTIONS_TOTAL,
-        k=K,
-        alpha=1.0,
-        beta=1.0,
-        random_state=RANDOM_STATE
+        num_actions=NUM_ACTIONS_TOTAL, k=K, alpha=1.0, beta=1.0, random_state=RANDOM_STATE
     )
 
     results_contextfree = run_online_bandit_experiment(
-        dataset_env,
-        "Thompson Sampling (Context-free)",
-        ts_contextfree,
-        NUM_TRIALS,
-        action_churn_schedule
+        dataset_env, "Thompson Sampling (Context-free)", ts_contextfree, NUM_TRIALS, action_churn_schedule
     )
-    print(f"✅ Context-free完了: 累積Regret {results_contextfree.get_final_cumulative_regret():.2f}")
+    print(f"✅ Context-free完了: 累積報酬 {results_contextfree.get_final_cumulative_reward():.2f}")
 
-    # Contextual Thompson Sampling  
+    # Contextual Thompson Sampling
     print("🚀 Contextual Thompson Sampling実験開始...")
     ts_contextual = ThompsonSamplingRanking(
-        num_actions=NUM_ACTIONS_TOTAL,
-        k=K,
-        dim_context=DIM_CONTEXT,
-        alpha=1.0,
-        beta=1.0,
-        random_state=RANDOM_STATE
+        num_actions=NUM_ACTIONS_TOTAL, k=K, dim_context=DIM_CONTEXT, alpha=1.0, beta=1.0, random_state=RANDOM_STATE
     )
 
     results_contextual = run_online_bandit_experiment(
-        dataset_env,
-        "Thompson Sampling (Contextual)",
-        ts_contextual,
-        NUM_TRIALS,
-        action_churn_schedule
+        dataset_env, "Thompson Sampling (Contextual)", ts_contextual, NUM_TRIALS, action_churn_schedule
     )
-    print(f"✅ Contextual完了: 累積Regret {results_contextual.get_final_cumulative_regret():.2f}")
+    print(f"✅ Contextual完了: 累積報酬 {results_contextual.get_final_cumulative_reward():.2f}")
 
     all_results = [results_contextfree, results_contextual]
-    
+
     print("✅ 実験完了!")
     mo.md("✅ 実験完了!")
     return all_results, results_contextfree, results_contextual
@@ -400,19 +371,18 @@ def _(all_results, mo, pd):
     # 結果サマリー表示
     summary_data = []
     for summary_result in all_results:
-        summary_data.append({
-            "アルゴリズム": summary_result.algorithm_name,
-            "最終累積Regret": f"{summary_result.get_final_cumulative_regret():.2f}",
-            "平均Regret": f"{summary_result.get_average_regret():.4f}",
-            "最終累積報酬": f"{summary_result.get_final_cumulative_reward():.2f}"
-        })
+        summary_data.append(
+            {
+                "アルゴリズム": summary_result.algorithm_name,
+                "最終累積報酬": f"{summary_result.get_final_cumulative_reward():.2f}",
+                "平均報酬": f"{summary_result.get_average_reward():.4f}",
+                "平均Regret": f"{summary_result.get_average_regret():.4f}",
+            }
+        )
 
     summary_df = pd.DataFrame(summary_data)
 
-    mo.vstack([
-        mo.md("## 📊 実験結果サマリー"),
-        mo.ui.table(summary_df)
-    ])
+    mo.vstack([mo.md("## 📊 実験結果サマリー"), mo.ui.table(summary_df)])
     return
 
 
@@ -421,23 +391,23 @@ def _(action_churn_schedule, all_results, pd, plt):
     # メイン結果可視化
     fig, axes = plt.subplots(2, 2, figsize=(16, 12))
 
-    # 1. 累積Regretの推移
+    # 1. 累積報酬の推移 (主要指標)
     ax1 = axes[0, 0]
     for plot_result in all_results:
-        ax1.plot(plot_result.cumulative_regret, label=plot_result.algorithm_name, alpha=0.8, linewidth=2)
+        ax1.plot(plot_result.cumulative_reward, label=plot_result.algorithm_name, alpha=0.8, linewidth=2)
     ax1.set_xlabel("Trial")
-    ax1.set_ylabel("Cumulative Regret")
-    ax1.set_title("累積Regretの推移")
+    ax1.set_ylabel("Cumulative Reward")
+    ax1.set_title("累積報酬の推移")
     ax1.legend()
     ax1.grid(True, alpha=0.3)
 
-    # 2. 累積報酬の推移
+    # 2. 累積Regretの推移 (参考指標)
     ax2 = axes[0, 1]
     for plot_result in all_results:
-        ax2.plot(plot_result.cumulative_reward, label=plot_result.algorithm_name, alpha=0.8, linewidth=2)
+        ax2.plot(plot_result.cumulative_regret, label=plot_result.algorithm_name, alpha=0.8, linewidth=2)
     ax2.set_xlabel("Trial")
-    ax2.set_ylabel("Cumulative Reward")
-    ax2.set_title("累積報酬の推移")
+    ax2.set_ylabel("Cumulative Regret")
+    ax2.set_title("累積Regretの推移 (参考)")
     ax2.legend()
     ax2.grid(True, alpha=0.3)
 
@@ -501,8 +471,7 @@ def _(
 ):
     # 段階別性能分析
     def analyze_performance_by_stage(
-        results: OnlineEvaluationResults, 
-        action_churn_schedule_param: Dict[int, List[int]]
+        results: OnlineEvaluationResults, action_churn_schedule_param: Dict[int, List[int]]
     ) -> pd.DataFrame:
         """段階別の性能を分析する"""
         stages = []
@@ -515,15 +484,17 @@ def _(
             stage_regrets = results.instant_regret[stage_start:stage_end]
             stage_rewards = results.instant_reward[stage_start:stage_end]
 
-            stages.append({
-                "Stage": i + 1,
-                "開始Trial": stage_start,
-                "終了Trial": stage_end,
-                "Action数": len(action_churn_schedule_param[stage_start]),
-                "平均Regret": np.mean(stage_regrets) if stage_regrets else 0,
-                "平均報酬": np.mean(stage_rewards) if stage_rewards else 0,
-                "アルゴリズム": results.algorithm_name,
-            })
+            stages.append(
+                {
+                    "Stage": i + 1,
+                    "開始Trial": stage_start,
+                    "終了Trial": stage_end,
+                    "Action数": len(action_churn_schedule_param[stage_start]),
+                    "平均報酬": np.mean(stage_rewards) if stage_rewards else 0,
+                    "平均Regret": np.mean(stage_regrets) if stage_regrets else 0,
+                    "アルゴリズム": results.algorithm_name,
+                }
+            )
 
         return pd.DataFrame(stages)
 
@@ -535,10 +506,7 @@ def _(
 
     combined_stage_analysis = pd.concat(stage_analysis_list, ignore_index=True)
 
-    mo.vstack([
-        mo.md("## 📈 段階別性能分析"),
-        mo.ui.table(combined_stage_analysis.round(4))
-    ])
+    mo.vstack([mo.md("## 📈 段階別性能分析"), mo.ui.table(combined_stage_analysis.round(4))])
     return (combined_stage_analysis,)
 
 
@@ -547,24 +515,24 @@ def _(combined_stage_analysis, plt):
     # 段階別性能の可視化
     fig2, axes2 = plt.subplots(1, 2, figsize=(16, 6))
 
-    # 段階別平均Regret
+    # 段階別平均報酬 (主要指標)
     ax2_1 = axes2[0]
-    pivot_regret = combined_stage_analysis.pivot(index="Stage", columns="アルゴリズム", values="平均Regret")
-    pivot_regret.plot(kind="bar", ax=ax2_1, alpha=0.8, width=0.7)
+    pivot_reward = combined_stage_analysis.pivot(index="Stage", columns="アルゴリズム", values="平均報酬")
+    pivot_reward.plot(kind="bar", ax=ax2_1, alpha=0.8, width=0.7)
     ax2_1.set_xlabel("Stage")
-    ax2_1.set_ylabel("Average Regret")
-    ax2_1.set_title("段階別平均Regret")
+    ax2_1.set_ylabel("Average Reward")
+    ax2_1.set_title("段階別平均報酬")
     ax2_1.legend(title="アルゴリズム", bbox_to_anchor=(1.05, 1), loc="upper left")
     ax2_1.grid(True, alpha=0.3)
     ax2_1.set_xticklabels([f"Stage {i}" for i in range(1, 4)], rotation=0)
 
-    # 段階別平均報酬
+    # 段階別平均Regret (参考指標)
     ax2_2 = axes2[1]
-    pivot_reward = combined_stage_analysis.pivot(index="Stage", columns="アルゴリズム", values="平均報酬")
-    pivot_reward.plot(kind="bar", ax=ax2_2, alpha=0.8, width=0.7)
+    pivot_regret = combined_stage_analysis.pivot(index="Stage", columns="アルゴリズム", values="平均Regret")
+    pivot_regret.plot(kind="bar", ax=ax2_2, alpha=0.8, width=0.7)
     ax2_2.set_xlabel("Stage")
-    ax2_2.set_ylabel("Average Reward")
-    ax2_2.set_title("段階別平均報酬")
+    ax2_2.set_ylabel("Average Regret")
+    ax2_2.set_title("段階別平均Regret (参考)")
     ax2_2.legend(title="アルゴリズム", bbox_to_anchor=(1.05, 1), loc="upper left")
     ax2_2.grid(True, alpha=0.3)
     ax2_2.set_xticklabels([f"Stage {i}" for i in range(1, 4)], rotation=0)
@@ -586,8 +554,7 @@ def _(
 ):
     # Action選択パターン分析
     def analyze_action_selection_patterns(
-        results: OnlineEvaluationResults, 
-        action_churn_schedule_param: Dict[int, List[int]]
+        results: OnlineEvaluationResults, action_churn_schedule_param: Dict[int, List[int]]
     ) -> dict:
         """action選択パターンを分析する"""
         pattern_analysis = {}
@@ -629,22 +596,21 @@ def _(
     for pattern_result in all_results:
         patterns = analyze_action_selection_patterns(pattern_result, action_churn_schedule)
         for stage_name, pattern in patterns.items():
-            sorted_rates = sorted(pattern['action_selection_rates'].items(), key=lambda x: x[1], reverse=True)
+            sorted_rates = sorted(pattern["action_selection_rates"].items(), key=lambda x: x[1], reverse=True)
             top_actions = sorted_rates[:3]  # トップ3のみ表示
 
-            pattern_results.append({
-                "アルゴリズム": pattern_result.algorithm_name,
-                "Stage": stage_name.replace("Stage_", ""),
-                "Diversity Score": f"{pattern['diversity_score']:.3f}",
-                "Top3 Actions": str([(action_id, f'{rate:.3f}') for action_id, rate in top_actions])
-            })
+            pattern_results.append(
+                {
+                    "アルゴリズム": pattern_result.algorithm_name,
+                    "Stage": stage_name.replace("Stage_", ""),
+                    "Diversity Score": f"{pattern['diversity_score']:.3f}",
+                    "Top3 Actions": str([(action_id, f"{rate:.3f}") for action_id, rate in top_actions]),
+                }
+            )
 
     pattern_df = pd.DataFrame(pattern_results)
 
-    mo.vstack([
-        mo.md("## 🎯 Action選択パターン分析"),
-        mo.ui.table(pattern_df)
-    ])
+    mo.vstack([mo.md("## 🎯 Action選択パターン分析"), mo.ui.table(pattern_df)])
     return
 
 
@@ -659,12 +625,16 @@ def _(
     results_contextual,
 ):
     # 最終まとめ
-    better_algorithm = "Context-free" if results_contextfree.get_final_cumulative_regret() < results_contextual.get_final_cumulative_regret() else "Contextual"
+    better_algorithm = (
+        "Context-free"
+        if results_contextfree.get_final_cumulative_reward() > results_contextual.get_final_cumulative_reward()
+        else "Contextual"
+    )
 
     stages_info = ""
     for trial_start_idx, action_ids in action_churn_schedule.items():
         stage_end = min([t for t in action_churn_schedule.keys() if t > trial_start_idx] + [NUM_TRIALS])
-        stages_info += f"- Trial {trial_start_idx}-{stage_end-1}: {len(action_ids)}個のコンテンツ\n"
+        stages_info += f"- Trial {trial_start_idx}-{stage_end - 1}: {len(action_ids)}個のコンテンツ\n"
 
     final_summary = mo.md(f"""
     ## 🎉 実験結果まとめ
@@ -678,8 +648,8 @@ def _(
 
     ### 主要な発見
     - **優秀なアルゴリズム**: {better_algorithm} Thompson Sampling
-    - **Context-free**: 累積Regret {results_contextfree.get_final_cumulative_regret():.2f}
-    - **Contextual**: 累積Regret {results_contextual.get_final_cumulative_regret():.2f}
+    - **Context-free**: 累積報酬 {results_contextfree.get_final_cumulative_reward():.2f}
+    - **Contextual**: 累積報酬 {results_contextual.get_final_cumulative_reward():.2f}
 
     ### 考察
     {"- シンプルなContext-freeアプローチが動的環境で頑健性を発揮" if better_algorithm == "Context-free" else "- コンテキスト情報が動的環境での適応に有効"}

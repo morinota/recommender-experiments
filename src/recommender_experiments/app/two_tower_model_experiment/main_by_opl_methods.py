@@ -1,7 +1,9 @@
 from pathlib import Path
-from recommender_experiments.service.simulator.opl_simulator import run_opl_multiple_simulations_in_parallel
-import recommender_experiments.service.utils.logging_policies as logging_policies
+
 import polars as pl
+
+import recommender_experiments.service.utils.logging_policies as logging_policies
+from recommender_experiments.service.simulator.opl_simulator import run_opl_multiple_simulations_in_parallel
 
 RESULT_DIR = Path("logs/two_tower_model_experiment")
 

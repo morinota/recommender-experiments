@@ -1,6 +1,7 @@
 from obp.dataset import OpenBanditDataset
+from obp.ope import InverseProbabilityWeighting as IPW
+from obp.ope import OffPolicyEvaluation
 from obp.policy import BernoulliTS
-from obp.ope import OffPolicyEvaluation, InverseProbabilityWeighting as IPW
 
 # (1) データの読み込みと前処理
 ## 「全アイテムキャンペーン」においてRandom policyが集めたログデータを読み込む(これらは引数に設定)

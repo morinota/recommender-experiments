@@ -1,6 +1,8 @@
 from typing import Optional
-from obp.policy import LogisticTS
+
 import numpy as np
+from obp.policy import LogisticTS
+
 from recommender_experiments.service.opl.policy_strategy_interface import (
     PolicyStrategyInterface,
 )

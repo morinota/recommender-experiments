@@ -2,13 +2,13 @@
 
 
 from typing import Optional, TypedDict
+
 import numpy as np
 import polars as pl
+from obp.dataset import SyntheticBanditDataset, logistic_reward_function
+from obp.policy import BernoulliTS, IPWLearner, LogisticTS, NNPolicyLearner, Random
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-
-from obp.dataset import logistic_reward_function, SyntheticBanditDataset
-from obp.policy import IPWLearner, NNPolicyLearner, Random, LogisticTS, BernoulliTS
 
 from recommender_experiments.app.logging_policy_experiment.expected_reward_function import expected_reward_function
 

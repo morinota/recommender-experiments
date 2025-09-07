@@ -1,9 +1,10 @@
 import random
 from typing import Callable, Optional, TypedDict
+
 import numpy as np
-from obp.dataset import SyntheticBanditDataset
-from obp.ope import ReplayMethod, InverseProbabilityWeighting
 import polars as pl
+from obp.dataset import SyntheticBanditDataset
+from obp.ope import InverseProbabilityWeighting, ReplayMethod
 
 
 class BanditFeedbackDict(TypedDict):

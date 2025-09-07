@@ -1,26 +1,27 @@
-from loguru import logger
-import typer
 from pathlib import Path
-from joblib import delayed, Parallel
+
 import numpy as np
-from pandas import DataFrame
-from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
+import typer
 import yaml
-from obp.dataset import logistic_reward_function, SyntheticBanditDataset, OpenBanditDataset
+from joblib import Parallel, delayed
+from loguru import logger
+from obp.dataset import OpenBanditDataset, SyntheticBanditDataset, logistic_reward_function
 from obp.ope import (
     DirectMethod,
-    InverseProbabilityWeighting,
-    SelfNormalizedInverseProbabilityWeighting,
     DoublyRobust,
-    SelfNormalizedDoublyRobust,
-    SwitchDoublyRobustTuning,
     DoublyRobustWithShrinkageTuning,
+    InverseProbabilityWeighting,
     OffPolicyEvaluation,
     RegressionModel,
     ReplayMethod,
+    SelfNormalizedDoublyRobust,
+    SelfNormalizedInverseProbabilityWeighting,
+    SwitchDoublyRobustTuning,
 )
 from obp.policy import IPWLearner
+from pandas import DataFrame
+from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 
 app = typer.Typer(pretty_exceptions_enable=False)
 

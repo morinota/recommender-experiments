@@ -1,7 +1,7 @@
 from typing import Optional, TypedDict
 
 import numpy as np
-from pydantic import BaseModel, Field, field_validator, ValidationInfo
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 
 class BanditFeedbackDict(TypedDict):

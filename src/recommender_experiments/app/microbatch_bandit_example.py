@@ -1,7 +1,7 @@
 """マイクロバッチによるバンディット学習の例."""
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 from recommender_experiments.service.algorithms.thompson_sampling_ranking import (
     ThompsonSamplingRanking,
@@ -102,7 +102,7 @@ def main():
             )
 
     # 5. 結果の表示
-    print(f"\n=== 結果 ===")
+    print("\n=== 結果 ===")
     print(f"最終累積Regret: {cumulative_regret:.3f}")
     print(f"平均瞬時Regret: {np.mean(instant_regrets):.3f}")
 
@@ -140,7 +140,7 @@ def main():
 
         plt.tight_layout()
         plt.savefig("microbatch_bandit_results.png", dpi=150, bbox_inches="tight")
-        print(f"\nグラフを 'microbatch_bandit_results.png' に保存しました")
+        print("\nグラフを 'microbatch_bandit_results.png' に保存しました")
 
     except ImportError:
         print("\nmatplotlibが見つからないため、グラフは表示されません")

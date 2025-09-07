@@ -1,6 +1,8 @@
 from dataclasses import dataclass
+
 import numpy as np
 from sklearn.neural_network import MLPRegressor
+
 from recommender_experiments.service.synthetic_bandit_feedback import BanditFeedbackDict
 
 

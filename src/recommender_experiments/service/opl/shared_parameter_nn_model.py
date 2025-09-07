@@ -1,11 +1,12 @@
 from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Optional
-from obp.policy import NNPolicyLearner
+
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from obp.policy import NNPolicyLearner
 from tqdm import tqdm
 
 

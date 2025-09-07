@@ -62,9 +62,7 @@ class OnlineBanditSimulator:
             # 2. アルゴリズムが行動を選択
             # available_actionsから最大k個選択（kは環境設定による）
             k = len(available_actions)  # 最大選択可能数
-            selected_actions = algorithm.select_actions(
-                context=context, available_actions=available_actions, k=k
-            )
+            selected_actions = algorithm.select_actions(context=context, available_actions=available_actions, k=k)
 
             # 3. 環境から報酬を観測
             rewards = self.environment.get_rewards(context, selected_actions, trial)
@@ -107,9 +105,7 @@ class OnlineBanditSimulator:
 
         for name, algorithm in algorithms.items():
             print(f"Evaluating {name}...")
-            results = self.evaluate_online_learning(
-                algorithm=algorithm, num_trials=num_trials
-            )
+            results = self.evaluate_online_learning(algorithm=algorithm, num_trials=num_trials)
             comparison_results[name] = results
 
         return comparison_results

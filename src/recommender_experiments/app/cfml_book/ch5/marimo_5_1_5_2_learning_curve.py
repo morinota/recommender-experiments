@@ -1,17 +1,17 @@
 import marimo
 
-__generated_with = "0.10.6"
+__generated_with = "0.15.2"
 app = marimo.App(width="medium")
 
 
 @app.cell
-def __():
-    mo.md("# 5.1-5.2 オフ方策学習における学習曲線")
+def _(mo):
+    mo.md("""# 5.1-5.2 オフ方策学習における学習曲線""")
     return
 
 
 @app.cell
-def __():
+def _():
     import warnings
 
     warnings.filterwarnings("ignore")
@@ -30,7 +30,6 @@ def __():
 
     from dataset import generate_synthetic_data
     from policylearners import POTEC, GradientBasedPolicyLearner, RegBasedPolicyLearner
-
     return (
         DataFrame,
         GradientBasedPolicyLearner,
@@ -38,27 +37,22 @@ def __():
         RegBasedPolicyLearner,
         check_random_state,
         generate_synthetic_data,
-        japanize_matplotlib,
-        np,
         pd,
         plt,
         sns,
         torch,
         tqdm,
-        warnings,
     )
 
 
 @app.cell
-def __():
-    mo.md(
-        "### ログデータ(トレーニングデータ)のサイズ$n$を変化させたときの回帰ベース・勾配ベース・POTECの学習曲線の変化"
-    )
+def _(mo):
+    mo.md("""### ログデータ(トレーニングデータ)のサイズ$n$を変化させたときの回帰ベース・勾配ベース・POTECの学習曲線の変化""")
     return
 
 
 @app.cell
-def __(check_random_state, torch):
+def _(check_random_state, torch):
     ## シミュレーション設定
     num_runs = 100  # シミュレーションの繰り返し回数
     dim_x = 5  # 特徴量xの次元
@@ -86,7 +80,16 @@ def __(check_random_state, torch):
 
 
 @app.cell
-def __(dim_x, generate_synthetic_data, lambda_, num_actions, num_clusters, random_, random_state, test_data_size):
+def _(
+    dim_x,
+    generate_synthetic_data,
+    lambda_,
+    num_actions,
+    num_clusters,
+    random_,
+    random_state,
+    test_data_size,
+):
     ## 期待報酬関数を定義するためのパラメータを抽出
     phi_a = random_.choice(num_clusters, size=num_actions)
     theta_g = random_.normal(size=(dim_x, num_clusters))
@@ -117,7 +120,7 @@ def __(dim_x, generate_synthetic_data, lambda_, num_actions, num_clusters, rando
 
 
 @app.cell
-def __(
+def _(
     DataFrame,
     GradientBasedPolicyLearner,
     M_g,
@@ -192,34 +195,17 @@ def __(
             curve = pd.concat([curve, pd.concat([log_, reg_, ips_, dr_, potec_])])
         curve.reset_index(inplace=True)
         curve_list_data.append(curve)
-    return (
-        curve,
-        curve_list_data,
-        dr,
-        dr_,
-        f_hat,
-        f_hat_test,
-        ips,
-        ips_,
-        log_,
-        num_data,
-        offline_logged_data,
-        potec,
-        potec_,
-        q_hat,
-        reg,
-        reg_,
-    )
+    return (curve_list_data,)
 
 
 @app.cell
-def __():
-    mo.md("## 図5.5")
+def _(mo):
+    mo.md("""## 図5.5""")
     return
 
 
 @app.cell
-def __(curve_list_data, num_data_list, pi_0_value, plt, sns):
+def _(curve_list_data, num_data_list, pi_0_value, plt, sns):
     fig, ax_list = plt.subplots(1, 3, figsize=(40, 10), tight_layout=True)
     for i, (num_data, curve) in enumerate(zip(num_data_list, curve_list_data)):
         curve["rel_value"] = curve.value / pi_0_value
@@ -259,17 +245,17 @@ def __(curve_list_data, num_data_list, pi_0_value, plt, sns):
         loc="center",
     )
     plt.show()
-    return ax, ax_list, curve, fig, i, num_data
-
-
-@app.cell
-def __():
-    mo.md("## 図5.10")
     return
 
 
 @app.cell
-def __(curve_list_data, num_data_list, pi_0_value, plt, sns):
+def _(mo):
+    mo.md("""## 図5.10""")
+    return
+
+
+@app.cell
+def _(curve_list_data, num_data_list, pi_0_value, plt, sns):
     fig, ax_list = plt.subplots(1, 3, figsize=(40, 10), tight_layout=True)
     for i, (num_data, curve) in enumerate(zip(num_data_list, curve_list_data)):
         curve["rel_value"] = curve.value / pi_0_value
@@ -309,13 +295,12 @@ def __(curve_list_data, num_data_list, pi_0_value, plt, sns):
         loc="center",
     )
     plt.show()
-    return ax, ax_list, curve, fig, i, num_data
+    return
 
 
 @app.cell
-def __():
+def _():
     import marimo as mo
-
     return (mo,)
 
 

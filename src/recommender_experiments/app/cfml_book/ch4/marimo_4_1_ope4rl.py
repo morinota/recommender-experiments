@@ -72,7 +72,7 @@ def __():
 @app.cell
 def __(check_random_state):
     ## シミュレーション設定
-    num_runs = 500  # シミュレーションの繰り返し回数
+    num_runs = 50  # シミュレーションの繰り返し回数
     dim_state = 5  # 状態sの次元
     num_states = 50  # 状態数, |S|
     num_actions = 10  # 行動数, |A|
@@ -375,7 +375,7 @@ def __():
 @app.cell
 def __(check_random_state):
     ## シミュレーション設定
-    num_runs = 500  # シミュレーションの繰り返し回数
+    num_runs = 50  # シミュレーションの繰り返し回数
     dim_state = 5  # 状態sの次元
     num_states = 50  # 状態数, |S|
     num_actions = 10  # 行動数, |A|
@@ -677,7 +677,7 @@ def __():
 @app.cell
 def __(check_random_state):
     ## シミュレーション設定
-    num_runs = 500  # シミュレーションの繰り返し回数
+    num_runs = 50  # シミュレーションの繰り返し回数
     dim_state = 5  # 状態sの次元
     num_actions = 10  # 行動数, |A|
     H = 6  # 軌跡の長さ

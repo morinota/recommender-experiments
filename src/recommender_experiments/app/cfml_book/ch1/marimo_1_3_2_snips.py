@@ -97,7 +97,7 @@ def __(mo):
 @app.cell
 def __(check_random_state):
     ## シミュレーション設定
-    num_runs = 500  # シミュレーションの繰り返し回数
+    num_runs = 50  # シミュレーションの繰り返し回数
     dim_context = 10  # 特徴量xの次元
     n_actions = 100  # 行動数, |A|
     beta = -5  # データ収集方策のパラメータ

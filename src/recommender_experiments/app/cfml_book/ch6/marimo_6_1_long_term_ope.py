@@ -63,7 +63,7 @@ def __():
 @app.cell
 def __(check_random_state):
     ## シミュレーション設定
-    num_runs = 1000  # シミュレーションの繰り返し回数
+    num_runs = 50  # シミュレーションの繰り返し回数
     dim_context = 10  # 特徴量xの次元
     num_data = 500  # ログデータのサイズ
     num_actions = 4  # 行動数, |A|

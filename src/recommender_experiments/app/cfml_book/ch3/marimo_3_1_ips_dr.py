@@ -64,7 +64,7 @@ def __(mo):
 @app.cell
 def __(check_random_state):
     ## シミュレーション設定
-    num_runs = 5000  # シミュレーションの繰り返し回数
+    num_runs = 50  # シミュレーションの繰り返し回数
     dim_context = 5  # 特徴量xの次元
     num_clusters = 30  # 行動クラスタ数
     num_data_actions = 500  # ログデータのサイズ
@@ -253,7 +253,7 @@ def __(mo):
 @app.cell
 def __(check_random_state):
     ## シミュレーション設定
-    num_runs_def = 5000  # シミュレーションの繰り返し回数
+    num_runs_def = 50  # シミュレーションの繰り返し回数
     dim_context_def = 5  # 特徴量xの次元
     num_actions_def = 1000  # 行動数, |A|
     num_clusters_def = 30  # 行動クラスタ数
@@ -445,7 +445,7 @@ def __(mo):
 @app.cell
 def __(check_random_state):
     ## シミュレーション設定
-    num_runs_data = 5000  # シミュレーションの繰り返し回数
+    num_runs_data = 50  # シミュレーションの繰り返し回数
     dim_context_data = 5  # 特徴量xの次元
     num_actions_data = 1000  # 行動数, |A|
     num_clusters_data = 30  # 行動クラスタ数

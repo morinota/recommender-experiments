@@ -56,7 +56,7 @@ def __(mo):
 
 @app.cell
 def __():
-    num_runs = 500  # シミュレーションの繰り返し回数
+    num_runs = 50  # シミュレーションの繰り返し回数
     dim_context = 5  # # 特徴量xの次元
     num_clusters = 30  # 行動クラスタ数
     beta = -0.2  # データ収集方策のパラメータ

@@ -92,7 +92,7 @@ def __():
 @app.cell
 def __():
     ## シミュレーション設定
-    num_runs = 500  # シミュレーションの繰り返し回数
+    num_runs = 50  # シミュレーションの繰り返し回数
     dim_context = 10  # 特徴量xの次元
     num_actions = 500  # 行動数, |A|
     reward_std = 2  # 報酬のノイズの大きさ

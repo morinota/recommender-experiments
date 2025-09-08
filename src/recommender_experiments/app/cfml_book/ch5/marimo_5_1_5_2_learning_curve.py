@@ -54,7 +54,7 @@ def _(mo):
 @app.cell
 def _(check_random_state, torch):
     ## シミュレーション設定
-    num_runs = 100  # シミュレーションの繰り返し回数
+    num_runs = 50  # シミュレーションの繰り返し回数
     dim_x = 5  # 特徴量xの次元
     num_actions = 500  # 行動数, |A|
     num_clusters = 50  # 行動クラスタ数, |C|

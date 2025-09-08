@@ -56,7 +56,7 @@ def __(mo):
 @app.cell
 def __(check_random_state):
     ## シミュレーション設定
-    num_runs = 1000  # シミュレーションの繰り返し回数
+    num_runs = 50  # シミュレーションの繰り返し回数
     dim_context = 5  # 特徴量xの次元
     num_data_k = 2000  # ログデータのサイズ
     num_actions = 4  # ユニークなアイテム数
@@ -223,7 +223,7 @@ def __(mo):
 @app.cell
 def __(check_random_state):
     ## シミュレーション設定
-    num_runs_data = 1000  # シミュレーションの繰り返し回数
+    num_runs_data = 50  # シミュレーションの繰り返し回数
     dim_context_data = 5  # 特徴量xの次元
     K_data = 8  # ランキングの長さ
     num_actions_data = 4  # ユニークなアイテム数

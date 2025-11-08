@@ -22,7 +22,77 @@ def generate_synthetic_data(
     sigma: float = 1.0,
     random_state: int = 12345,
 ) -> dict:
-    """オフ方策学習におけるログデータを生成する."""
+    """オフ方策学習におけるクラスタ構造を持つ合成バンディットフィードバックデータを生成する.
+
+    期待報酬関数はクラスタ効果g(x,c)と残差効果h(x,a)の重み付き和として定義される:
+        q(x,a) = (1-λ)g(x,c) + λh(x,a)
+    ここでcはphi_a[a]により行動aにマッピングされたクラスタ。
+
+    データ収集方策pi_0はlogging_policy()により期待報酬をベースに生成され、
+    その方策に従って行動が選択され、選択された行動の期待報酬に基づいて
+    バイナリ報酬が確率的に生成される。
+
+    Args:
+        num_data: 生成するログデータのサンプル数
+        theta_g: クラスタ効果g(x,c)の線形項パラメータ (dim_context, num_clusters)
+        M_g: クラスタ効果g(x,c)の相互作用項パラメータ (dim_context, num_clusters)
+        b_g: クラスタ効果g(x,c)のバイアス項 (1, num_clusters)
+        theta_h: 残差効果h(x,a)の線形項パラメータ (dim_context, num_actions)
+        M_h: 残差効果h(x,a)の相互作用項パラメータ (dim_context, num_actions)
+        b_h: 残差効果h(x,a)のバイアス項 (1, num_actions)
+        phi_a: 各行動のクラスタIDマッピング (num_actions,). 各要素は0からnum_clusters-1の整数
+        lambda_: クラスタ効果と残差効果の配合率. 0=クラスタのみ, 1=残差のみ
+        dim_context: コンテキストベクトルxの次元数
+        num_actions: 行動数 |A|
+        num_clusters: クラスタ数 |C|
+        beta: logging_policyのsoftmax温度パラメータ
+        lam: logging_policyの期待報酬とノイズの配合率
+        sigma: logging_policyに加えるノイズの標準偏差
+        random_state: 再現性のための乱数シード
+
+    Returns:
+        以下のキーを持つバンディットフィードバックデータのdict:
+            num_data: データ数
+            num_actions: 行動数
+            num_clusters: クラスタ数
+            x: コンテキスト (num_data, dim_context)
+            a: 選択された行動 (num_data,)
+            c: 選択された行動のクラスタID (num_data,)
+            r: 観測された報酬 (num_data,). 0または1のバイナリ値
+            phi_a: 行動とクラスタのマッピング (num_actions,)
+            pi_0: データ収集方策の行動選択確率分布 (num_data, num_actions)
+            pi_0_c: データ収集方策のクラスタ選択確率分布 (num_data, num_clusters)
+            pscore: 選択された行動の傾向スコア (num_data,)
+            pscore_c: 選択された行動のクラスタ傾向スコア (num_data,)
+            g_x_c: 重み付き後のクラスタ効果 (1-λ)g(x,c) (num_data, num_clusters)
+            h_x_a: 重み付き後の残差効果 λh(x,a) (num_data, num_actions)
+            q_x_a: 期待報酬関数 q(x,a) (num_data, num_actions)
+
+    Examples:
+        >>> random_ = np.random.RandomState(42)
+        >>> phi_a = random_.choice(3, size=10)  # 10行動を3クラスタにマッピング
+        >>> theta_g = random_.normal(size=(5, 3))
+        >>> M_g = random_.normal(size=(5, 3))
+        >>> b_g = random_.normal(size=(1, 3))
+        >>> theta_h = random_.normal(size=(5, 10))
+        >>> M_h = random_.normal(size=(5, 10))
+        >>> b_h = random_.normal(size=(1, 10))
+        >>> dataset = generate_synthetic_data(
+        ...     num_data=100,
+        ...     theta_g=theta_g, M_g=M_g, b_g=b_g,
+        ...     theta_h=theta_h, M_h=M_h, b_h=b_h,
+        ...     phi_a=phi_a,
+        ...     dim_context=5,
+        ...     num_actions=10,
+        ...     num_clusters=3,
+        ... )
+        >>> dataset['x'].shape
+        (100, 5)
+        >>> dataset['a'].shape
+        (100,)
+        >>> np.all(np.isin(dataset['r'], [0, 1]))
+        True
+    """
     random_ = check_random_state(random_state)
     x = random_.normal(size=(num_data, dim_context))
     one_hot_a, one_hot_c = np.eye(num_actions), np.eye(num_clusters)

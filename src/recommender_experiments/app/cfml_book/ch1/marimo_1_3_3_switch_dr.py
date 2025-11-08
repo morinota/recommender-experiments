@@ -43,7 +43,11 @@ def __():
     )
     from obp.ope import OffPolicyEvaluation, RegressionModel
     from obp.ope import SwitchDoublyRobust as SwitchDR
-    from utils import aggregate_simulation_results, aggregate_simulation_results_lam, eps_greedy_policy
+    from recommender_experiments.app.cfml_book.common_utils import (
+        aggregate_simulation_results,
+        aggregate_simulation_results_lam,
+        eps_greedy_policy,
+    )
 
     return (
         DataFrame,
@@ -147,7 +151,14 @@ def __(
         ## 評価方策の真の性能(policy value)を近似
         policy_value_24 = dataset_24.calc_ground_truth_policy_value(
             expected_reward=test_data_24["expected_reward"],
-            action_dist=eps_greedy_policy(test_data_24["expected_reward"]),
+            action_dist=eps_greedy_policy(
+                test_data_24["expected_reward"],
+                k=1,
+                eps=0.1,
+                return_normalized=True,
+                rank_method=None,
+                add_newaxis=True,
+            ),
         )
 
         estimated_policy_value_list_24 = []
@@ -156,7 +167,14 @@ def __(
             offline_logged_data_24 = dataset_24.obtain_batch_bandit_feedback(n_rounds=num_data)
 
             ## ログデータ上における評価方策の行動選択確率を計算
-            pi_24 = eps_greedy_policy(offline_logged_data_24["expected_reward"])
+            pi_24 = eps_greedy_policy(
+                offline_logged_data_24["expected_reward"],
+                k=1,
+                eps=0.1,
+                return_normalized=True,
+                rank_method=None,
+                add_newaxis=True,
+            )
 
             ## 期待報酬関数に対する推定モデル\hat{q}(x,a)を得る
             reg_model_24 = RegressionModel(
@@ -317,7 +335,14 @@ def __(
         ## 評価方策の真の性能(policy value)を近似
         policy_value_25 = dataset_25.calc_ground_truth_policy_value(
             expected_reward=test_data_25["expected_reward"],
-            action_dist=eps_greedy_policy(test_data_25["expected_reward"]),
+            action_dist=eps_greedy_policy(
+                test_data_25["expected_reward"],
+                k=1,
+                eps=0.1,
+                return_normalized=True,
+                rank_method=None,
+                add_newaxis=True,
+            ),
         )
 
         estimated_policy_value_list_25 = []
@@ -326,7 +351,14 @@ def __(
             offline_logged_data_25 = dataset_25.obtain_batch_bandit_feedback(n_rounds=num_data)
 
             ## ログデータ上における評価方策の行動選択確率を計算
-            pi_25 = eps_greedy_policy(offline_logged_data_25["expected_reward"])
+            pi_25 = eps_greedy_policy(
+                offline_logged_data_25["expected_reward"],
+                k=1,
+                eps=0.1,
+                return_normalized=True,
+                rank_method=None,
+                add_newaxis=True,
+            )
 
             ## 期待報酬関数に対する推定モデル\hat{q}(x,a)を得る
             reg_model_25 = RegressionModel(

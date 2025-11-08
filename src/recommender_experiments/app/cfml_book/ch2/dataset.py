@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.utils import check_random_state
 
-from recommender_experiments.app.cfml_book.ch2.utils import eps_greedy_policy, sample_action_fast, sigmoid, softmax
+from recommender_experiments.app.cfml_book.common_utils import eps_greedy_policy, sample_action_fast, sigmoid, softmax
 
 
 def generate_synthetic_data(
@@ -103,7 +103,7 @@ def generate_synthetic_data(
     C = np.clip(C_ + is_rand * C_rand, 0, 1)
 
     if is_test:
-        pi_0 = eps_greedy_policy(base_q_func)
+        pi_0 = eps_greedy_policy(base_q_func, k=1, eps=0.5, return_normalized=True, rank_method=None)
     else:
         pi_0 = softmax(beta * base_q_func)
     # 行動を抽出する

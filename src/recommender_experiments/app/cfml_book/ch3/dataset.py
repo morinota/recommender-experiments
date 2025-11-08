@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.utils import check_random_state
-from utils import eps_greedy_policy, sample_action_fast, softmax
+
+from recommender_experiments.app.cfml_book.common_utils import eps_greedy_policy, sample_action_fast, softmax
 
 
 def generate_synthetic_data(
@@ -86,6 +87,6 @@ def calc_true_value(
     )
 
     q_x_a = test_bandit_data["q_x_a"]
-    pi = eps_greedy_policy(q_x_a)
+    pi = eps_greedy_policy(q_x_a, k=5, eps=0.1, return_normalized=True, rank_method="ordinal")
 
     return (q_x_a * pi).sum(1).mean()

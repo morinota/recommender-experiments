@@ -41,7 +41,11 @@ def __():
     )
     from obp.ope import InverseProbabilityWeighting as IPS
     from obp.ope import OffPolicyEvaluation
-    from utils import aggregate_simulation_results, aggregate_simulation_results_lam, eps_greedy_policy
+    from recommender_experiments.app.cfml_book.common_utils import (
+        aggregate_simulation_results,
+        aggregate_simulation_results_lam,
+        eps_greedy_policy,
+    )
 
     return (
         DataFrame,
@@ -140,7 +144,14 @@ def __(
         ## 評価方策の真の性能(policy value)を近似
         policy_value_lambda = dataset_lambda.calc_ground_truth_policy_value(
             expected_reward=test_data_lambda["expected_reward"],
-            action_dist=eps_greedy_policy(test_data_lambda["expected_reward"]),
+            action_dist=eps_greedy_policy(
+                test_data_lambda["expected_reward"],
+                k=1,
+                eps=0.1,
+                return_normalized=True,
+                rank_method=None,
+                add_newaxis=True,
+            ),
         )
 
         estimated_policy_value_list_lambda = []
@@ -149,7 +160,14 @@ def __(
             offline_logged_data_lambda = dataset_lambda.obtain_batch_bandit_feedback(n_rounds=num_data)
 
             ## ログデータ上における評価方策の行動選択確率を計算
-            pi_lambda = eps_greedy_policy(offline_logged_data_lambda["expected_reward"])
+            pi_lambda = eps_greedy_policy(
+                offline_logged_data_lambda["expected_reward"],
+                k=1,
+                eps=0.1,
+                return_normalized=True,
+                rank_method=None,
+                add_newaxis=True,
+            )
 
             ## ログデータを用いてオフ方策評価を実行する
             ope_lambda = OffPolicyEvaluation(
@@ -294,7 +312,14 @@ def __(
         ## 評価方策の真の性能(policy value)を近似
         policy_value_size = dataset_size.calc_ground_truth_policy_value(
             expected_reward=test_data_size_exp["expected_reward"],
-            action_dist=eps_greedy_policy(test_data_size_exp["expected_reward"]),
+            action_dist=eps_greedy_policy(
+                test_data_size_exp["expected_reward"],
+                k=1,
+                eps=0.1,
+                return_normalized=True,
+                rank_method=None,
+                add_newaxis=True,
+            ),
         )
 
         estimated_policy_value_list_size = []
@@ -303,7 +328,14 @@ def __(
             offline_logged_data_size = dataset_size.obtain_batch_bandit_feedback(n_rounds=num_data)
 
             ## ログデータ上における評価方策の行動選択確率を計算
-            pi_size = eps_greedy_policy(offline_logged_data_size["expected_reward"])
+            pi_size = eps_greedy_policy(
+                offline_logged_data_size["expected_reward"],
+                k=1,
+                eps=0.1,
+                return_normalized=True,
+                rank_method=None,
+                add_newaxis=True,
+            )
 
             ## ログデータを用いてオフ方策評価を実行する
             ope_size = OffPolicyEvaluation(

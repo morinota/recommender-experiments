@@ -28,7 +28,8 @@ def __():
     plt.style.use("ggplot")
 
     from dataset import calc_true_value, generate_synthetic_data
-    from utils import aggregate_simulation_results, calc_weights, eps_greedy_policy
+    from recommender_experiments.app.cfml_book.common_utils import eps_greedy_policy
+    from utils import aggregate_simulation_results, calc_weights
 
     return (
         DataFrame,
@@ -125,7 +126,7 @@ def __(
             )
 
             ## ログデータ上における評価方策の行動選択確率を計算
-            pi = eps_greedy_policy(offline_logged_data["q_x_a"])
+            pi = eps_greedy_policy(offline_logged_data["q_x_a"], k=5, eps=0.1, return_normalized=True, rank_method="ordinal")
 
             ## シミュレーション結果の集計
             w_x_a, w_x_c = calc_weights(offline_logged_data, pi)

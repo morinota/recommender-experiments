@@ -1,19 +1,6 @@
 import numpy as np
 from pandas import DataFrame
 
-from recommender_experiments.app.cfml_book.common_utils import eps_greedy_policy as _eps_greedy_policy
-
-
-def eps_greedy_policy(
-    expected_reward: np.ndarray,
-    k: int = 1,
-    eps: float = 0.1,
-) -> np.ndarray:
-    """epsilon-greedy法により方策を定義する."""
-    return _eps_greedy_policy(
-        expected_reward, k=k, eps=eps, return_normalized=True, rank_method=None, add_newaxis=True
-    )
-
 
 def aggregate_simulation_results(
     estimated_policy_value_list: list,

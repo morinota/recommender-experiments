@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.utils import check_random_state
-from utils import eps_greedy_policy, sample_action_fast, sigmoid, softmax
+
+from recommender_experiments.app.cfml_book.common_utils import eps_greedy_policy, sample_action_fast, sigmoid, softmax
 
 
 def generate_synthetic_data(
@@ -35,10 +36,10 @@ def generate_synthetic_data(
     s_h[:, 0] = sample_action_fast(np.tile(init_dist, (num_data, 1)), random_state=random_state)
     for h in range(H):
         if is_test:
-            pi_0[:, :, h] = eps_greedy_policy(q_s_a[s_h[:, h]])
+            pi_0[:, :, h] = eps_greedy_policy(q_s_a[s_h[:, h]], k=5, eps=0.2, return_normalized=True, rank_method="ordinal")
         else:
             pi_0[:, :, h] = softmax(beta * q_s_a[s_h[:, h]])
-        pi[:, :, h] = eps_greedy_policy(q_s_a[s_h[:, h]])
+        pi[:, :, h] = eps_greedy_policy(q_s_a[s_h[:, h]], k=5, eps=0.2, return_normalized=True, rank_method="ordinal")
         a_h[:, h] = sample_action_fast(pi_0[:, :, h], random_state=random_state + h)
         q_h[:, h] = q_s_a[s_h[:, h], a_h[:, h]]
         r_h[:, h] = random_.normal(q_h[:, h], scale=reward_noise)

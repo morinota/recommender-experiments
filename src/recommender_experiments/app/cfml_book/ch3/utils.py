@@ -23,15 +23,6 @@ def calc_weights(dataset: dict, pi: np.ndarray) -> np.ndarray:
     return w_x_a, w_x_c
 
 
-def eps_greedy_policy(
-    q_func: np.ndarray,
-    k: int = 5,
-    eps: float = 0.1,
-) -> np.ndarray:
-    """epsilon-greedy法により方策を定義する."""
-    return _eps_greedy_policy(q_func, k=k, eps=eps, return_normalized=True, rank_method="ordinal")
-
-
 def aggregate_simulation_results(
     estimated_policy_value_list: list,
     policy_value: float,

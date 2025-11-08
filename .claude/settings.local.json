@@ -11,7 +11,12 @@
       "Bash(uv run:*)",
       "Read(//Users/masato.morita/src/embedding-engine/**)",
       "Bash(do)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(python3:*)",
+      "Bash(for file in src/recommender_experiments/app/cfml_book/ch2/marimo_*.py)",
+      "Bash(for:*)",
+      "Bash(do echo \"=== $file ===\")",
+      "Bash(do python3 -c \"import json; nb=json.load(open(''$file'')); src=''''.join([''''.join(c.get(''source'',[])) for c in nb[''cells'']]); print(''✓'' if ''from recommender_experiments.app.cfml_book.common_utils import eps_greedy_policy'' in src else ''✗'', ''$file'')\")"
     ],
     "deny": []
   }

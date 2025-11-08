@@ -1,21 +1,6 @@
 import numpy as np
 from pandas import DataFrame
 
-from recommender_experiments.app.cfml_book.common_utils import (
-    eps_greedy_policy as _eps_greedy_policy,
-    sample_action_fast,
-    sigmoid,
-    softmax,
-)
-
-
-def eps_greedy_policy(
-    q_func: np.ndarray,
-    eps: float = 0.5,
-) -> np.ndarray:
-    """epsilon-greedy法により方策を定義する."""
-    return _eps_greedy_policy(q_func, k=1, eps=eps, return_normalized=False, rank_method=None)
-
 
 def aggregate_simulation_results(
     estimated_policy_value_list: list,

@@ -36,7 +36,8 @@ def __():
 
     from dataset import calc_true_value, generate_synthetic_data
     from estimators import calc_avg, calc_ips, calc_mips
-    from utils import aggregate_simulation_results, eps_greedy_policy, remove_outliers
+    from recommender_experiments.app.cfml_book.common_utils import eps_greedy_policy
+    from utils import aggregate_simulation_results, remove_outliers
 
     return (
         DataFrame,
@@ -157,7 +158,7 @@ def __(
             )
 
             ## ログデータ上における評価方策の行動選択確率を計算
-            pi = eps_greedy_policy(offline_logged_data["q_x_a"])
+            pi = eps_greedy_policy(offline_logged_data["q_x_a"], k=5, eps=0.1, return_normalized=True, rank_method="ordinal")
 
             ## ログデータを用いてオフ方策評価を実行する
             estimated_policy_values = dict()
@@ -397,7 +398,7 @@ def __(
             )
 
             ## ログデータ上における評価方策の行動選択確率を計算
-            pi_2 = eps_greedy_policy(offline_logged_data_2["q_x_a"])
+            pi_2 = eps_greedy_policy(offline_logged_data_2["q_x_a"], k=5, eps=0.1, return_normalized=True, rank_method="ordinal")
 
             ## ログデータを用いてオフ方策評価を実行する
             estimated_policy_values_2 = dict()
@@ -577,7 +578,7 @@ def __(
             )
 
             ## ログデータ上における評価方策の行動選択確率を計算
-            pi_3 = eps_greedy_policy(offline_logged_data_3["q_x_a"])
+            pi_3 = eps_greedy_policy(offline_logged_data_3["q_x_a"], k=5, eps=0.1, return_normalized=True, rank_method="ordinal")
 
             ## ログデータを用いてオフ方策評価を実行する
             estimated_policy_values_3 = dict()
@@ -815,7 +816,7 @@ def __(
             )
 
             ## ログデータ上における評価方策の行動選択確率を計算
-            pi_4 = eps_greedy_policy(offline_logged_data_4["q_x_a"])
+            pi_4 = eps_greedy_policy(offline_logged_data_4["q_x_a"], k=5, eps=0.1, return_normalized=True, rank_method="ordinal")
 
             ## ログデータを用いてオフ方策評価を実行する
             estimated_policy_values_4 = dict()

@@ -53,7 +53,8 @@ def __():
     from obp.ope import (
         OffPolicyEvaluation,
     )
-    from utils import aggregate_simulation_results, eps_greedy_policy
+    from recommender_experiments.app.cfml_book.common_utils import eps_greedy_policy
+    from utils import aggregate_simulation_results
 
     return (
         CIPS,
@@ -145,7 +146,10 @@ def __(
             expected_reward=test_data["expected_reward"],
             action_dist=eps_greedy_policy(
                 test_data["expected_reward"],
+                k=num_actions,
                 eps=eps,
+                return_normalized=True,
+                rank_method="ordinal",
             )[:, :, np.newaxis],
         )
 
@@ -157,7 +161,13 @@ def __(
                 offline_logged_data = dataset.obtain_batch_bandit_feedback(n_rounds=num_data)
 
                 ## ログデータ上における評価方策の行動選択確率を計算
-                pi = eps_greedy_policy(offline_logged_data["expected_reward"], eps=eps)
+                pi = eps_greedy_policy(
+                    offline_logged_data["expected_reward"],
+                    k=num_actions,
+                    eps=eps,
+                    return_normalized=True,
+                    rank_method="ordinal",
+                )
 
                 ## ログデータを用いてオフ方策評価を実行する
                 ope = OffPolicyEvaluation(

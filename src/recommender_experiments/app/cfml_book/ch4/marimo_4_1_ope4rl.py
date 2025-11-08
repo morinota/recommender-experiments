@@ -38,7 +38,8 @@ def __():
 
     from dataset import calc_true_value, generate_synthetic_data
     from estimators import calc_avg, calc_dr, calc_mis, calc_sis, calc_tis
-    from utils import aggregate_simulation_results, eps_greedy_policy, softmax
+    from recommender_experiments.app.cfml_book.common_utils import eps_greedy_policy
+    from utils import aggregate_simulation_results, softmax
 
     return (
         DataFrame,

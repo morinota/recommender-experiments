@@ -16,7 +16,7 @@ def __():
     from dataset import calc_true_value, generate_synthetic_data
     from estimators import calc_avg, calc_dr, calc_mis, calc_sis, calc_tis
     from pandas import DataFrame
-    from policy import eps_greedy_policy
+    from recommender_experiments.app.cfml_book.common_utils import eps_greedy_policy
     from sklearn.utils import check_random_state
     from tqdm import tqdm
     from utils import softmax

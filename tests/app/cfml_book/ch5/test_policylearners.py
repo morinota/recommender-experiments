@@ -3,11 +3,9 @@ import pytest
 import torch
 
 from recommender_experiments.app.cfml_book.ch5.dataset import generate_synthetic_data
-from recommender_experiments.app.cfml_book.ch5.policylearners import (
-    POTEC,
-    GradientBasedPolicyLearner,
-    RegBasedPolicyLearner,
-)
+from recommender_experiments.app.cfml_book.ch5.gradient_based_policy_learner import GradientBasedPolicyLearner
+from recommender_experiments.app.cfml_book.ch5.potec import POTEC
+from recommender_experiments.app.cfml_book.ch5.reg_based_policy_learner import RegBasedPolicyLearner
 
 
 @pytest.fixture

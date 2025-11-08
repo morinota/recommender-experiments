@@ -2,30 +2,27 @@
 name = "recommender-experiments"
 version = "0.1.0"
 description = ""
-authors = [{name = "morita", email = "morinota416@gmail.com"}]
+authors = [{ name = "morita", email = "morinota416@gmail.com" }]
 readme = "README.md"
 requires-python = ">=3.10,<3.11"
 dependencies = [
-    "matplotlib==3.4.3",
-    "seaborn==0.11.2",
-    "typer>=0.13.0",
-    "loguru>=0.7.2",
-    "polars>=1.17.1",
-    "pandera>=0.21.1",
-    "pyarrow>=18.1.0",
-    "japanize-matplotlib>=1.1.3",
-    "obp>=0.5.7",
-    "tqdm-joblib>=0.0.4",
-    "ruff>=0.11.2",
-    "multimethod==1.9",
-    "marimo>=0.15.2",
+  "matplotlib==3.4.3",
+  "seaborn==0.11.2",
+  "typer>=0.13.0",
+  "loguru>=0.7.2",
+  "polars>=1.17.1",
+  "pandera>=0.21.1",
+  "pyarrow>=18.1.0",
+  "japanize-matplotlib>=1.1.3",
+  "obp>=0.5.7",
+  "tqdm-joblib>=0.0.4",
+  "ruff>=0.11.2",
+  "multimethod==1.9",
+  "marimo>=0.15.2",
 ]
 
 [project.optional-dependencies]
-dev = [
-    "ipykernel>=6.29.5",
-    "pytest>=8.3.4",
-]
+dev = ["ipykernel>=6.29.5", "pytest>=8.3.4"]
 
 [tool.uv]
 package = true

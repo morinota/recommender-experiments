@@ -1,0 +1,14 @@
+{
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv",
+    "python.analysis.typeCheckingMode": "standard",
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.fixAll": "explicit",
+            "source.organizeImports": "explicit"
+        }
+    },
+    "ruff.nativeServer": true,
+    "ruff.configuration": "${workspaceFolder}/pyproject.toml"
+}

@@ -54,17 +54,17 @@ def _(mo):
 @app.cell
 def _(check_random_state, torch):
     ## シミュレーション設定
-    num_runs = 50  # シミュレーションの繰り返し回数
+    num_runs = 30  # シミュレーションの繰り返し回数（軽量化: 50→30）
     dim_x = 5  # 特徴量xの次元
-    num_actions = 500  # 行動数, |A|
-    num_clusters = 50  # 行動クラスタ数, |C|
+    num_actions = 200  # 行動数, |A|（軽量化: 500→200）
+    num_clusters = 20  # 行動クラスタ数, |C|（軽量化: 50→20）
     lambda_ = 0.5  # クラスタ効果と残差効果の配合率
-    max_iter = 31  # エポック数
-    test_data_size = 50000  # テストデータのサイズ
+    max_iter = 21  # エポック数（軽量化: 31→21）
+    test_data_size = 10000  # テストデータのサイズ（軽量化: 50000→10000）
     random_state = 12345
     torch.manual_seed(random_state)
     random_ = check_random_state(random_state)
-    num_data_list = [100, 500, 2000]  # トレーニングデータのサイズ
+    num_data_list = [100, 500, 1500]  # トレーニングデータのサイズ（軽量化: 2000→1500）
     return (
         dim_x,
         lambda_,

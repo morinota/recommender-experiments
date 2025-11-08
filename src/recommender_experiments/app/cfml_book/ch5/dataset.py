@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.utils import check_random_state
-from utils import logging_policy, sample_action_fast, sigmoid
+
+from recommender_experiments.app.cfml_book.ch5.utils import logging_policy, sample_action_fast, sigmoid
 
 
 def generate_synthetic_data(

@@ -8,7 +8,8 @@
       "Bash(uv init:*)",
       "Bash(uv sync:*)",
       "Bash(uv run pytest:*)",
-      "Bash(uv run:*)"
+      "Bash(uv run:*)",
+      "Read(//Users/masato.morita/src/embedding-engine/**)"
     ],
     "deny": []
   }

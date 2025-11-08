@@ -8,7 +8,12 @@ import torch.nn as nn
 import torch.optim as optim
 from sklearn.utils import check_random_state
 from torch.optim.lr_scheduler import ExponentialLR
-from utils import GradientBasedPolicyDataset, RegBasedPolicyDataset, softmax
+
+from recommender_experiments.app.cfml_book.ch5.utils import (
+    GradientBasedPolicyDataset,
+    RegBasedPolicyDataset,
+    softmax,
+)
 
 
 @dataclass

@@ -60,17 +60,17 @@ def __():
 @app.cell
 def __(check_random_state, torch):
     ## シミュレーション設定
-    num_runs = 50  # シミュレーションの繰り返し回数
+    num_runs = 30  # シミュレーションの繰り返し回数
     dim_x = 5  # 特徴量xの次元
-    num_actions = 500  # 行動数, |A|
-    num_clusters = 50  # 行動クラスタ数, |C|
+    num_actions = 200  # 行動数, |A|
+    num_clusters = 20  # 行動クラスタ数, |C|
     lambda_ = 0.5  # クラスタ効果と残差効果の配合率
-    max_iter = 31  # エポック数
-    test_data_size = 50000  # テストデータのサイズ
+    max_iter = 21  # エポック数
+    test_data_size = 10000  # テストデータのサイズ
     random_state = 12345
     torch.manual_seed(random_state)
     random_ = check_random_state(random_state)
-    num_data_list = [100, 200, 500, 1000, 2000]  # トレーニングデータのサイズ
+    num_data_list = [100, 200, 500, 1000]  # トレーニングデータのサイズ
     return (
         dim_x,
         lambda_,
@@ -248,11 +248,11 @@ def __(
     tqdm,
 ):
     ## シミュレーション設定
-    num_runs = 50  # シミュレーションの繰り返し回数
-    num_data = 500  # トレーニングデータのサイズ
+    num_runs = 30  # シミュレーションの繰り返し回数
+    num_data = 300  # トレーニングデータのサイズ
     torch.manual_seed(random_state)
     random_ = check_random_state(random_state)
-    num_actions_list = [50, 100, 200, 500, 1000, 2000, 5000]  # 行動数, |A|
+    num_actions_list = [50, 100, 200, 500]  # 行動数, |A|
 
     result_df_list = []
     for num_actions in num_actions_list:

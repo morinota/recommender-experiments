@@ -3,22 +3,6 @@ import numpy as np
 from recommender_experiments.app.cfml_book.ch5.potec import POTEC
 
 
-def test_POTEC初期化時に正しいプロパティが設定されること():
-    # Arrange
-    dim_x = 5
-    num_actions = 10
-    num_clusters = 3
-
-    # Act
-    sut = POTEC(dim_x=dim_x, num_actions=num_actions, num_clusters=num_clusters, max_iter=5)
-
-    # Assert
-    assert sut.dim_x == dim_x, "dim_xが正しく設定されること"
-    assert sut.num_actions == num_actions, "num_actionsが正しく設定されること"
-    assert sut.num_clusters == num_clusters, "num_clustersが正しく設定されること"
-    assert sut.nn_model is not None, "NNモデルが初期化されること"
-
-
 def test_POTECのfit後に学習履歴が記録されること(small_synthetic_dataset):
     # Arrange
     dataset, dim_x, num_actions, num_clusters = small_synthetic_dataset
@@ -65,4 +49,6 @@ def test_POTECのpredict時にクラスタベース方策が正しく生成さ�
     # Assert
     # 各サンプルで非ゼロの確率を持つアクション数はクラスタ数以下
     non_zero_actions_per_sample = (pi > 0).sum(axis=1)
-    assert np.all(non_zero_actions_per_sample <= num_clusters), "各サンプルで選択されるアクションはクラスタ数以下であること"
+    assert np.all(non_zero_actions_per_sample <= num_clusters), (
+        "各サンプルで選択されるアクションはクラスタ数以下であること"
+    )

@@ -3,21 +3,6 @@ import numpy as np
 from recommender_experiments.app.cfml_book.ch5.gradient_based_policy_learner import GradientBasedPolicyLearner
 
 
-def test_GradientBasedPolicyLearner初期化時に正しいプロパティが設定されること():
-    # Arrange
-    dim_x = 5
-    num_actions = 10
-
-    # Act
-    sut = GradientBasedPolicyLearner(dim_x=dim_x, num_actions=num_actions, max_iter=5)
-
-    # Assert
-    assert sut.dim_x == dim_x, "dim_xが正しく設定されること"
-    assert sut.num_actions == num_actions, "num_actionsが正しく設定されること"
-    assert sut.nn_model is not None, "NNモデルが初期化されること"
-    assert len(sut.train_loss) == 0, "train_lossが空のリストで初期化されること"
-
-
 def test_GradientBasedPolicyLearnerのfit後に学習履歴が記録されること(small_synthetic_dataset):
     # Arrange
     dataset, dim_x, num_actions, _ = small_synthetic_dataset

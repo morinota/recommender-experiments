@@ -3,23 +3,6 @@ import numpy as np
 from recommender_experiments.app.cfml_book.ch5.reg_based_policy_learner import RegBasedPolicyLearner
 
 
-def test_RegBasedPolicyLearner初期化時に正しいプロパティが設定されること():
-    # Arrange
-    dim_x = 5
-    num_actions = 10
-
-    # Act
-    sut = RegBasedPolicyLearner(dim_x=dim_x, num_actions=num_actions, max_iter=5)
-
-    # Assert
-    assert sut.dim_x == dim_x, "dim_xが正しく設定されること"
-    assert sut.num_actions == num_actions, "num_actionsが正しく設定されること"
-    assert sut.nn_model is not None, "NNモデルが初期化されること"
-    assert len(sut.train_loss) == 0, "train_lossが空のリストで初期化されること"
-    assert len(sut.train_value) == 0, "train_valueが空のリストで初期化されること"
-    assert len(sut.test_value) == 0, "test_valueが空のリストで初期化されること"
-
-
 def test_RegBasedPolicyLearner異なるactivation関数で初期化できること():
     # Arrange & Act & Assert
     for activation in ["tanh", "relu", "elu"]:

@@ -3,7 +3,12 @@
     "allow": [
       "Bash(rm:*)",
       "WebFetch(domain:github.com)",
-      "Bash(gtimeout:*)"
+      "Bash(gtimeout:*)",
+      "Bash(tree:*)",
+      "Bash(uv init:*)",
+      "Bash(uv sync:*)",
+      "Bash(uv run pytest:*)",
+      "Bash(uv run:*)"
     ],
     "deny": []
   }

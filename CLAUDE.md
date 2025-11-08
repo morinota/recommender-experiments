@@ -2,16 +2,16 @@
 
 ```
 # テストの実行(単体・統合テスト全体)
-poetry run pytest
+uv run pytest
 # 特定のテストファイルのみ実行
-poetry run pytest tests/test_ファイル名.py
+uv run pytest tests/test_ファイル名.py
 
 # ruff formatでコードフォーマット (src/ と tests/ をそれぞれ指定すること)
-poetry run ruff format src/
-poetry run ruff format tests/
+uv run ruff format src/
+uv run ruff format tests/
 # importの自動整理 (src/ と tests/ をそれぞれ指定すること)
-poetry run ruff check --select I --fix src/
-poetry run ruff check --select I --fix tests/
+uv run ruff check --select I --fix src/
+uv run ruff check --select I --fix tests/
 ```
 
 ## 単体テストのスタイルについて
@@ -40,23 +40,23 @@ poetry run ruff check --select I --fix tests/
 ### marimoコマンド
 ```bash
 # ノートブックの編集
-poetry run marimo edit notebooks/explore.py
+uv run marimo edit notebooks/explore.py
 
 # ファイル監視付き編集（外部エディタとの連携）
-poetry run marimo edit notebooks/explore.py --watch
+uv run marimo edit notebooks/explore.py --watch
 
 # アプリとして実行（コード非表示）
-poetry run marimo run notebooks/report.py
+uv run marimo run notebooks/report.py
 
 # スクリプトとして実行（自動化用）
-poetry run python notebooks/analysis.py
+uv run python notebooks/analysis.py
 
 # 引数付き実行
-poetry run marimo run notebooks/report.py -- --date 2024-01-01
-poetry run python notebooks/report.py --date 2024-01-01
+uv run marimo run notebooks/report.py -- --date 2024-01-01
+uv run python notebooks/report.py --date 2024-01-01
 
 # HTML形式でエクスポート
-poetry run marimo export html notebooks/report.py -o report.html
+uv run marimo export html notebooks/report.py -o report.html
 ```
 
 ### marimoベストプラクティス

@@ -29,7 +29,9 @@ def __():
     plt.style.use("ggplot")
 
     from dataset import generate_synthetic_data
-    from policylearners import POTEC, GradientBasedPolicyLearner, RegBasedPolicyLearner
+    from gradient_based_policy_learner import GradientBasedPolicyLearner
+    from potec import POTEC
+    from reg_based_policy_learner import RegBasedPolicyLearner
     from utils import softmax
 
     return (

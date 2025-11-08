@@ -17,12 +17,10 @@ def __():
     import seaborn as sns
     import torch
     from dataset import generate_synthetic_data
+    from gradient_based_policy_learner import GradientBasedPolicyLearner
     from pandas import DataFrame
-    from policylearners import (
-        POCEM,
-        GradientBasedPolicyLearner,
-        RegBasedPolicyLearner,
-    )
+    from potec import POTEC as POCEM
+    from reg_based_policy_learner import RegBasedPolicyLearner
     from sklearn.utils import check_random_state
     from tqdm import tqdm
     from utils import softmax

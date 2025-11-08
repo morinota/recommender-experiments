@@ -87,9 +87,9 @@ def test_generate_synthetic_dataが正しい構造のバンディットフィー
 
     # Assert: クラスタマッピングの検証
     assert len(dataset["phi_a"]) == num_actions, "phi_aの長さがnum_actionsと一致すること"
-    assert np.all(dataset["phi_a"] >= 0) and np.all(
-        dataset["phi_a"] < num_clusters
-    ), "phi_aが有効なクラスタID範囲内であること"
+    assert np.all(dataset["phi_a"] >= 0) and np.all(dataset["phi_a"] < num_clusters), (
+        "phi_aが有効なクラスタID範囲内であること"
+    )
 
     expected_c = dataset["phi_a"][dataset["a"]]
     assert np.array_equal(dataset["c"], expected_c), "cがphi_a[a]と一致すること"

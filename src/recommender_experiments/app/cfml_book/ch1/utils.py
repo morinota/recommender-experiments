@@ -1,6 +1,7 @@
 import numpy as np
 from pandas import DataFrame
-from scipy.stats import rankdata
+
+from recommender_experiments.app.cfml_book.common_utils import eps_greedy_policy as _eps_greedy_policy
 
 
 def eps_greedy_policy(
@@ -9,12 +10,9 @@ def eps_greedy_policy(
     eps: float = 0.1,
 ) -> np.ndarray:
     """epsilon-greedy法により方策を定義する."""
-    is_topk = rankdata(-expected_reward, axis=1) <= k
-    pi = ((1.0 - eps) / k) * is_topk
-    pi += eps / expected_reward.shape[1]
-    pi /= pi.sum(1)[:, np.newaxis]
-
-    return pi[:, :, np.newaxis]
+    return _eps_greedy_policy(
+        expected_reward, k=k, eps=eps, return_normalized=True, rank_method=None, add_newaxis=True
+    )
 
 
 def aggregate_simulation_results(

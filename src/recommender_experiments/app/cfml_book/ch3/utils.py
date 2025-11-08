@@ -29,10 +29,7 @@ def eps_greedy_policy(
     eps: float = 0.1,
 ) -> np.ndarray:
     """epsilon-greedy法により方策を定義する."""
-    is_topk = rankdata(-q_func, method="ordinal", axis=1) <= k
-    pi = ((1.0 - eps) / k) * is_topk + eps / q_func.shape[1]
-
-    return pi / pi.sum(1)[:, np.newaxis]
+    return _eps_greedy_policy(q_func, k=k, eps=eps, return_normalized=True, rank_method="ordinal")
 
 
 def aggregate_simulation_results(

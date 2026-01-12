@@ -59,7 +59,16 @@ uv run python src/recommender_experiments/app/mind_ml_project/4_batch_inference_
 ```
 
 ### 5. Dashboard (`5_dashboard.py`)
-- marimo を使ったインタラクティブダッシュボード(今後実装予定)
+- marimoを使ったインタラクティブダッシュボード
+- データ概要、カテゴリ分布、ユーザー行動分析を可視化
+- モデル情報と推薦結果をインタラクティブに表示
+
+実行方法:
+```bash
+uv run marimo edit src/recommender_experiments/app/mind_ml_project/5_dashboard.py
+```
+
+ブラウザで `http://localhost:2718` にアクセスしてダッシュボードを確認できます。
 
 ## FTIパイプラインの実行順序
 
@@ -73,6 +82,9 @@ uv run python src/recommender_experiments/app/mind_ml_project/3_training_pipelin
 
 # 3. バッチ推論
 uv run python src/recommender_experiments/app/mind_ml_project/4_batch_inference_pipeline.py
+
+# 4. ダッシュボードで結果確認
+uv run marimo edit src/recommender_experiments/app/mind_ml_project/5_dashboard.py
 ```
 
 日次運用(想定):
@@ -85,6 +97,9 @@ uv run python src/recommender_experiments/app/mind_ml_project/3_training_pipelin
 
 # 3. 毎日バッチ推論を実行
 uv run python src/recommender_experiments/app/mind_ml_project/4_batch_inference_pipeline.py
+
+# 4. ダッシュボードで結果確認
+uv run marimo edit src/recommender_experiments/app/mind_ml_project/5_dashboard.py
 ```
 
 ## データ構造
